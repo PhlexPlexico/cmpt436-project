@@ -100,7 +100,10 @@
 			console.log(message);
 			message.time = moment(message.time).format("h:mm");
 			this.push('messages', message);
-			this.$.chat.scrollTop = this.$.chat.scrollHeight;
+			this.async(function() {
+				this.$.chat.scrollTop = this.$.chat.scrollHeight;
+			});
+			
 		}
 	});
 </script>
