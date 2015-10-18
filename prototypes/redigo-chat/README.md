@@ -1,6 +1,6 @@
 # redigo-chat
 
-This is intended to be a simple prototype for testing a simple chat server using Redis and WebSocket. The Redis backend hasn't been implemented yet, so the Go server is basically just sending messages to all connected users, but I plan on using [Pub/Sub](http://redis.io/topics/pubsub) once I have time.
+This is intended to be a simple prototype for testing a simple chat server using WebSockets, Go, and Redis. The Redis backend hasn't been implemented yet, so the Go server is basically just sending messages to all connected users, but I plan on using [Pub/Sub](http://redis.io/topics/pubsub) once I have time.
 
 ### Setup
 
@@ -14,4 +14,4 @@ in the `app/` directory, and
 
 in the `server/` directory.
 
-After that, the site will be accessible via http://localhost:8000/
+After that, the site will be accessible via [http://localhost:8000/](http://localhost:8000/)
