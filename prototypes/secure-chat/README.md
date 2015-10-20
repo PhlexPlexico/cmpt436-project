@@ -2,6 +2,11 @@
 
 This is intended to be a simple prototype for testing https and wss. None of the chat system has been really been implemented yet, but it will model the redigo-chat prototype when it's done.
 
+### Notes
+
+* The official Golang websocket implementation, [golang.org/x/net/websocket](https://godoc.org/golang.org/x/net/websocket) does not contain any way of limiting the size of the messages sent over the network
+  * It may be prefferable to use [github.com/gorilla/websocket](https://godoc.org/github.com/gorilla/websocket) since it supports this feature which is important so that users can't just send giant strigns and crash our server
+
 ### Setup
 
 Setup is a bit more involved for this prototype. Make sure you have [Bower](http://bower.io/) and [Go](https://golang.org/) installed, and then run:
