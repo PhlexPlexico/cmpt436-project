@@ -28,4 +28,5 @@ func main() {
 
 	go http.ListenAndServeTLS(":8080", "cert.crt", "key.key", nil)
 	http.ListenAndServe(":8000", http.HandlerFunc(redirectHandler))
+
 }

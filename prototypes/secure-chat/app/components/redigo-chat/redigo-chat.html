@@ -92,6 +92,7 @@
         handleResponse: function(request) {
             credentials = JSON.parse(request.detail.response);
 
+            
             openSocket(credentials);
         }
 
