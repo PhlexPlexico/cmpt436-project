@@ -1,6 +1,6 @@
 # secure-chat
 
-This is intended to be a simple prototype for testing a simple chat server using WebSockets, Go, and Redis. The Redis backend hasn't been implemented yet, so the Go server is basically just sending messages to all connected users, but I plan on using [Pub/Sub](http://redis.io/topics/pubsub) once I have time.
+This is intended to be a simple prototype for testing https and wss. None of the chat system has been really been implemented yet, but it will model the redigo-chat prototype when it's done.
 
 ### Setup
 
