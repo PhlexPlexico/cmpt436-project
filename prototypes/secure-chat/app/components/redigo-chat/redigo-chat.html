@@ -1,0 +1,109 @@
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/classes/iron-flex-layout.html">
+
+<dom-module id="redigo-chat">
+	<style>
+		.vertical-container {
+			@apply(--layout-vertical);
+		}
+		.horizontal-container {
+			@apply(--layout-horizontal);
+	    }
+	    .flexchild {
+			@apply(--layout-flex);
+	    }
+	    #chat {
+	    	height: 200px;
+	    	width: auto;
+	    	overflow-y: scroll;
+	    	overflow-wrap: break-word;
+	    	background: #EEE;
+	    	padding-left: 10px;
+	    	padding-right: 10px;
+	    }
+	    .time {
+	    	font-weight: 200;
+	    	color: #888;
+	    }
+	    .username {
+	    	font-weight: 600;
+	    	color: #444;
+	    }
+	    .message {
+	    	color: #000;
+	    }
+	</style>
+	<template>
+		<div>
+			<div class="horizontal-container">
+				<paper-input id="username" class="flexchild" label="Enter a username..." value="anon"></paper-input>
+			</div>
+			<div class="flexchild" id="chat">
+				<template is="dom-repeat" id="chat" items="{{messages}}">
+					<div>
+						<span class="time">{{item.time}}</span><span class="time"> - </span><span class="username">{{item.username}}</span><span class="message">: </span><span class="message">{{item.message}}</span>
+					</div>
+				</template>
+			</div>
+			<div class="horizontal-container">
+				<paper-input id="input" class="flexchild" label="Enter a message..." no-label-float></paper-input>
+				<paper-button on-tap="send">Send</paper-button>
+				<iron-a11y-keys target="{{}}" keys="enter" on-keys-pressed="send"></iron-a11y-keys>
+			</div>
+		</div>
+	</template>
+</dom-module>
+
+<script src="../../bower_components/moment/moment.js"></script>
+<script>
+	Polymer({
+		is: "redigo-chat",
+
+		properties: {
+			messages: {
+				type: Array,
+				value: [],
+			},
+			conn: Object
+		},
+
+		ready: function() {
+		    if (window["WebSocket"]) {
+		        this.conn = new WebSocket("wss://" + window.location.host + "/ws");
+		        this.conn.onclose = function(event) {
+		            console.log("websocket closed");
+		        };
+		        this.conn.onmessage = function(event) {
+		            this.receive(event.data)
+		        }.bind(this);
+		    } else {
+		        console.log("websockets not supported");
+		    }
+		},
+
+		send: function() {
+			var str = this.$.input.value;
+			if (str) {
+				var msg = {
+					username: this.$.username.value,
+					message: str
+				}
+				this.conn.send(JSON.stringify(msg));
+				this.$.input.value = "";
+			}
+		},
+
+		receive: function(message) {
+			message = JSON.parse(message);
+			console.log(message);
+			message.time = moment(message.time).format("h:mm");
+			this.push('messages', message);
+			this.async(function() {
+				this.$.chat.scrollTop = this.$.chat.scrollHeight;
+			});
+			
+		}
+	});
+</script>
