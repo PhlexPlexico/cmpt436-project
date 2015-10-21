@@ -63,7 +63,8 @@
             method="GET"
             handle-as="json"
             on-response="handleResponse"
-            debounce-duration="300"></iron-ajax>
+            debounce-duration="300">
+        </iron-ajax>
     </template>
 </dom-module>
 
@@ -82,22 +83,30 @@
 
         ready: function() {
             if (window["WebSocket"]) {
-                //TODO insert handshake stuff here
-                this.$.requestAuth.generateRequest();
+                var sessionId = getCookie("sessionId");
+                if (sessionId == "") {
+                    this.$.requestAuth.generateRequest();
+                } else {
+                    openSocket(sessionId);
+                }
             } else {
                 console.log("websockets not supported");
             }
         },
 
         handleResponse: function(request) {
-            credentials = JSON.parse(request.detail.response);
+            var sessionId = JSON.parse(request.detail.response);
+            console.log(JSON.stringify(sessionId));
 
-            
-            openSocket(credentials);
+            setCookie("sessionId", sessionId.sessionId, 60);
+
+            openSocket(sessionId);
         }
 
-        openSocket: function(credentials) {
+        openSocket: function(sessionId) {
             this.conn = new WebSocket("wss://" + window.location.host + "/ws");
+            this.conn.send(JSON.stringify(sessionId));
+            
             this.conn.onclose = function(event) {
                 console.log("websocket closed");
             };
@@ -125,8 +134,25 @@
             this.push('messages', message);
             this.async(function() {
                 this.$.chat.scrollTop = this.$.chat.scrollHeight;
-            });
-            
+            });   
+        }
+
+        setCookie: function(cname, cvalue, exMinutes) {
+            var d = new Date();
+            d.setTime(d.getTime() + (exMinutes*60*1000));
+            var expires = "expires="+d.toUTCString();
+            document.cookie = cname + "=" + cvalue + "; " + expires;
+        }
+
+        getCookie: function(cname) {
+            var name = cname + "=";
+            var ca = document.cookie.split(';');
+            for(var i=0; i<ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0)==' ') c = c.substring(1);
+                if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+            }
+            return "";
         }
     });
 </script>
