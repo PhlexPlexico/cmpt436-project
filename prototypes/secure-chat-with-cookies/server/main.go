@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
@@ -86,30 +87,38 @@ func wsHandler(ws *websocket.Conn) {
 	receiver := NewReceiver()
 	var session Session
 	receiver.receive(ws, &session)
-	if receiver.handleErr() {
+	if receiver.err != nil {
+		log.Println(receiver.err)
 		return
 	}
 
-	existingSession, ok := getActiveSession(session.username)
+	existingSession, ok := getActiveSession(session.Username)
 
 	//TODO inform the user of invalidity
-	if !ok || existingSession.sessionId != session.sessionId {
+	if !ok {
+		log.Println("active session not found.")
+		return
+	}
+	if existingSession.SessionId != session.SessionId {
 		log.Println("invalid sessionId")
 		return
-	} else if existingSession.expiryTime.Before(time.Now()) {
+	}
+	if existingSession.ExpiryTime.Before(time.Now()) {
 		log.Println("expired session")
-		removeActiveSession(session.username)
+		removeActiveSession(session.Username)
 		return
 	}
 
 	chat.join <- ws
 	var message Message
 	for receiver.receive(ws, &message) {
-		message.Username = session.username
+		message.Username = session.Username
 		message.Time = time.Now()
 		chat.incoming <- &message
 	}
-	receiver.handleErr()
+	if receiver.err != nil {
+		log.Println(receiver.err)
+	}
 
 	chat.leave <- ws
 }
@@ -133,14 +142,6 @@ func (r *Receiver) receive(ws *websocket.Conn, v interface{}) bool {
 	return r.err == nil
 }
 
-func (r *Receiver) handleErr() bool {
-	if r.err != nil {
-		log.Println(r.err)
-	}
-
-	return r.err != nil
-}
-
 type AuthHandler struct {
 	err error
 }
@@ -152,6 +153,7 @@ func NewAuthHandler() *AuthHandler {
 }
 
 func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Println("serving http request")
 	query := r.URL.Query()
 	username := query.Get("username")
 	password := query.Get("password")
@@ -161,39 +163,53 @@ func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	session := NewSession(username, password)
 	addActiveSession(session)
 
+	log.Println(session)
 	var sessionJsonBytes []byte
 	sessionJsonBytes, a.err = json.Marshal(session)
 	if a.err != nil {
 		log.Panic("session cannot be stored as a json object")
 	}
+
+	log.Println(string(sessionJsonBytes))
 	w.Write(sessionJsonBytes)
 }
 
 type Session struct {
-	username   string    `json:"username"`
-	password   string    `json:"password"`
-	sessionId  string    `json:"sessionId"`
-	expiryTime time.Time `json:"expiryTime"`
+	Username   string    `json:"username"`
+	Password   string    `json:"password"`
+	SessionId  string    `json:"sessionId"`
+	ExpiryTime time.Time `json:"expiryTime"`
 }
 
 func NewSession(username, password string) *Session {
 	sessionIdBytes := make([]byte, SESSSION_ID_SIZE)
-	n, err := rand.Read(sessionIdBytes)
+	_, err := rand.Read(sessionIdBytes)
 	if err != nil {
 		log.Println("could not generate session id")
 		return nil
 		//TODO handle this properly
 	}
 
-	sessionId := string(sessionIdBytes[:n])
+	sessionId := base64.URLEncoding.EncodeToString(sessionIdBytes)
 	expiryTime := time.Now().Add(time.Duration(SESSION_DURATION_MINUTES) * time.Minute)
 
 	return &Session{
-		username:   username,
-		password:   password,
-		sessionId:  sessionId,
-		expiryTime: expiryTime,
+		Username:   username,
+		Password:   password,
+		SessionId:  sessionId,
+		ExpiryTime: expiryTime,
 	}
+}
+
+func (s *Session) String() string {
+	// return fmt.Sprintf("session: {username: %s; password: "+
+	// 	"%s; sessionId: %s; expiryTime: %s",
+	// 	s.Username, s.Password, s.SessionId, s.ExpiryTime.String())
+	json, err := json.Marshal(s)
+	if err != nil {
+		log.Panic("JSON can't marshal session.")
+	}
+	return string(json)
 }
 
 func getActiveSession(username string) (session *Session, ok bool) {
@@ -206,7 +222,7 @@ func getActiveSession(username string) (session *Session, ok bool) {
 func addActiveSession(session *Session) {
 	//TODO deal with duplicate usernames, don't just return true
 	lockActiveSessions.Lock()
-	activeSessions[session.username] = session
+	activeSessions[session.Username] = session
 	lockActiveSessions.Unlock()
 	return
 }

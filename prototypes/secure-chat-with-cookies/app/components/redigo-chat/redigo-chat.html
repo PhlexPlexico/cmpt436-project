@@ -81,24 +81,17 @@
             conn: Object
         },
 
-        getCookie: function(cname) {
-            var name = cname + "=";
-            var ca = document.cookie.split(';');
-            for(var i=0; i<ca.length; i++) {
-                var c = ca[i];
-                while (c.charAt(0)==' ') c = c.substring(1);
-                if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
-            }
-            return "";
-        },
-
         ready: function() {
             if (window["WebSocket"]) {
+                console.log("attempting to open socket")
+                //TODO remove this test code
+                this.setCookie("sessionId", "", 1);
                 var sessionId = this.getCookie("sessionId");
                 if (sessionId == "") {
+                    console.log("generating session id")
                     this.$.requestAuth.generateRequest();
                 } else {
-                    openSocket(sessionId);
+                    this.openSocket(sessionId);
                 }
             } else {
                 console.log("websockets not supported");
@@ -106,18 +99,23 @@
         },
 
         handleResponse: function(request) {
-            var sessionId = JSON.parse(request.detail.response);
+            var sessionId = request.detail.response;
+            console.log(sessionId);
             console.log(JSON.stringify(sessionId));
 
-            setCookie("sessionId", sessionId.sessionId, 60);
+            this.setCookie("sessionId", sessionId.sessionId, 29);
 
-            openSocket(sessionId);
+            this.openSocket(sessionId);
         },
 
         openSocket: function(sessionId) {
             this.conn = new WebSocket("wss://" + window.location.host + "/ws");
-            this.conn.send(JSON.stringify(sessionId));
-            
+            var self = this;
+            this.conn.onopen = function(event) {
+                console.log("socket has opened. sending sessionId: "+ 
+                    JSON.stringify(sessionId));
+                self.conn.send(JSON.stringify(sessionId));
+            };
             this.conn.onclose = function(event) {
                 console.log("websocket closed");
             };
@@ -146,6 +144,17 @@
             this.async(function() {
                 this.$.chat.scrollTop = this.$.chat.scrollHeight;
             });   
+        },
+
+        getCookie: function(cname) {
+            var name = cname + "=";
+            var ca = document.cookie.split(';');
+            for(var i=0; i<ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0)==' ') c = c.substring(1);
+                if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+            }
+            return "";
         },
 
         setCookie: function(cname, cvalue, exMinutes) {
