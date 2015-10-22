@@ -1,20 +1,19 @@
 package main
 
 import (
-	"encoding/json"
-	"encoding/base64"
 	"crypto/rand"
-	"sync"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
 const (
-	SESSSION_ID_SIZE int = 32
-	SESSION_DURATION_MINUTES = 30
+	SESSSION_ID_SIZE         int = 32
+	SESSION_DURATION_MINUTES     = 30
 )
 
 var activeSessions map[string]*Session
@@ -83,43 +82,6 @@ type Message struct {
 	Message  string    `json:"message"`
 }
 
-type Session struct {
-	username string	`json:"username"`
-	sessionId string `json:"sessionId"`
-	expiryTime time.Time `json:"expiryTime"`
-}
-
-func NewSession(username string) *Session {
-	sessionIdBytes := make([]byte, SESSSION_ID_SIZE)
-	n, err := rand.Read(sessionIdBytes)
-	if err != nil {
-		log.Println("could not generate session id")
-		return nil
-		//TODO handle this properly
-	}
-
-	sessionId := string(sessionIdBytes[:n])
-	expiryTime := time.Now().Add(time.Duration(SESSION_DURATION_MINUTES) * time.Minute)
-	
-	return &Session {
-		username: username,
-		sessionId: sessionId,
-		expiryTime: expiryTime,
-	}
-}
-func authHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	username := query.Get("username")
-	password := query.Get("password")
-	//TODO actually authorize something
-
-	session := NewSession()
-	addActiveSession(session)
-
-	//TODO account for the case where session is nil
-	w.Write(json.Marshal(session))
-}
-
 func wsHandler(ws *websocket.Conn) {
 	receiver := NewReceiver()
 	var session Session
@@ -143,7 +105,7 @@ func wsHandler(ws *websocket.Conn) {
 	chat.join <- ws
 	var message Message
 	for receiver.receive(ws, &message) {
-		message.Username = session.
+		message.Username = session.username
 		message.Time = time.Now()
 		chat.incoming <- &message
 	}
@@ -155,7 +117,6 @@ func wsHandler(ws *websocket.Conn) {
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://localhost:8080"+r.RequestURI, http.StatusMovedPermanently)
 }
-
 
 type Receiver struct {
 	err error
@@ -174,10 +135,65 @@ func (r *Receiver) receive(ws *websocket.Conn, v interface{}) bool {
 
 func (r *Receiver) handleErr() bool {
 	if r.err != nil {
-		log.Println(err)
+		log.Println(r.err)
 	}
 
 	return r.err != nil
+}
+
+type AuthHandler struct {
+	err error
+}
+
+func NewAuthHandler() *AuthHandler {
+	return &AuthHandler{
+		err: nil,
+	}
+}
+
+func (a *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	username := query.Get("username")
+	password := query.Get("password")
+	//TODO actually authorize something
+
+	//TODO account for the case where session is nil
+	session := NewSession(username, password)
+	addActiveSession(session)
+
+	var sessionJsonBytes []byte
+	sessionJsonBytes, a.err = json.Marshal(session)
+	if a.err != nil {
+		log.Panic("session cannot be stored as a json object")
+	}
+	w.Write(sessionJsonBytes)
+}
+
+type Session struct {
+	username   string    `json:"username"`
+	password   string    `json:"password"`
+	sessionId  string    `json:"sessionId"`
+	expiryTime time.Time `json:"expiryTime"`
+}
+
+func NewSession(username, password string) *Session {
+	sessionIdBytes := make([]byte, SESSSION_ID_SIZE)
+	n, err := rand.Read(sessionIdBytes)
+	if err != nil {
+		log.Println("could not generate session id")
+		return nil
+		//TODO handle this properly
+	}
+
+	sessionId := string(sessionIdBytes[:n])
+	expiryTime := time.Now().Add(time.Duration(SESSION_DURATION_MINUTES) * time.Minute)
+
+	return &Session{
+		username:   username,
+		password:   password,
+		sessionId:  sessionId,
+		expiryTime: expiryTime,
+	}
 }
 
 func getActiveSession(username string) (session *Session, ok bool) {
@@ -187,12 +203,12 @@ func getActiveSession(username string) (session *Session, ok bool) {
 	return
 }
 
-func addActiveSession(session *Session) (ok bool) {
-	//TODO deal with duplicate usernames
+func addActiveSession(session *Session) {
+	//TODO deal with duplicate usernames, don't just return true
 	lockActiveSessions.Lock()
 	activeSessions[session.username] = session
 	lockActiveSessions.Unlock()
-	ok = true
+	return
 }
 
 func removeActiveSession(username string) (ok bool) {
@@ -200,8 +216,9 @@ func removeActiveSession(username string) (ok bool) {
 	_, ok = activeSessions[username]
 	if ok {
 		delete(activeSessions, username)
-	} 
+	}
 	lockActiveSessions.Unlock()
+	return
 }
 
 func main() {
@@ -214,7 +231,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.Handle("/ws", websocket.Handler(wsHandler))
-	r.Handle("/auth", http.HandleFunc(authHandler))
+	r.Handle("/auth", NewAuthHandler())
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("app/")))
 
 	http.Handle("/", r)
