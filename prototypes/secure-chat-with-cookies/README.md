@@ -15,8 +15,3 @@ After that, run
 `go run main.go`
 
 in the `server/` directory, and the site will be accessible via [http://localhost:8000/](http://localhost:8000/)
-
-### Notes
-
-* The official Golang websocket implementation, [golang.org/x/net/websocket](https://godoc.org/golang.org/x/net/websocket) does not contain any way of limiting the size of the messages sent over the network
-  * It may be prefferable to use [github.com/gorilla/websocket](https://godoc.org/github.com/gorilla/websocket) since it supports this feature which is important so that users can't just send giant strigns and crash our server
