@@ -28,3 +28,10 @@ _testmain.go
 
 *.crt
 *.key
+
+# Created by https://www.gitignore.io/api/redis
+
+### Redis ###
+# Ignore redis binary dump (dump.rdb) files
+
+*.rdb
