@@ -1,20 +1,24 @@
 # secure-chat
 
-This is intended to be a simple prototype for testing https and wss. None of the chat system has been really been implemented yet, but it will model the redigo-chat prototype when it's done.
+This is intended to be a simple prototype for testing https and wss, using a Redis backend.
 
 ### Setup
 
-Setup is a bit more involved for this prototype. Make sure you have [Bower](http://bower.io/) and [Go](https://golang.org/) installed, and then run:
+Setup is a bit more involved for this prototype. Make sure you have [Bower](http://bower.io/), [Go](https://golang.org/), [Redis](http://redis.io/), and [OpenSSL](https://www.openssl.org/) installed (preferably using [Homebrew](http://brew.sh/) or apt-get if possible), and then run the following commands:
 
-`bower install`
+1. `cd app`
+2. `bower install`
+	* Installs required web components
+3. `cd ../server`
+4. `sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /key.key -out cert.crt`
+ * Generates a self-signed certificate for https and wss
+5. `redis-server`
+ * Starts a redis server, **do this in a seperate window**
+6. `go run *.go`
 
-in the `app/` directory to get all of the website dependencies. After that, you will need to create a certificate and key (named `cert.crt` and `key.key`) for https and wss connection, and place them in the `server/` directory. I'd recommend following [this tutorial](https://www.digitalocean.com/community/tutorials/how-to-create-an-ssl-certificate-on-nginx-for-ubuntu-14-04) to generate self-signed certificates.
+You may need to install some Go packages, in which case you can usually type in `go get foo`, where foo is the name of the missing package that needs to be installed. 
 
-After that, run
-
-`go run main.go`
-
-in the `server/` directory, and the site will be accessible via [http://localhost:8000/](http://localhost:8000/)
+After all this is done, the site will be accessible via [http://localhost:8000/](http://localhost:8000/)
 
 ### Notes
 
