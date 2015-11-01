@@ -1,0 +1,57 @@
+<link rel="import" href="../bower_components/iron-menu-behavior/iron-menu-behavior.html">
+
+<dom-module id="chat-message">
+	<style>
+		.message {
+			margin-bottom: 15px;
+		}
+		.username {
+			font-weight: 600;
+			color: #333;
+			margin-right: 5px;
+		}
+		.time {
+			color: #888;
+			font-weight: 300;
+		}
+		img {
+			width: 40px;
+			height: 40px;
+			margin-right: 10px;
+			border-radius: 40px;
+		}
+		.header {
+			margin-bottom: 5px;
+		}
+		.no_overflow {
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+			min-width: 0;
+		}
+	</style>
+	<template>
+		<div class="horizontal layout">
+			<img src="../images/profile-picture.svg">
+			<div class="message vertical layout flex">
+				<div class="no_overflow header horizontal layout">
+					<div class="no_overflow username">[[user]]</div>
+					<div class="time">[[time]]</div><br>
+				</div>
+				<content></content>
+			</div>
+		</div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "chat-message",
+
+		properties: {
+			user: String,
+			time: String,
+			message: String,
+		},
+	});
+</script>

@@ -1,0 +1,252 @@
+<link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/paper-menu/paper-submenu.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-flex-layout/classes/iron-flex-layout.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="contact-menu.html">
+<link rel="import" href="chat-message.html">
+
+<dom-module id="design-prototype">
+	<style>
+		h1 {
+			font-weight: 400;
+			font-size: 22px;
+		}
+		h3 {
+			font-weight: 400;
+		}
+
+		#contactToolbar {
+			--paper-toolbar-background: #00796B;
+			--paper-toolbar-color: #fff;
+		}
+/*		#contactToolbar:hover {
+			--paper-toolbar-background: #00796B;
+			cursor: pointer;
+		}*/
+
+		#contact-drawer {
+			background-color: #009688;
+			color: #fff;
+		}
+		paper-menu {
+			--paper-menu-background-color: transparent;
+			--paper-menu-color: #fff;
+		}
+		#main-toolbar {
+			--paper-toolbar-background: #transparent;
+			--paper-toolbar-color: #333;
+			text-overflow: ellipsis;
+		}
+		#info-drawer {
+			background-color: #f5f5f5;
+		}
+		#info-toolbar {
+			--paper-toolbar-background: #transparent;
+			--paper-toolbar-color: #333;
+		}
+		.dropdown-content {
+			color: #000;
+		}
+		.content {
+			margin: 20px;
+		}
+		paper-item {
+			--paper-item-selected: {
+				background-color: #FFA726;
+			};
+		}
+		contact-menu {
+			display: inline-block;
+			width: 100%;
+		}
+		paper-menu-button {
+			padding: 0;
+		}
+		.no_overflow {
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			overflow: hidden;
+			min-width: 0;
+		}
+		paper-icon-button {
+			min-width: 40px;
+		}
+		paper-button {
+			text-transform: none;
+			font-weight: 400;
+			font-size: 22px;
+			padding: 10px;
+			margin: 0;
+			text-align: left;
+		}
+		iron-icon {
+			min-width: 24px;
+		}
+		.content {
+			height: 100%;
+		}
+    }
+
+	</style>
+	<template>
+		<paper-dialog id="dialog" with-backdrop>
+		  <h2>Header</h2>
+		  <paper-dialog-scrollable>
+		    Lorem ipsum...
+		  </paper-dialog-scrollable>
+		  <div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+		    <paper-button dialog-confirm>Accept</paper-button>
+		  </div>
+		</paper-dialog>
+
+		<paper-drawer-panel id="contact_drawer_panel" narrow="{{contactNarrow}}" disable-edge-swipe>
+		  <paper-header-panel id="contact-drawer" mode="seamed" drawer>
+		    <paper-toolbar id="contactToolbar"
+		    	on-mouseover="updateToolbar"
+		    	on-mouseout="updateToolbar">
+		    	<div class="horizontal layout center flex">
+			    	
+			    	<paper-menu-button id="accountMenu" vertical-offset="40" horizontal-offset="20"
+			    		on-iron-select="openDialog">
+			    		<paper-button class="dropdown-trigger">
+			    			<span class="no_overflow flex">App Name</span><iron-icon icon="icons:expand-more"></iron-icon>
+			    		</paper-button>
+			    		<paper-menu class="dropdown-content" selected="">
+			    			<paper-item>Preferences</paper-item>
+			    			<paper-item>Log out</paper-item>
+			    		</paper-menu>
+			    	</paper-menu-button>
+		    	</div>
+		    </paper-toolbar>
+		    <div class="content">
+			    <contact-menu></contact-menu>
+		    </div>
+		  </paper-header-panel>
+		  <div main>
+		  	<paper-drawer-panel right-drawer id="info_drawer_panel" force-narrow disable-edge-swipe>
+	  		  <paper-header-panel mode="seamed" main>
+			    <paper-toolbar id="main-toolbar">
+			    	<div class="horizontal layout center flex">
+				    	<paper-icon-button icon="menu" on-tap="contactToggle" hidden$="{{!contactNarrow}}"></paper-icon-button>
+				    	<!-- <h1 class="no_overflow">Group Name</h1> -->
+				    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
+				    		<paper-button class="no_overflow horizontal layout dropdown-trigger">
+				    			<span class="no_overflow">Group Name</span>
+				    			<iron-icon icon="icons:expand-more"></iron-icon>
+				    		</paper-button>
+				    		<!-- <paper-icon-button icon="icons:expand-more" class="dropdown-trigger"></paper-icon-button> -->
+				    		<paper-menu class="dropdown-content" on-iron-select="openDialog">
+				    			<paper-item>Preferences</paper-item>
+				    			<paper-item>Add User</paper-item>
+				    			<paper-item>Leave Group</paper-item>
+				    		</paper-menu>
+			    		</paper-menu-button>
+			    		<div class="flex"></div>
+				    	<paper-icon-button icon="editor:attach-money" on-tap="debtsOpen"></paper-icon-button>
+				    	<paper-icon-button icon="social:people" on-tap="peopleOpen"></paper-icon-button>
+			    	</div>
+			    </paper-toolbar>
+			    <div class="content vertical layout flex">
+			    	<div class="flex">
+			    		<template is="dom-repeat" items="[[messages]]">
+			    			<chat-message user="[[item.user]]" time="[[item.time]]">[[item.message]]</chat-message>
+			    		</template>
+			    	</div>
+			    	<div>
+			    		<paper-input class="flex" label="Enter a message..."></paper-input>
+			    	</div>
+			    </div>
+			  </paper-header-panel>
+			  <paper-header-panel id="info-drawer" mode="seamed" drawer>
+			    <paper-toolbar id="info-toolbar">
+				    <div class="horizontal layout center flex">
+				    	<h1 class="flex">[[infoTitle]]</h1>
+				    	<paper-icon-button icon="icons:close" on-tap="infoClose"></paper-icon-button>
+				    </div>
+			    </paper-toolbar>
+			    <div class="content"> Main content... </div>
+			  </paper-header-panel>
+		  	</paper-drawer-panel>
+		  </div>
+		</paper-drawer-panel>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "design-prototype",
+
+		properties: {
+			infoTitle: String,
+			messages: {
+				type: Array,
+				value: [
+					{user: 'Josh Heinrichs', time: '1:23 PM', message: 'hello'},
+					{user: 'Ken Slawinski', time: '1:24 PM', message: 'hi'},
+					{user: 'William van der Kamp', time: '1:25 PM', message: 'hey'},
+					{user: 'Jordan Lys', time: '1:25 PM', message: 'whats up'},
+					{user: 'Evan Closson', time: '1:25 PM', message: 'hows it going'}
+				]
+			}
+		},
+
+		peopleOpen: function() {
+			this.infoToggle("People");
+		},
+
+		debtsOpen: function() {
+			this.infoToggle("Debts");
+		},
+
+		contactToggle: function() {
+			this.$.contact_drawer_panel.togglePanel();
+		},
+
+		infoOpen: function() {
+			drawer = this.$.info_drawer_panel;
+			drawer.forceNarrow = false;
+			drawer.openDrawer();
+		},
+
+		infoClose: function() {
+			drawer = this.$.info_drawer_panel;
+			drawer.forceNarrow = true;
+			drawer.closeDrawer();
+		},
+
+		infoToggle: function(infoTitle) {
+			drawer = this.$.info_drawer_panel;
+			if (!drawer.narrow && infoTitle == this.infoTitle) {
+				this.infoClose();
+			} else {
+				this.infoTitle = infoTitle;
+				this.infoOpen();
+			}
+		},
+
+		updateToolbar: function() {
+			this.$.contactToolbar.updateStyles();
+		},
+
+		openAccountMenu: function() {
+			this.$.accountMenu.open();
+		},
+
+		openDialog: function() {
+			this.$.dialog.open();
+		}
+
+	});
+</script>
