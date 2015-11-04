@@ -85,8 +85,8 @@
             if (window["WebSocket"]) {
                 console.log("attempting to open socket")
                 //TODO remove this test code
-                this.setCookie("sessionId", "", 1);
-                var sessionId = this.getCookie("session");
+                this.setCookie("chat-session", "", 1);
+                var sessionId = this.getCookie("chat-session");
                 if (sessionId == "") {
                     console.log("generating session id")
                     this.$.requestAuth.generateRequest();
@@ -99,22 +99,16 @@
         },
 
         handleResponse: function(request) {
-            var sessionId = request.detail.response;
-            console.log(sessionId);
-            console.log(JSON.stringify(sessionId));
+            console.log(request.detail.response);
 
-            this.setCookie("session", sessionId.sessionId, 29);
-
-            this.openSocket(sessionId);
+            this.openSocket();
         },
 
-        openSocket: function(sessionId) {
+        openSocket: function() {
             this.conn = new WebSocket("wss://" + window.location.host + "/ws");
             var self = this;
             this.conn.onopen = function(event) {
-                console.log("socket has opened. sending sessionId: " + 
-                    JSON.stringify(sessionId));
-                self.conn.send(JSON.stringify(sessionId));
+                console.log("socket has opened.");
             };
             this.conn.onclose = function(event) {
                 console.log("websocket closed");
