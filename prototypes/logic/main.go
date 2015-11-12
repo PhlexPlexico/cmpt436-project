@@ -45,7 +45,7 @@ func printGroup(group *[]*user) {
 // Adds a purchase for the buyer, increasing the expeced by (cost-average)
 // lowers all other group members expected by average
 func addPurchase(group *[]*user, buyer *user, cost int) []*user {
-	var length int = (len(*group) - 1)
+	var length int = len(*group)
 	var average int = (cost / length)
 	for _, ele := range *group {
 		if *ele == *buyer {
@@ -58,11 +58,36 @@ func addPurchase(group *[]*user, buyer *user, cost int) []*user {
 	return *group
 }
 
+// payer pays payee
+// payers expected and owed increase
+// payees expected and owed decrease
 func payMember(payer *user, payee *user, amount int) {
 	payer.expected += amount
 	payer.owed += amount
 	payee.expected -= amount
 	payee.owed -= amount
+}
+
+// take on the entirety of someone elses expected/owed
+func takeDebt(taker *user, giver *user) {
+	taker.expected += giver.expected
+	taker.owed += giver.owed
+	giver.expected = 0
+	giver.owed = 0
+}
+
+// split the entirety of one persons finances to other members
+func splitDebt(group *[]*user, debtHolder *user) []*user {
+	var length int = (len(*group) - 1)
+	for _, ele := range *group {
+		if *ele != *debtHolder {
+			ele.owed = ele.owed + debtHolder.owed/length
+			ele.expected = ele.expected + debtHolder.expected/length
+		}
+	}
+	debtHolder.owed = 0
+	debtHolder.expected = 0
+	return *group
 }
 
 func main() {
@@ -97,7 +122,25 @@ func main() {
 	addPurchase(&Group, &K, 90)
 	printGroup(&Group)
 
-	fmt.Println("J pay K 5")
-	payMember(&J, &K, 5)
+	fmt.Println("W pay K 22")
+	payMember(&W, &K, 22)
 	printGroup(&Group)
+
+	fmt.Println("E takes Josh's debt over")
+	takeDebt(&E, &J)
+	printGroup(&Group)
+
+	fmt.Println("Split Ken's debt")
+	splitDebt(&Group, &K)
+	printGroup(&Group)
+
+	// balance check
+	fmt.Println("Evan Pay Will 15")
+	payMember(&E, &W, 15)
+	printGroup(&Group)
+
+	fmt.Println("Evan Pay Josh 14")
+	payMember(&E, &J, 14)
+	printGroup(&Group)
+
 }
