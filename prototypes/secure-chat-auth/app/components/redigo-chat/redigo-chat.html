@@ -55,7 +55,7 @@
             </div>
         </div>
 
-        <iron-ajax
+        <!-- <iron-ajax
             id="requestAuth"
             url="/auth/gplus"
             params='{"provider":"gplus"}'
@@ -63,7 +63,7 @@
             handle-as="json"
             on-response="handleResponse"
             debounce-duration="300">
-        </iron-ajax>
+        </iron-ajax> -->
     </template>
 </dom-module>
 
@@ -82,18 +82,18 @@
 
         ready: function() {
             if (window["WebSocket"]) {
-                console.log("starting authentication")
-                this.$.requestAuth.generateRequest();
+                console.log("starting websocket")
+                this.openSocket();
             } else {
                 console.log("websockets not supported");
             }
         },
 
-        handleResponse: function(request) {
-            console.log(request.detail.response);
+        // handleResponse: function(request) {
+        //     console.log(request.detail.response);
 
-            this.openSocket();
-        },
+        //     this.openSocket();
+        // },
 
         openSocket: function() {
             this.conn = new WebSocket("wss://" + window.location.host + "/ws");
