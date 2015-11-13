@@ -1,0 +1,164 @@
+<link rel="import" href="../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+
+<dom-module id="split-adjuster">
+	<style>
+		.name {
+			width: 30px;
+		}
+		paper-input {
+			width: 260px;
+		}
+	</style>
+	<template>
+		<paper-input label="total" value="{{cost}}" type="number">
+        	<div prefix>$</div>
+      	</paper-input><br>
+		<template is="dom-repeat" items="[[_people]]" as="person">
+			<div class="horizontal layout center">
+				<span style="display:none;">[[index]]</span>
+				<div class="name">[[person.name]]</div>
+				<paper-slider editable
+					min="0" max="[[cost]]" 
+					value="{{person.cost}}"
+					step="0.01"
+					disabled="{{sliderDisabled(person.locked, slidersDisabled)}}"
+					on-immediate-value-change="sliderChange"
+					on-change="sliderChange">
+				</paper-slider>
+				<paper-icon-button
+					on-tap="toggleLock"
+					icon="{{lockIcon(person.locked)}}">
+				</paper-icon-button>
+				<br>
+			</div>
+		</template>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "split-adjuster",
+
+		properties: {
+			_people: {
+				type: Array,
+				value: null,
+			},
+			people: {
+				type: Array,
+				value: ["Foo", "Bar", "Baz"],
+				observer: "peopleChanged"
+			},
+			cost: {
+				type: Number,
+				value: 10.00,
+				observer: "costChanged"
+			},
+			slidersDisabled: {
+				type: Boolean,
+				value: false
+			}
+		},
+
+		ready: function() {
+			this.peopleChanged();
+		},
+
+		displayCost: function(cost) {
+			return cost.toFixed(2);
+		},
+
+		lockIcon: function(locked) {
+			if (locked) {
+				return "icons:lock"
+			} else {
+				return "icons:lock-open"
+			}
+		},
+
+		toggleLock: function(event) {
+			console.log(event);
+			this.set('_people.'+event.model.index+'.locked', !event.model.person.locked);
+
+			var numUnlocked = 0;
+			for (var i=0; i<this._people.length; i++) {
+				if (!this._people[i].locked) {
+					numUnlocked++;
+				}
+			}
+
+			this.slidersDisabled = numUnlocked <= 1;
+		},
+
+		peopleChanged: function() {
+			this.set('_people', []);
+			console.log(this.people.length);
+			console.log(this.cost);
+			console.log(this.cost / this.people.length);
+			for (var i=0; i<this.people.length; i++) {
+				this.push('_people', {
+					name: this.people[i],
+					cost: this.cost / this.people.length,
+					ratio: 1.0 / this.people.length,
+					locked: false
+				});
+			}
+		},
+
+		costChanged: function() {
+			for (var i=0; i<this._people.length; i++) {
+				this.set('_people.'+i+'.cost', this.cost * this._people[i].ratio);
+			}
+		},
+
+		sliderDisabled: function(locked, slidersDisabled) {
+			return locked || slidersDisabled;
+		},
+
+		sliderChange: function(event) {
+			var otherCostBefore = 0;
+			for (var i=0; i<this._people.length; i++) {
+				if (i != event.model.index && !this._people[i].locked) {
+					otherCostBefore += this._people[i].cost;
+				}
+			}
+
+			var lockedCost = 0;
+			var numUnlocked = 0;
+			for (var i=0; i<this._people.length; i++) {
+				if (this._people[i].locked) {
+					lockedCost += this._people[i].cost;
+				} else {
+					numUnlocked++;
+				}
+			}
+
+			var maxCost = this.cost - lockedCost;
+			if (event.target.value > maxCost) {
+				event.target.value = maxCost;
+			}
+
+			var otherCostAfter = this.cost - event.target.immediateValue - lockedCost;
+
+			if (otherCostBefore == 0) {
+				for (var i=0; i<this._people.length; i++) {
+					if (i != event.model.index && !this._people[i].locked) {
+						this.set('_people.'+i+'.cost', otherCostAfter / (numUnlocked - 1));
+					}
+				}
+			} else {
+				for (var i=0; i<this._people.length; i++) {
+					if (i != event.model.index && !this._people[i].locked) {
+						var ratioBefore = this._people[i].cost / otherCostBefore;
+						this.set('_people.'+i+'.cost', ratioBefore * otherCostAfter);
+						this._people[i].ratio = this._people[i].cost / this.cost;
+					}
+				}
+			}
+		},
+
+	});
+</script>
