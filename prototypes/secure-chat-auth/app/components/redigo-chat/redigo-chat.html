@@ -4,7 +4,6 @@
 <link rel="import" href="../../bower_components/iron-flex-layout/classes/iron-flex-layout.html">
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 
-
 <dom-module id="redigo-chat">
     <style>
         .vertical-container {
@@ -58,8 +57,8 @@
 
         <iron-ajax
             id="requestAuth"
-            url="/auth"
-            params='{"username":"william", "password":"fakepass"}'
+            url="/auth/gplus"
+            params='{"provider":"gplus"}'
             method="GET"
             handle-as="json"
             on-response="handleResponse"
@@ -83,16 +82,8 @@
 
         ready: function() {
             if (window["WebSocket"]) {
-                console.log("attempting to open socket")
-                //TODO remove this test code
-                this.setCookie("chat-session", "", 1);
-                var sessionId = this.getCookie("chat-session");
-                if (sessionId == "") {
-                    console.log("generating session id")
-                    this.$.requestAuth.generateRequest();
-                } else {
-                    this.openSocket(sessionId);
-                }
+                console.log("starting authentication")
+                this.$.requestAuth.generateRequest();
             } else {
                 console.log("websockets not supported");
             }
@@ -140,22 +131,22 @@
             });   
         },
 
-        getCookie: function(cname) {
-            var name = cname + "=";
-            var ca = document.cookie.split(';');
-            for(var i=0; i<ca.length; i++) {
-                var c = ca[i];
-                while (c.charAt(0)==' ') c = c.substring(1);
-                if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
-            }
-            return "";
-        },
+        // getCookie: function(cname) {
+        //     var name = cname + "=";
+        //     var ca = document.cookie.split(';');
+        //     for(var i=0; i<ca.length; i++) {
+        //         var c = ca[i];
+        //         while (c.charAt(0)==' ') c = c.substring(1);
+        //         if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+        //     }
+        //     return "";
+        // },
 
-        setCookie: function(cname, cvalue, exMinutes) {
-            var d = new Date();
-            d.setTime(d.getTime() + (exMinutes*60*1000));
-            var expires = "expires="+d.toUTCString();
-            document.cookie = cname + "=" + cvalue + "; " + expires;
-        },
+        // setCookie: function(cname, cvalue, exMinutes) {
+        //     var d = new Date();
+        //     d.setTime(d.getTime() + (exMinutes*60*1000));
+        //     var expires = "expires="+d.toUTCString();
+        //     document.cookie = cname + "=" + cvalue + "; " + expires;
+        // },
     });
 </script>
