@@ -1,26 +1,37 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
+	"fmt"
+	"github.com/gorilla/pat"
+	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
+	"github.com/markbates/goth/providers/gplus"
+	"golang.org/x/oauth2/google"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 )
 
 const (
-	SESSION_DURATION_MINUTES int    = 30
-	SESSION_NAME             string = "chat-session"
-	HTTP_PARAM_USERNAME      string = "username"
-	SESSION_KEY_USERNAME     string = HTTP_PARAM_USERNAME
+	SESSION_DURATION_MINUTES       int    = 30
+	SESSION_NAME                   string = "chat-session"
+	HTTP_PARAM_USERNAME                   = "username"
+	SESSION_KEY_USERNAME                  = HTTP_PARAM_USERNAME
+	GOOGLE_CLIENT_SECRET_FILE_PATH        = "../../../.gplus_client_secret.json"
 )
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
+
+var router *pat.Router
+
+var activeSessions = sessions.NewCookieStore([]byte("a-secret-key-i-guess"))
 
 func redirectHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "https://localhost:8080"+r.RequestURI, http.StatusMovedPermanently)
@@ -41,26 +52,53 @@ func (r *Receiver) receive(ws *websocket.Conn, v interface{}) bool {
 	return r.err == nil
 }
 
-func AuthHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("serving http request")
+func AuthChoiceHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("serving auth request")
 
-	user, err := gothic.CompleteUserAuth(res, req)
+	t, err := template.New("foo").Parse(indexTemplate)
 	if err != nil {
-		fmt.Fprintln(res, err)
+		fmt.Fprintln(w, err)
 		return
 	}
 
-	session.Values[SESSION_KEY_USERNAME] = userName
+	t.Execute(w, nil)
+}
+
+func AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("serving auth callback")
+
+	//TODO make use of more user attributes, besides name.
+	user, err := gothic.CompleteUserAuth(w, r)
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	session, err := activeSessions.Get(r, SESSION_NAME)
+	if err != nil {
+		log.Println(err.Error())
+		// http.Error(w, err.Error(), 500)
+		// return
+	}
+
+	// t, err := template.New("foo").Parse(userTemplate)
+	// if err != nil {
+	// 	fmt.Fprintln(w, err)
+	// 	return
+	// }
+
+	// t.Execute(w, user)
+
+	log.Printf("number of values already in new session: %d.\n", len(session.Values))
+
+	session.Values[SESSION_KEY_USERNAME] = user.Name
 	session.Save(r, w)
+
+	http.ServeFile(w, r, "app/")
 }
 
 // serveWs handles websocket requests from the peer.
 func WsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", 405)
-		return
-	}
-
 	existingSession, err := activeSessions.Get(r, SESSION_NAME)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -101,11 +139,17 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
+	jsonKey, err := ioutil.ReadFile(GOOGLE_CLIENT_SECRET_FILE_PATH)
+	if err != nil {
+		log.Println("unable to read file ", GOOGLE_CLIENT_SECRET_FILE_PATH)
+		return
+	}
+	//TODO do I need scopes?
+	// https://developers.google.com/+/domains/authentication/scopes
+	googleConfig, err := google.ConfigFromJSON(jsonKey)
 	goth.UseProviders(
-		twitter.New(os.Getenv("TWITTER_KEY"), os.Getenv("TWITTER_SECRET"),
-			"http://localhost:3000/auth/twitter/callback"),
-		facebook.New(os.Getenv("FACEBOOK_KEY"), os.Getenv("FACEBOOK_SECRET"),
-			"http://localhost:3000/auth/facebook/callback"),
+		gplus.New(googleConfig.ClientID, googleConfig.ClientSecret,
+			googleConfig.RedirectURL),
 	)
 
 	activeSessions.Options = &sessions.Options{
@@ -116,23 +160,20 @@ func main() {
 	}
 
 	chat = NewChat()
+	router = pat.New()
 
-	r := mux.NewRouter()
-
-	r.HandleFunc("/ws", WsHandler)
-	r.HandleFunc("/auth/{provider}/callback", AuthHandler)
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("app/")))
-
-	http.Handle("/", r)
+	router.Get("/ws", WsHandler)
+	router.Get("/app", AuthCallbackHandler)
+	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
+	router.Get("/", AuthChoiceHandler)
+	http.Handle("/", router)
 
 	go http.ListenAndServeTLS(":8080", "cert.crt", "key.key", nil)
 	http.ListenAndServe(":8000", http.HandlerFunc(redirectHandler))
-
 }
 
 var indexTemplate = `
-<p><a href="/auth/twitter">Log in with Twitter</a></p>
-<p><a href="/auth/facebook">Log in with Facebook</a></p>
+<p><a href="/auth/gplus">Log in with Google</a></p>
 `
 
 var userTemplate = `

@@ -57,3 +57,7 @@ $RECYCLE.BIN/
 
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
+
+#client secrets, etc, for authentication
+.gplus_client_secret.json
+.session_secret
