@@ -17,7 +17,7 @@ import (
 
 const (
 	SESSION_DURATION_MINUTES       int    = 30
-	SESSION_NAME                   string = "chat-session"
+	SESSION_NAME                   string = "user_session"
 	SESSION_KEY_USERNAME                  = "username"
 	GOOGLE_CLIENT_SECRET_FILE_PATH        = "../../../.gplus_client_secret.json"
 )
@@ -76,7 +76,7 @@ func tryToAttachPreexistingUserToSession(
 		return false, err
 	}
 
-	sess, err := provider.UnmarshalSession(session.Values[SessionName].(string))
+	sess, err := provider.UnmarshalSession(session.Values[GOTH_SESS_KEY].(string))
 	if err != nil {
 		log.Println("unable to unmarshal sess from session")
 		endSession(session, w, r)
@@ -84,7 +84,9 @@ func tryToAttachPreexistingUserToSession(
 	}
 
 	user, err := provider.FetchUser(sess)
-	if err != nil {
+	//TODO generalize 'user.RawData["error"] != nil'.
+	//Works for gplus, but unlikely to work for all providers.
+	if err != nil || user.RawData["error"] != nil {
 		log.Println("unable to fetch user with ", provider.Name())
 		endSession(session, w, r)
 		return false, err
@@ -108,17 +110,19 @@ func AuthChoiceHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-
-	if !wasUserFound {
-		log.Println("serving new login.")
-		t, err := template.New("foo").Parse(indexTemplate)
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		t.Execute(w, nil)
+	if wasUserFound {
+		http.Redirect(w, r, "/realapp", http.StatusMovedPermanently)
+		return
 	}
+
+	log.Println("serving new login.")
+	t, err := template.New("foo").Parse(indexTemplate)
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	t.Execute(w, nil)
 }
 
 func AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,13 +144,6 @@ func AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		// http.Error(w, err.Error(), 500)
 		// return
 	}
-
-	// t, err := template.New("foo").Parse(userTemplate)
-	// if err != nil {
-	// 	fmt.Fprintln(w, err)
-	// 	return
-	// }
-	// t.Execute(w, user)
 
 	log.Printf("number of values already in new session: %d.\n", len(session.Values))
 
@@ -179,11 +176,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//TODO try commenting this out, see if it makes a difference (it shouldn't)
-	session.Save(r, w)
+	// session.Save(r, w)
 
 	user, err := getUserFromSession(session)
 	if err != nil {
 		log.Println("188")
+		log.Println(err.Error())
 		http.Error(w, "unable to retrieve user from session", 500)
 		endSession(session, w, r)
 		return
@@ -220,7 +218,7 @@ func main() {
 		log.Println("unable to read file ", GOOGLE_CLIENT_SECRET_FILE_PATH)
 		return
 	}
-	//TODO do I need scopes?
+	// do I need more scopes?
 	// https://developers.google.com/+/domains/authentication/scopes
 	googleConfig, err := google.ConfigFromJSON(jsonKey)
 
@@ -247,17 +245,7 @@ func main() {
 	http.ListenAndServe(":8000", http.HandlerFunc(redirectHandler))
 }
 
+//TODO add more providers
 var indexTemplate = `
 <p><a href="/auth/gplus">Log in with Google</a></p>
-`
-
-var userTemplate = `
-<p>Name: {{.Name}}</p>
-<p>Email: {{.Email}}</p>
-<p>NickName: {{.NickName}}</p>
-<p>Location: {{.Location}}</p>
-<p>AvatarURL: {{.AvatarURL}} <img src="{{.AvatarURL}}"></p>
-<p>Description: {{.Description}}</p>
-<p>UserID: {{.UserID}}</p>
-<p>AccessToken: {{.AccessToken}}</p>
 `

@@ -26,11 +26,11 @@ import (
 	"github.com/markbates/goth"
 )
 
-// SessionName is the key used to access the session store.
+// SESSION_NAME is the key used to access the session store.
 const (
-	SessionName                     = "_gothic_session"
-	PROVIDER_NAME_KEY               = "gothic_provider"
-	USER_KEY                        = "gothic_user"
+	GOTH_SESS_KEY                   = "goth_sess"
+	PROVIDER_NAME_KEY               = "goth_provider"
+	USER_KEY                        = "goth_user"
 	SESSION_SECRET_CONFIG_FILE_PATH = "../../../.session_secret"
 )
 
@@ -40,7 +40,7 @@ func marshalUser(user *goth.User) (string, error) {
 }
 
 func unmarshalUser(data string) (*goth.User, error) {
-	var user *goth.User
+	user := &goth.User{}
 	err := json.Unmarshal([]byte(data), user)
 	return user, err
 }
@@ -85,7 +85,6 @@ func putUserInSession(user *goth.User, s *sessions.Session) error {
 	if err != nil {
 		return err
 	}
-
 	s.Values[USER_KEY] = userString
 	return nil
 }
@@ -175,10 +174,10 @@ func GetAuthURL(res http.ResponseWriter, req *http.Request) (string, error) {
 		return "", err
 	}
 
-	session, _ := Store.Get(req, SessionName)
+	session, _ := Store.Get(req, SESSION_NAME)
 
 	//added by William: store both the provider and the session.
-	session.Values[SessionName] = sess.Marshal()
+	session.Values[GOTH_SESS_KEY] = sess.Marshal()
 	session.Values[PROVIDER_NAME_KEY] = provider.Name()
 	err = session.Save(req, res)
 	if err != nil {
@@ -212,13 +211,13 @@ var CompleteUserAuth = func(res http.ResponseWriter, req *http.Request) (goth.Us
 		return goth.User{}, err
 	}
 
-	session, _ := Store.Get(req, SessionName)
+	session, _ := Store.Get(req, SESSION_NAME)
 
-	if session.Values[SessionName] == nil {
+	if session.Values[GOTH_SESS_KEY] == nil {
 		return goth.User{}, errors.New("could not find a matching session for this request")
 	}
 
-	sess, err := provider.UnmarshalSession(session.Values[SessionName].(string))
+	sess, err := provider.UnmarshalSession(session.Values[GOTH_SESS_KEY].(string))
 	if err != nil {
 		return goth.User{}, err
 	}
@@ -246,7 +245,7 @@ func getProviderName(req *http.Request) (string, error) {
 		provider = req.URL.Query().Get(":provider")
 	}
 	if provider == "" {
-		session, err := Store.Get(req, SessionName)
+		session, err := Store.Get(req, SESSION_NAME)
 		if err != nil {
 			return provider, err
 		}
