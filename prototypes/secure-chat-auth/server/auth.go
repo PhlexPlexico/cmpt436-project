@@ -233,14 +233,13 @@ var CompleteUserAuth = func(res http.ResponseWriter, req *http.Request) (goth.Us
 	}
 
 	_, err = sess.Authorize(provider, req.URL.Query())
+	if err != nil {
+		return goth.User{}, err
+	}
 
 	//Save the sess to the session, because now its access token has been set.
 	session.Values[GOTH_SESS_KEY] = sess.Marshal()
 	session.Save(req, res)
-
-	if err != nil {
-		return goth.User{}, err
-	}
 
 	return provider.FetchUser(sess)
 }
