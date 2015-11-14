@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	SESSION_DURATION_MINUTES       int    = 1
+	SESSION_DURATION_MINUTES       int    = 30
 	SESSION_NAME                   string = "user_session"
 	SESSION_KEY_USERNAME                  = "username"
 	GOOGLE_CLIENT_SECRET_FILE_PATH        = "../../../.gplus_client_secret.json"

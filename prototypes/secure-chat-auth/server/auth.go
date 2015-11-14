@@ -102,6 +102,16 @@ func init() {
 		log.Println("could not load session secret from file ",
 			SESSION_SECRET_CONFIG_FILE_PATH)
 		log.Println(err)
+
+		//TODO delete these lines, when I know this will never be used.
+		// key, err = os.Getenv("SESSION_SECRET")
+		// if err != nil {
+		// 	log.Println("could not load session secret from " +
+		// 		"environment variable SESSION_SECRET.\nUsing a hard-coded value. " +
+		// 		"This should be removed from production code.")
+		// 	log.Println(err)
+		// 	key = "aFakeTemporarySecret"
+		// }
 	}
 	keySet = len(key) != 0
 	Store = sessions.NewCookieStore([]byte(key))
