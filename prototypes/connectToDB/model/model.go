@@ -17,7 +17,6 @@ type User struct {
 	Groups		[]Group 		`bson:"groups"`
 	Contacts	[]Contact		`bson:"contacts"`
 	Timestamp 	time.Time 		`bson:"time.Time"`
-
 }
 
 type Contact struct {
