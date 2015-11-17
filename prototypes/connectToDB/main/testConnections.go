@@ -14,9 +14,9 @@ type User struct {
 	Phone     	string			`json:"phone"`
 	Email		string			`json:"email"`
 	IsRealUser	bool			`json:"isRealUser"`
-	Groups		[]*Group 		`json:"groups"`
-	Contacts	[]*Contact		`json:"contacts"`
-	Timestamp 	time.Time 		`json:"time" bson:"time.Time"`
+	Groups		[]*Group 		`json:"groups" bson:"groups"`
+	Contacts	[]*Contact		`json:"contacts" bson:"contacts"`
+	Timestamp 	time.Time 		`json:"time"`
 }
 
 type Contact struct {
@@ -25,7 +25,7 @@ type Contact struct {
 	Phone		string  		`json:"phone"`
 	Email		string 			`json:"email"`
 	IsRealUser	bool			`json:"isRealUser`
-	Timestamp 	time.Time 		`json:"time" bson:"time.Time"`
+	Timestamp 	time.Time 		`json:"time"`
 }
 
 type Group struct {
@@ -41,7 +41,7 @@ type Comment struct {
 	UserName	string 			`json:"userName"`
 	Subject		string 			`json:"subject"`
 	Content		string 			`json:"content"`
-	Timestamp	time.Time  		`json:"time" bson:"time.Time"`
+	Timestamp	time.Time  		`json:"time"`
 }
 
 var (
@@ -110,24 +110,31 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("\n")
+	fmt.Println("\nHexID of JRock\n")
 	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\n")
+	fmt.Println("\nResult Object\n")
+	fmt.Println(result)
+	//hex := findJ.ID.Hex()
 
-	hex := findJ.ID.Hex()
-
-	// query := bson.M{"_id": bson.ObjectId(hex)}
-	// change := bson.M{"$push": bson.M{"Contacts": &result}}
-	// fmt.Println(change)
-	// err = c.Update(query, change)
-
-	//  findJ = User{}
-	//  err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	//  if err != nil {
-	//   	panic(err)
-	//  }
-
-	//  fmt.Println(findJ.Contacts)
+	 query := bson.M{"_id": bson.ObjectId(findJ.ID)}
+	 fmt.Println("\nQuery\n")
+	 fmt.Println(query)
+	 change := bson.M{"$push": bson.M{"Contacts": result}}
+	 fmt.Println("\nUpdate Params\n")
+	 fmt.Println(change)
+	 //bson.M{"$push": bson.M{"tags": bsonM.{"$each": tags} }}
+	 //fmt.Println(result.Timestamp)
+	 err = c.Update(query, change)
+	   if err != nil {
+	      panic(err)
+	 }
+	  findJ = User{}
+	  err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
+	  if err != nil {
+	   	panic(err)
+	  }
+	  fmt.Println("\nContacts of JRock\n")
+	  fmt.Println(findJ)
 
 
 
