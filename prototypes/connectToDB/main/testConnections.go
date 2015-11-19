@@ -46,14 +46,29 @@ type Comment struct {
 
 var (
 	IsDrop = true
+	session *mgo.Session
+	collection *mgo.Database
 )
+func thisPanic(err error) {
+  if err != nil {
+    panic(err)
+  }
 
+}
+
+func connectToDB() {
+
+	 
+	 var err error
+	 session, err = mgo.Dial("127.0.0.1")
+	 thisPanic(err)
+	 collection = session.DB("")
+
+}
 func main() {
-
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		panic(err)
-	}
+	var err error
+	connectToDB()
+	thisPanic(err)
 
 	defer session.Close()
 
@@ -62,9 +77,8 @@ func main() {
 	// Drop Database
 	if IsDrop {
 		err = session.DB("test").DropDatabase()
-		if err != nil {
-			panic(err)
-		}
+		thisPanic(err)
+
 	}
 	c := session.DB("test").C("User")
 
@@ -79,26 +93,25 @@ func main() {
 
 	err = c.EnsureIndex(index)
 
-	if err != nil {
-		panic(err)
-	}
+	thisPanic(err)
+
 
 	err = c.Insert(&User{ Name: "Ale", Phone: "+922", IsRealUser: true, Email:"abc@gmail.com", Timestamp: time.Now()})
+	thisPanic(err)
 	err = c.Insert(&User{ Name: "Jrock", Phone: "+911", IsRealUser: true, Email:"jcl@gmail.com", Timestamp: time.Now()})	
-	if err != nil {
-		panic(err)
-	}
+	thisPanic(err)
+
 
 	c = session.DB("test").C("Contact")
 	err = c.Insert(&Contact{ Name: "Ale", Phone: "+922", IsRealUser: true, Email:"abc@gmail.com", Timestamp: time.Now()})
+	thisPanic(err)
 
 
 
 	result := Contact{}
 	err = c.Find(bson.M{"name": "Ale"}).One(&result)
-	if err != nil {
-		panic(err)
-	}
+	thisPanic(err)
+
 	fmt.Println("\n")
 	fmt.Println(result)
 	fmt.Println("\n")
@@ -107,39 +120,68 @@ func main() {
 	c = session.DB("test").C("User")
 	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id":1}).One(&findJ)
 	fmt.Println(findJ)
-	if err != nil {
-		panic(err)
-	}
+	thisPanic(err)
+
 	fmt.Println("\nHexID of JRock\n")
 	fmt.Println(findJ.ID.Hex())
 	fmt.Println("\nResult Object\n")
 	fmt.Println(result)
-	//hex := findJ.ID.Hex()
 
 	 query := bson.M{"_id": bson.ObjectId(findJ.ID)}
 	 fmt.Println("\nQuery\n")
 	 fmt.Println(query)
-	 change := bson.M{"$push": bson.M{"Contacts": result}}
+	 change := bson.M{"$push": bson.M{"contacts": result}}
+	 //change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
+
 	 fmt.Println("\nUpdate Params\n")
 	 fmt.Println(change)
-	 //bson.M{"$push": bson.M{"tags": bsonM.{"$each": tags} }}
-	 //fmt.Println(result.Timestamp)
 	 err = c.Update(query, change)
-	   if err != nil {
-	      panic(err)
-	 }
-	  findJ = User{}
-	  err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	  if err != nil {
-	   	panic(err)
-	  }
-	  fmt.Println("\nContacts of JRock\n")
-	  fmt.Println(findJ)
+	 thisPanic(err)
 
+	 findJ = User{}
+	 err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
+	 thisPanic(err)
 
+	 fmt.Println("\nContacts of JRock\n")
+	 fmt.Println(findJ.Contacts[0])
+	 
+	c = session.DB("test").C("Contact")
+	err = c.Insert(&Contact{ Name: "Eclo", Phone: "+306", IsRealUser: true, Email:"eclo@gmail.com", Timestamp: time.Now()})
+	thisPanic(err)
+	result = Contact{}
+	err = c.Find(bson.M{"name": "Eclo"}).One(&result)
+	
+	c = session.DB("test").C("User")
+	/*ADD ANOTHER CONTACT*/
+	findJ = User{}
+	c = session.DB("test").C("User")
+	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id":1}).One(&findJ)
+	fmt.Println(findJ)
+	thisPanic(err)
 
+	fmt.Println("\nHexID of JRock\n")
+	fmt.Println(findJ.ID.Hex())
+	fmt.Println("\nResult Object\n")
+	fmt.Println(result)
 
+	 query = bson.M{"_id": bson.ObjectId(findJ.ID)}
+	 fmt.Println("\nQuery\n")
+	 fmt.Println(query)
+	 change = bson.M{"$push": bson.M{"contacts": result}}
+	 //change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
+
+	 fmt.Println("\nUpdate Params\n")
+	 fmt.Println(change)
+	 err = c.Update(query, change)
+	 thisPanic(err)
+
+	 findJ = User{}
+	 err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
+	 thisPanic(err)
+
+	 fmt.Println("\nContacts of JRock\n")
+	 fmt.Println(findJ.Contacts[1])
+	 
 
 
 }	
-
