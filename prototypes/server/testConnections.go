@@ -67,8 +67,8 @@ type Notification struct {
 
 var (
 	IsDrop     = true
-	session    *mgo.Session
-	collection *mgo.Database
+	Session    *mgo.Session
+	Collection *mgo.Database
 )
 
 func ThisPanic(err error) {
@@ -81,9 +81,9 @@ func ThisPanic(err error) {
 func ConnectToDB() {
 
 	var err error
-	session, err = mgo.Dial("127.0.0.1")
+	Session, err = mgo.Dial("127.0.0.1")
 	ThisPanic(err)
-	collection = session.DB("")
+	Collection = Session.DB("")
 
 }
 func main() {
@@ -91,17 +91,17 @@ func main() {
 	ConnectToDB()
 	ThisPanic(err)
 
-	defer session.Close()
+	defer Session.Close()
 
-	session.SetMode(mgo.Monotonic, true)
+	Session.SetMode(mgo.Monotonic, true)
 
 	// Drop Database
 	if IsDrop {
-		err = session.DB("test").DropDatabase()
+		err = Session.DB("test").DropDatabase()
 		ThisPanic(err)
 
 	}
-	c := session.DB("test").C("User")
+	c := Session.DB("test").C("User")
 
 	index := mgo.Index{
 		Key:        []string{"name", "phone"},
@@ -120,7 +120,7 @@ func main() {
 	err = c.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
 
-	c = session.DB("test").C("Contact")
+	c = Session.DB("test").C("Contact")
 	err = c.Insert(&Contact{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
 
@@ -133,7 +133,7 @@ func main() {
 	fmt.Println("\n")
 
 	findJ := User{}
-	c = session.DB("test").C("User")
+	c = Session.DB("test").C("User")
 	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
 	fmt.Println(findJ)
 	ThisPanic(err)
@@ -161,16 +161,16 @@ func main() {
 	fmt.Println("\nContacts of JRock\n")
 	fmt.Println(findJ.Contacts[0])
 
-	c = session.DB("test").C("Contact")
+	c = Session.DB("test").C("Contact")
 	err = c.Insert(&Contact{Name: "Eclo", Phone: "+306", IsRealUser: true, Email: "eclo@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
 	result = Contact{}
 	err = c.Find(bson.M{"name": "Eclo"}).One(&result)
 
-	c = session.DB("test").C("User")
+	c = Session.DB("test").C("User")
 	/*ADD ANOTHER CONTACT*/
 	findJ = User{}
-	c = session.DB("test").C("User")
+	c = Session.DB("test").C("User")
 	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
 	fmt.Println(findJ)
 	ThisPanic(err)
