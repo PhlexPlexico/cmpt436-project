@@ -43,6 +43,28 @@ type Comment struct {
 	Timestamp time.Time     `json:"time"`
 }
 
+type Payment struct {
+	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	Payer         string        `json:"payer"`
+	Payee         string        `json:"payee"`
+	AmountInCents int           `json:"amountInCents"`
+	Timestamp     time.Time     `json:"time"`
+}
+
+type Purchase struct {
+	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	Payer         string        `json:"payer"`
+	AmountInCents int           `json:"amountInCents"`
+	Timestamp     time.Time     `json:"time"`
+}
+
+type Notification struct {
+	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	Subject   string        `json:"subject"`
+	Content   string        `json:"content"`
+	Timestamp time.Time     `json:"time"`
+}
+
 var (
 	IsDrop     = true
 	session    *mgo.Session
