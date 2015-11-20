@@ -1,14 +1,12 @@
 package main
 
-import {
-	"../connectToDB/main"
-	"../logic"
-}
+import (
+	//"../logic"
+	"../server"
+)
 
-func main(){
+func main() {
 	var err error
-	server.connectToDB()
-	server.thisPanic(err)
-
-	defer 
+	server.ThisPanic(err)
+	server.ConnectToDB()
 }

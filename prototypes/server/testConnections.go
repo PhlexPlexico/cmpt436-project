@@ -71,25 +71,25 @@ var (
 	collection *mgo.Database
 )
 
-func thisPanic(err error) {
+func ThisPanic(err error) {
 	if err != nil {
 		panic(err)
 	}
 
 }
 
-func connectToDB() {
+func ConnectToDB() {
 
 	var err error
 	session, err = mgo.Dial("127.0.0.1")
-	thisPanic(err)
+	ThisPanic(err)
 	collection = session.DB("")
 
 }
 func main() {
 	var err error
-	connectToDB()
-	thisPanic(err)
+	ConnectToDB()
+	ThisPanic(err)
 
 	defer session.Close()
 
@@ -98,7 +98,7 @@ func main() {
 	// Drop Database
 	if IsDrop {
 		err = session.DB("test").DropDatabase()
-		thisPanic(err)
+		ThisPanic(err)
 
 	}
 	c := session.DB("test").C("User")
@@ -113,20 +113,20 @@ func main() {
 
 	err = c.EnsureIndex(index)
 
-	thisPanic(err)
+	ThisPanic(err)
 
 	err = c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	thisPanic(err)
+	ThisPanic(err)
 	err = c.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
-	thisPanic(err)
+	ThisPanic(err)
 
 	c = session.DB("test").C("Contact")
 	err = c.Insert(&Contact{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	thisPanic(err)
+	ThisPanic(err)
 
 	result := Contact{}
 	err = c.Find(bson.M{"name": "Ale"}).One(&result)
-	thisPanic(err)
+	ThisPanic(err)
 
 	fmt.Println("\n")
 	fmt.Println(result)
@@ -136,7 +136,7 @@ func main() {
 	c = session.DB("test").C("User")
 	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
 	fmt.Println(findJ)
-	thisPanic(err)
+	ThisPanic(err)
 
 	fmt.Println("\nHexID of JRock\n")
 	fmt.Println(findJ.ID.Hex())
@@ -152,18 +152,18 @@ func main() {
 	fmt.Println("\nUpdate Params\n")
 	fmt.Println(change)
 	err = c.Update(query, change)
-	thisPanic(err)
+	ThisPanic(err)
 
 	findJ = User{}
 	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	thisPanic(err)
+	ThisPanic(err)
 
 	fmt.Println("\nContacts of JRock\n")
 	fmt.Println(findJ.Contacts[0])
 
 	c = session.DB("test").C("Contact")
 	err = c.Insert(&Contact{Name: "Eclo", Phone: "+306", IsRealUser: true, Email: "eclo@gmail.com", Timestamp: time.Now()})
-	thisPanic(err)
+	ThisPanic(err)
 	result = Contact{}
 	err = c.Find(bson.M{"name": "Eclo"}).One(&result)
 
@@ -173,7 +173,7 @@ func main() {
 	c = session.DB("test").C("User")
 	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
 	fmt.Println(findJ)
-	thisPanic(err)
+	ThisPanic(err)
 
 	fmt.Println("\nHexID of JRock\n")
 	fmt.Println(findJ.ID.Hex())
@@ -189,11 +189,11 @@ func main() {
 	fmt.Println("\nUpdate Params\n")
 	fmt.Println(change)
 	err = c.Update(query, change)
-	thisPanic(err)
+	ThisPanic(err)
 
 	findJ = User{}
 	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	thisPanic(err)
+	ThisPanic(err)
 
 	fmt.Println("\nContacts of JRock\n")
 	fmt.Println(findJ.Contacts[1])
