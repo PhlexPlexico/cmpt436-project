@@ -86,7 +86,8 @@ func ConnectToDB() {
 	Collection = Session.DB("")
 
 }
-func main() {
+
+func Init() *mgo.Collection {
 	var err error
 	ConnectToDB()
 	ThisPanic(err)
@@ -114,8 +115,14 @@ func main() {
 	err = c.EnsureIndex(index)
 
 	ThisPanic(err)
+	return c
+}
 
-	err = c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
+func main() {
+
+	c := Init()
+
+	err := c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
 	err = c.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)

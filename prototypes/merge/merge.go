@@ -6,8 +6,5 @@ import (
 )
 
 func main() {
-	var err error
-	server.ThisPanic(err)
-	server.ConnectToDB()
-	defer server.Session.Close()
+	server.Init()
 }
