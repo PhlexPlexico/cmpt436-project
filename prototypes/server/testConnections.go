@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"fmt"
@@ -28,11 +28,11 @@ type Contact struct {
 }
 
 type Group struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	GroupName string        `json:"groupName"`
-	Users     []*User       `json:"users"`
-	Expected  []*int        `json:"expected"`
-	Actual    []*int        `json:"actual"`
+	ID        bson.ObjectId 	`json:"id" bson:"_id"`
+	GroupName string        	`json:"groupName"`
+	UserIDs   []*bson.ObjectId  `json:"users"`
+	Expected  []*int        	`json:"expected"`
+	Actual    []*int        	`json:"actual"`
 }
 
 type Comment struct {
@@ -69,6 +69,7 @@ var (
 	IsDrop     = true
 	Session    *mgo.Session
 	Collection *mgo.Database
+	err error
 )
 
 func ThisPanic(err error) {
@@ -80,7 +81,7 @@ func ThisPanic(err error) {
 
 func ConnectToDB() {
 
-	var err error
+	
 	Session, err = mgo.Dial("127.0.0.1")
 	ThisPanic(err)
 	Collection = Session.DB("")
@@ -88,7 +89,7 @@ func ConnectToDB() {
 }
 
 func Init() *mgo.Collection {
-	var err error
+	
 	ConnectToDB()
 	ThisPanic(err)
 
@@ -118,11 +119,61 @@ func Init() *mgo.Collection {
 	return c
 }
 
+//func AddUser(name string, email string, phone string, isRealUser bool) {
+//	c := Session.DB("test").C("User")
+//	err = c.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
+//{}
+
+// func FindUserByID(id bson.ObjectId)
+
+// func GetIDbyEmail(email string)
+
+// func AddGroup(groupName string, id bson.ObjectId) 
+
+// func FindGroup(id bson.ObjectId) g *Group
+
+// func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId ) 
+
+// func GetGroupChanges(g Group)
+
+// func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) 
+
+// func DeleteGroup(id bson.ObjectId) b bool
+
+
+
+
 func main() {
 
-	c := Init()
+	ConnectToDB()
+	ThisPanic(err)
 
-	err := c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
+	defer Session.Close()
+
+	Session.SetMode(mgo.Monotonic, true)
+
+	// Drop Database
+	if IsDrop {
+		err = Session.DB("test").DropDatabase()
+		ThisPanic(err)
+
+	}
+	c := Session.DB("test").C("User")
+
+	index := mgo.Index{
+		Key:        []string{"name", "phone"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+
+	err = c.EnsureIndex(index)
+
+	ThisPanic(err)
+
+
+	err = c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
 	err = c.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
@@ -180,6 +231,7 @@ func main() {
 	c = Session.DB("test").C("User")
 	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
 	fmt.Println(findJ)
+	
 	ThisPanic(err)
 
 	fmt.Println("\nHexID of JRock\n")
@@ -201,8 +253,12 @@ func main() {
 	findJ = User{}
 	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
 	ThisPanic(err)
+	fmt.Println(findJ)
+	array := []*bson.ObjectId{&findJ.ID}
 
-	fmt.Println("\nContacts of JRock\n")
-	fmt.Println(findJ.Contacts[1])
+	c = Session.DB("test").C("Group")
+	err = c.Insert(&Group{GroupName: "test", UserIDs: array})
+	ThisPanic(err)
+
 
 }
