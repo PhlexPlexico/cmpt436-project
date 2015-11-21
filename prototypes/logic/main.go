@@ -1,21 +1,25 @@
-package logic
+//package logic
+package main
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	//"strings"
 )
 
 type user struct {
-	userName       string
+	userName       bson.ObjectId
 	expected, owed int
 }
 
+// this can be deleted
 //TODO will need to work out how to divy up existing debt
 func AddMember(group *[]*user, x *user) []*user {
 	*group = append(*group, x)
 	return *group
 }
 
+// this can deleted
 //TODO work out how to spread the remainder of his money around
 //MaybeTODO an error if the user is not in the group.
 func RemoveMember(group *[]*user, x *user) []*user {
