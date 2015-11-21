@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/pat"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
 	"github.com/markbates/goth"
+	"github.com/markbates/goth/providers/facebook"
 	"github.com/markbates/goth/providers/gplus"
 	"golang.org/x/oauth2/google"
 	"html/template"
@@ -16,10 +18,13 @@ import (
 )
 
 const (
-	SESSION_DURATION_MINUTES       int    = 30
-	SESSION_NAME                   string = "user_session"
-	SESSION_KEY_USERNAME                  = "username"
-	GOOGLE_CLIENT_SECRET_FILE_PATH        = "../../../.gplus_client_secret.json"
+	SESSION_DURATION_MINUTES         int    = 30
+	SESSION_NAME                     string = "user_session"
+	SESSION_KEY_USERNAME                    = "username"
+	GOOGLE_CLIENT_SECRET_FILE_PATH          = "../../../.gplus_client_secret.json"
+	FACEBOOK_CLIENT_SECRET_FILE_PATH        = "../../../.facebook_client_secret.json"
+	AUTH_CALLBACK_URL                       = "https://localhost:8080/oauth2callback"
+	ONE_TIME_STATE_KEY                      = "one_time_state"
 )
 
 var upgrader = websocket.Upgrader{
@@ -53,73 +58,111 @@ func endSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	s.Save(r, w)
 }
 
+func validateSessionAndLogInIfNecessary(
+	w http.ResponseWriter, r *http.Request) *sessions.Session {
+	session, err := validateSession(w, r)
+	if session == nil {
+		if err != nil {
+			log.Println(err.Error())
+		}
+		serveNewLogin(w, r)
+	}
+
+	return session
+}
+
 /**
- * return true if a pre-existing user was attached, false otherwise.
- * if false, an associated error may be returned (unless there simply was no
- * pre-existing user.
+ * return a session pointer. It is nil if the session could not be validated
+ * (and thus the session is unauthorized). An error is also returned, if one
+ * exists.
  */
-func tryToAttachPreexistingUserToSession(
-	w http.ResponseWriter, r *http.Request) (bool, error) {
+func validateSession(
+	w http.ResponseWriter, r *http.Request) (*sessions.Session, error) {
 	session, err := Store.Get(r, SESSION_NAME)
+	log.Println("validating session...")
+
 	if err != nil {
 		log.Println("unable to get session.")
-		return false, err
+		return nil, err
 	}
 
 	if session.IsNew {
-		return false, nil
+		endSession(session, w, r)
+		return nil, nil
 	}
 
 	provider, err := getProviderFromSession(session)
 	if err != nil {
 		log.Println("unable to get provider")
-		return false, err
+		endSession(session, w, r)
+		return nil, err
 	}
 
-	sess, err := provider.UnmarshalSession(session.Values[GOTH_SESS_KEY].(string))
+	_, err = provider.UnmarshalSession(session.Values[GOTH_SESS_KEY].(string))
 	if err != nil {
 		log.Println("unable to unmarshal sess from session")
 		endSession(session, w, r)
-		return false, err
+		return nil, err
 	}
 
-	user, err := provider.FetchUser(sess)
-	//TODO generalize 'user.RawData["error"] != nil'.
-	//Works for gplus, but unlikely to work for all providers.
-	if err != nil || user.RawData["error"] != nil {
-		log.Println("unable to fetch user with ", provider.Name())
-		endSession(session, w, r)
-		return false, err
-	}
-
-	err = putUserInSession(&user, session)
+	_, err = getUserFromSession(session)
 	if err != nil {
-		log.Println("unable to store user in session.")
+		log.Println("unable to unmarshal user from session.")
 		endSession(session, w, r)
-		return false, err
+		return nil, err
 	}
 
-	session.Save(r, w)
-	return true, nil
+	return session, nil
+
+	//The following is supposedly not needed; we can just keep the users' data until
+	//our own session expires. No need to ask for it again each time.
+
+	// user, err := provider.FetchUser(sess)
+	// //TODO generalize 'user.RawData["error"] != nil'.
+	// //Works for gplus, but unlikely to work for all providers.
+	// if err != nil || user.RawData["error"] != nil {
+	// 	log.Println("unable to fetch user with ", provider.Name())
+	// 	endSession(session, w, r)
+	// 	return false, err
+	// }
+
+	// err = putUserInSession(&user, session)
+	// if err != nil {
+	// 	log.Println("unable to store user in session.")
+	// 	endSession(session, w, r)
+	// 	return false, err
+	// }
+
+	// session.Save(r, w)
+	// return true, nil
 }
 
 func AuthChoiceHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
-	wasUserFound, err := tryToAttachPreexistingUserToSession(w, r)
+	session, err := validateSession(w, r)
 	if err != nil {
 		log.Println(err)
-	}
-	if wasUserFound {
-		http.Redirect(w, r, "/realapp", http.StatusMovedPermanently)
+	} else if session != nil {
+		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 		return
 	}
 
+	serveNewLogin(w, r)
+}
+
+func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving new login.")
-	t, err := template.New("foo").Parse(indexTemplate)
+	t, err := template.New("login").Parse(indexTemplate)
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
+	}
+
+	_, err = Store.Get(r, SESSION_NAME)
+	if err != nil {
+		http.Error(w, "unable to get session", 500)
+		log.Println(err.Error())
 	}
 
 	t.Execute(w, nil)
@@ -139,13 +182,12 @@ func AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Println(err.Error())
-		//Apparently this err does not mean no session was created, so I don't need
-		//to return.
-		// http.Error(w, err.Error(), 500)
-		// return
+		http.Error(w, err.Error(), 500)
+		return
 	}
 
-	log.Printf("number of values already in new session: %d.\n", len(session.Values))
+	// log.Printf("number of values already in new session: %d.\n",
+	// len(session.Values))
 
 	err = putUserInSession(&user, session)
 	if err != nil {
@@ -155,38 +197,21 @@ func AuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.Save(r, w)
-	log.Println("163")
-	// http.ServeFile(w, r, "app/")
-	http.Redirect(w, r, "/realapp", http.StatusMovedPermanently)
+	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 
 // serveWs handles websocket requests from the peer.
 func WsHandler(w http.ResponseWriter, r *http.Request) {
-	session, err := Store.Get(r, SESSION_NAME)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
+	session := validateSessionAndLogInIfNecessary(w, r)
+	if session == nil {
 		return
 	}
-	log.Println("175")
-	//TODO inform the user of invalidity
-	if session.IsNew {
-		http.Error(w, "invalid action: user is not logged in.", 401)
-		endSession(session, w, r)
-		return
-	}
-
-	//TODO try commenting this out, see if it makes a difference (it shouldn't)
-	// session.Save(r, w)
-
+	log.Println("opening websocket")
 	user, err := getUserFromSession(session)
 	if err != nil {
-		log.Println("188")
-		log.Println(err.Error())
-		http.Error(w, "unable to retrieve user from session", 500)
-		endSession(session, w, r)
+		http.Error(w, "unable to retrieve user info", 500)
 		return
 	}
-	log.Println("192")
 	userName := user.Name
 
 	ws, err := upgrader.Upgrade(w, r, w.Header())
@@ -213,32 +238,48 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	jsonKey, err := ioutil.ReadFile(GOOGLE_CLIENT_SECRET_FILE_PATH)
+	googleJsonKey, err := ioutil.ReadFile(GOOGLE_CLIENT_SECRET_FILE_PATH)
 	if err != nil {
-		log.Println("unable to read file ", GOOGLE_CLIENT_SECRET_FILE_PATH)
-		return
+		log.Fatalln("unable to read file ", GOOGLE_CLIENT_SECRET_FILE_PATH,
+			":", err)
 	}
+	facebookJsonKey, err := ioutil.ReadFile(FACEBOOK_CLIENT_SECRET_FILE_PATH)
+	if err != nil {
+		log.Fatalln("unable to read file ", FACEBOOK_CLIENT_SECRET_FILE_PATH,
+			":", err)
+	}
+
 	// do I need more scopes?
 	// https://developers.google.com/+/domains/authentication/scopes
-	googleConfig, err := google.ConfigFromJSON(jsonKey)
+	googleConfig, err := google.ConfigFromJSON(googleJsonKey)
+	if err != nil {
+		log.Fatalln("unable to get google provider config:", err)
+	}
+	facebookConfig := &genericConfig{}
+	err = json.Unmarshal(facebookJsonKey, facebookConfig)
+	if err != nil {
+		log.Fatalln("unable to get facebook provider config:", err)
+	}
 
-	//gives me "profile", "email", "openid" scopes by default.
+	//I need "profile", "email", scopes. gplus and facebook provide these by
+	//default.
 	goth.UseProviders(
 		gplus.New(googleConfig.ClientID, googleConfig.ClientSecret,
-			googleConfig.RedirectURL),
+			AUTH_CALLBACK_URL),
+		facebook.New(facebookConfig.Client_id, facebookConfig.Client_secret, AUTH_CALLBACK_URL),
 	)
 
 	chat = NewChat()
 	router = pat.New()
 
 	router.Get("/ws", WsHandler)
-	router.Get("/app", AuthCallbackHandler)
+	router.Get("/oauth2callback", AuthCallbackHandler)
 	router.Get("/auth/{provider}", BeginAuthHandler)
 	router.Get("/", AuthChoiceHandler)
-	// router.Add("GET", "/realapp", http.FileServer(http.Dir("app/")))
-	// router.PathPrefix("/realapp").Handler(http.FileServer(http.Dir("app/")))
+	// router.Add("GET", "/app", http.FileServer(http.Dir("app/")))
+	// router.PathPrefix("/app").Handler(http.FileServer(http.Dir("app/")))
 	http.Handle("/", router)
-	http.Handle("/realapp/", http.StripPrefix("/realapp/",
+	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
 	go http.ListenAndServeTLS(":8080", "cert.crt", "key.key", nil)
@@ -248,4 +289,10 @@ func main() {
 //TODO add more providers
 var indexTemplate = `
 <p><a href="/auth/gplus">Log in with Google</a></p>
+<p><a href="/auth/facebook">Log in with Facebook</a></p>
 `
+
+type genericConfig struct {
+	Client_id     string `json:"client_id"`
+	Client_secret string `json:"client_secret"`
+}

@@ -204,7 +204,7 @@ It expects to be able to get the name of the provider from the query parameters
 as either "provider" or ":provider".
 See https://github.com/markbates/goth/examples/main.go to see this in action.
 */
-var CompleteUserAuth = func(res http.ResponseWriter, req *http.Request) (goth.User, error) {
+func CompleteUserAuth(res http.ResponseWriter, req *http.Request) (goth.User, error) {
 
 	if !keySet && defaultStore == Store {
 		fmt.Println("William says: the following error should never occur!")
