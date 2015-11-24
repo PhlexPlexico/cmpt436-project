@@ -13,8 +13,8 @@ type User struct {
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
 	IsRealUser bool          `json:"isRealUser"`
-	Groups     []*Group      `json:"groups" bson:"groups"`
-	Contacts   []*Contact    `json:"contacts" bson:"contacts"`
+	Groups     []Group      `json:"groups" bson:"groups"`
+	Contacts   []Contact    `json:"contacts" bson:"contacts"`
 	Timestamp  time.Time     `json:"time"`
 }
 
@@ -30,9 +30,9 @@ type Contact struct {
 type Group struct {
 	ID        bson.ObjectId 	`json:"id" bson:"_id"`
 	GroupName string        	`json:"groupName"`
-	UserIDs   []*bson.ObjectId  `json:"users"`
-	Expected  []*int        	`json:"expected"`
-	Actual    []*int        	`json:"actual"`
+	UserIDs   []bson.ObjectId  `json:"users"`
+	Expected  []int        	`json:"expected"`
+	Actual    []int        	`json:"actual"`
 }
 
 type Comment struct {
