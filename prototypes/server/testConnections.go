@@ -145,18 +145,21 @@ func GetGroupChanges(g Group) {
 	ThisPanic(err)
 }
 
-func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) {
-	group := FindGroup(groupId)
-	err = Col.Find
-	/*for i := range group.UserIDs {
-		if (group.UserIDs[i] == userId)
-			delete me
-			break
-		otherwise do shit all. 
-	}*/
-}
+// func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) {
+// 	group := FindGroup(groupId)
+	
+	
 
-// func DeleteGroup(id bson.ObjectId) b bool
+
+	
+// }
+
+func DeleteGroup(id bson.ObjectId) bool {
+	Col = Session.DB("test").C("Group")
+	err = Col.RemoveId(id)
+	ThisPanic(err)
+	return true
+}
 
 
 func ConfigDB() {
