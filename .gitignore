@@ -62,3 +62,4 @@ $RECYCLE.BIN/
 .gplus_client_secret.json
 .facebook_client_secret.json
 .session_secret
+.authConfig

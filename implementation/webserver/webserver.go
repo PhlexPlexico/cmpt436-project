@@ -87,18 +87,6 @@ func Init() {
 	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
-	log.Println()
 	go http.ListenAndServeTLS(":8080", "cert.crt", "key.key", nil)
 	http.ListenAndServe(":8000", http.HandlerFunc(redirectHandler))
-}
-
-//TODO add more providers
-var indexTemplate = `
-<p><a href="/auth/gplus">Log in with Google</a></p>
-<p><a href="/auth/facebook">Log in with Facebook</a></p>
-`
-
-type genericConfig struct {
-	Client_id     string `json:"client_id"`
-	Client_secret string `json:"client_secret"`
 }

@@ -14,23 +14,18 @@ import (
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/facebook"
 	"github.com/markbates/goth/providers/gplus"
-	"golang.org/x/oauth2/google"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 )
 
-// SESSION_NAME is the key used to access the session store.
 const (
-	SESSION_DURATION_MINUTES         int    = 30
-	USER_KEY                         string = "goth_user"
-	SESSION_SECRET_CONFIG_FILE_PATH         = "../../.session_secret"
-	SESSION_NAME                            = "user_session"
-	SESSION_KEY_USERNAME                    = "username"
-	GOOGLE_CLIENT_SECRET_FILE_PATH          = "../../.gplus_client_secret.json"
-	FACEBOOK_CLIENT_SECRET_FILE_PATH        = "../../.facebook_client_secret.json"
-	AUTH_CALLBACK_RELATIVE_PATH             = "/oauth2callback"
+	SESSION_DURATION_MINUTES    int    = 30
+	USER_KEY                    string = "goth_user"
+	AUTHCONFIG_FILE_PATH               = "../../.authConfig"
+	SESSION_KEY_USERNAME               = "username"
+	AUTH_CALLBACK_RELATIVE_PATH        = "/oauth2callback"
 )
 
 func marshalUser(user *goth.User) (string, error) {
@@ -65,63 +60,6 @@ func putUserInSession(user *goth.User, s *sessions.Session) error {
 	return nil
 }
 
-func initAuth(router *pat.Router) {
-	//get all the providers set up.
-	googleJsonKey, err := ioutil.ReadFile(GOOGLE_CLIENT_SECRET_FILE_PATH)
-	if err != nil {
-		log.Fatalln("unable to read file ", GOOGLE_CLIENT_SECRET_FILE_PATH,
-			":", err)
-	}
-	facebookJsonKey, err := ioutil.ReadFile(FACEBOOK_CLIENT_SECRET_FILE_PATH)
-	if err != nil {
-		log.Fatalln("unable to read file ", FACEBOOK_CLIENT_SECRET_FILE_PATH,
-			":", err)
-	}
-
-	// do I need more scopes?
-	// https://developers.google.com/+/domains/authentication/scopes
-	googleConfig, err := google.ConfigFromJSON(googleJsonKey)
-	if err != nil {
-		log.Fatalln("unable to get google provider config:", err)
-	}
-	facebookConfig := &genericConfig{}
-	err = json.Unmarshal(facebookJsonKey, facebookConfig)
-	if err != nil {
-		log.Fatalln("unable to get facebook provider config:", err)
-	}
-
-	AUTH_CALLBACK_PATH := fmt.Sprint(DOMAIN_NAME, AUTH_CALLBACK_RELATIVE_PATH)
-	//I need "profile", "email", scopes. gplus and facebook provide these by
-	//default.
-	goth.UseProviders(
-		gplus.New(googleConfig.ClientID, googleConfig.ClientSecret,
-			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
-		facebook.New(facebookConfig.Client_id, facebookConfig.Client_secret,
-			fmt.Sprint(AUTH_CALLBACK_PATH, "/facebook")),
-	)
-
-	//initialize the gothic store.
-	key, err := ioutil.ReadFile(SESSION_SECRET_CONFIG_FILE_PATH)
-	if err != nil {
-		log.Println("could not load session secret from file ",
-			SESSION_SECRET_CONFIG_FILE_PATH)
-		log.Fatalln(err)
-	}
-	gothic.Store = sessions.NewCookieStore([]byte(key))
-	gothic.Store.(*sessions.CookieStore).Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   60 * SESSION_DURATION_MINUTES,
-		HttpOnly: true,
-		Secure:   true,
-	}
-
-	log.Println()
-	router.Get(fmt.Sprint(AUTH_CALLBACK_RELATIVE_PATH, "/{provider}"),
-		authCallbackHandler)
-	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
-	router.Get("/", authHandler)
-}
-
 func validateSessionAndLogInIfNecessary(
 	w http.ResponseWriter, r *http.Request) *sessions.Session {
 	session, err := validateSession(w, r)
@@ -142,7 +80,7 @@ func validateSessionAndLogInIfNecessary(
  */
 func validateSession(
 	w http.ResponseWriter, r *http.Request) (*sessions.Session, error) {
-	session, err := gothic.Store.Get(r, SESSION_NAME)
+	session, err := gothic.Store.Get(r, gothic.SessionName)
 	log.Println("validating session...")
 
 	if err != nil {
@@ -187,7 +125,7 @@ func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = gothic.Store.Get(r, SESSION_NAME)
+	_, err = gothic.Store.Get(r, gothic.SessionName)
 	if err != nil {
 		http.Error(w, "unable to get session", 500)
 		log.Println(err.Error())
@@ -206,7 +144,7 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := gothic.Store.Get(r, SESSION_NAME)
+	session, err := gothic.Store.Get(r, gothic.SessionName)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -231,4 +169,61 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 func endSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	s.Options = &sessions.Options{MaxAge: -1}
 	s.Save(r, w)
+}
+
+//TODO add more providers
+var indexTemplate = `
+<p><a href="/auth/gplus">Log in with Google</a></p>
+<p><a href="/auth/facebook">Log in with Facebook</a></p>
+`
+
+//These will be marshaled directly from json
+type authConfig struct {
+	Gplus          genericConfig `json:"gplus"`
+	Facebook       genericConfig `json:"facebook"`
+	Session_secret string        `json:"session_secret"`
+}
+type genericConfig struct {
+	Client_id     string `json:"client_id"`
+	Client_secret string `json:"client_secret"`
+}
+
+func initAuth(router *pat.Router) {
+
+	authConfigBytes, err := ioutil.ReadFile(AUTHCONFIG_FILE_PATH)
+	if err != nil {
+		log.Fatalln("unable to read file ", AUTHCONFIG_FILE_PATH,
+			":", err)
+	}
+
+	config := &authConfig{}
+	err = json.Unmarshal(authConfigBytes, config)
+	if err != nil {
+		log.Fatalln("unable to unmarshal config file:", err)
+	}
+
+	//get all the providers set up.
+	AUTH_CALLBACK_PATH := fmt.Sprint(DOMAIN_NAME, AUTH_CALLBACK_RELATIVE_PATH)
+	//I need "profile", "email", scopes. gplus and facebook provide these by
+	//default.
+	goth.UseProviders(
+		gplus.New(config.Gplus.Client_id, config.Gplus.Client_secret,
+			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
+		facebook.New(config.Facebook.Client_id, config.Facebook.Client_secret,
+			fmt.Sprint(AUTH_CALLBACK_PATH, "/facebook")),
+	)
+
+	//initialize the gothic store.
+	gothic.Store = sessions.NewCookieStore([]byte(config.Session_secret))
+	gothic.Store.(*sessions.CookieStore).Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   60 * SESSION_DURATION_MINUTES,
+		HttpOnly: true,
+		Secure:   true,
+	}
+
+	router.Get(fmt.Sprint(AUTH_CALLBACK_RELATIVE_PATH, "/{provider}"),
+		authCallbackHandler)
+	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
+	router.Get("/", authHandler)
 }
