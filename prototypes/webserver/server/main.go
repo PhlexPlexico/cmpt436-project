@@ -23,7 +23,8 @@ const (
 	SESSION_KEY_USERNAME                    = "username"
 	GOOGLE_CLIENT_SECRET_FILE_PATH          = "../../../.gplus_client_secret.json"
 	FACEBOOK_CLIENT_SECRET_FILE_PATH        = "../../../.facebook_client_secret.json"
-	AUTH_CALLBACK_URL                       = "https://localhost:8080/oauth2callback"
+	DOMAIN_NAME                             = "https://localhost:8080"
+	AUTH_CALLBACK_RELATIVE_PATH             = "/oauth2callback"
 	ONE_TIME_STATE_KEY                      = "one_time_state"
 )
 
@@ -225,12 +226,14 @@ func main() {
 		log.Fatalln("unable to get facebook provider config:", err)
 	}
 
+	AUTH_CALLBACK_PATH := fmt.Sprint(DOMAIN_NAME, AUTH_CALLBACK_RELATIVE_PATH)
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
 	goth.UseProviders(
 		gplus.New(googleConfig.ClientID, googleConfig.ClientSecret,
-			AUTH_CALLBACK_URL),
-		facebook.New(facebookConfig.Client_id, facebookConfig.Client_secret, AUTH_CALLBACK_URL),
+			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
+		facebook.New(facebookConfig.Client_id, facebookConfig.Client_secret,
+			fmt.Sprint(AUTH_CALLBACK_PATH, "/facebook")),
 	)
 
 	//Set the gothic store. It is also the store I will be using in general.
@@ -240,7 +243,7 @@ func main() {
 	router = pat.New()
 
 	router.Get("/ws", wsHandler)
-	router.Get("/oauth2callback", authCallbackHandler)
+	router.Get("/oauth2callback/{provider}", authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
 	router.Get("/", authHandler)
 	// router.Add("GET", "/app", http.FileServer(http.Dir("app/")))
