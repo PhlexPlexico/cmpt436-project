@@ -23,7 +23,7 @@ import (
 const (
 	SESSION_DURATION_MINUTES    int    = 30
 	USER_KEY                    string = "goth_user"
-	AUTHCONFIG_FILE_PATH               = "../../.authConfig"
+	AUTHCONFIG_FILE_PATH               = ".authconfig.json"
 	SESSION_KEY_USERNAME               = "username"
 	AUTH_CALLBACK_RELATIVE_PATH        = "/oauth2callback"
 )
