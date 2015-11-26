@@ -47,17 +47,17 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("opening websocket")
 	user, err := getUserFromSession(session)
 	if err != nil {
-		http.Error(w, "unable to retrieve user info", 500)
+		http.Error(w, "unable to retrieve user info",
+			http.StatusInternalServerError)
 		return
 	}
 	userName := user.Name
 
 	ws, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	receiver := newReceiver()
 	chat.join <- ws
 	var message Message
@@ -71,6 +71,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat.leave <- ws
+}
+
+func writeJson(w http.ResponseWriter, v interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(todos); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func Serve() {
