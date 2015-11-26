@@ -21,9 +21,12 @@ Preliminary
  * args: userId, userId, group, amount
  * return: successful?
 
-### Get all feed items for a group
+### Websocket: get constantly updating feed items for group (including bulk get for historical items)
  * args: groupId
- * return: list of all the feed items for that group. 
+ * return: constantly updating list of all the feed items for that group. 
+   * This could also be used to infer constantly updating balances, and constantly updating system
+     notifications, such as users entering/leaving group. Come to think of it, the websocket could 
+     cover a lot of stuff.
 
 ### Post a new feed item for a group
  * args: feed item, groupId
@@ -38,9 +41,9 @@ Preliminary
  * return: successful?
 
 ### Put user joins group
- * args: userId, groupId, new user's assigned balance (amount owed)
+ * args: userId, groupId, new user's assigned balance (amount owed), array of changes to other users' balances
  * return: successful?
 
 ### Put create group
- * args: userId, groupId
+ * args: userId, group name
  * return: successful?
