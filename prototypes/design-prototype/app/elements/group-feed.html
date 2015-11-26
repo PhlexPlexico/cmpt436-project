@@ -1,0 +1,99 @@
+<link rel="import" href="contact-menu.html">
+<link rel="import" href="chat-message.html">
+<link rel="import" href="../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+
+<dom-module id="group-feed">
+	<style>
+		:host {
+			display: block;
+		}
+		.content {
+			margin: 0 20px;
+		}
+		paper-menu-button {
+			padding: 0;
+			color: #333;
+		}
+		#chat {
+			width: auto;
+			overflow-y: scroll;
+			overflow-wrap: break-word;
+		}
+		.fill {
+			height: 100%;
+		}
+	</style>
+	<template>
+		<div class="fill vertical layout flex">
+			<div id="chat" class="content fill vertical layout flex">
+				<template is="dom-if" if="[[empty]]">
+					<div>No messages yet, send something to start chatting!</div>
+				</template>
+				<template is="dom-repeat" items="[[contact.messages]]">
+					<chat-message 
+						no-header="[[sameAsPrevious(index)]]"
+						user="[[item.name]]" 
+						time="[[item.time]]">
+						[[item.message]]
+					</chat-message>
+				</template>
+			</div>
+			<div class="horizontal layout end">
+				<paper-menu-button id="accountMenu"
+					vertical-offset="40"
+					vertical-align="bottom"
+					on-iron-select="openDialog">
+					<paper-icon-button icon="add" class="dropdown-trigger"></paper-icon-button>
+					<paper-menu class="dropdown-content" selected="-1">
+						<paper-item>Add Purchase</paper-item>
+						<paper-item>Add Payment</paper-item>
+					</paper-menu>
+				</paper-menu-button>
+				<paper-input id="input" class="flex" no-label-float label="Enter a message..."></paper-input>
+				<paper-button on-tap="send">Send</paper-button>
+				<iron-a11y-keys target="{{}}" keys="enter" on-keys-pressed="send"></iron-a11y-keys>
+			</div>
+		</div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "group-feed",
+
+		properties: {
+			contact: {
+				type: Object,
+				value: null,
+			},
+			empty: {
+				type: Boolean,
+				value: true,
+			}
+		},
+
+		observers: [
+			'isEmpty(contact.messages.splices)'
+		],
+
+		send: function() {
+			console.log("send");
+			var str = this.$.input.value.trim();
+			if (str) {
+				this.push('contact.messages', {name: 'Josh Heinrichs', time: '1:26 PM', message: str})
+				this.$.input.value = "";
+				this.async(function() {
+					this.$.chat.scrollTop = this.$.chat.scrollHeight;
+				});   
+			}
+		},
+
+		sameAsPrevious: function(index) {
+			return index > 0 && this.contact.messages[index].name == this.contact.messages[index - 1].name;
+		},
+
+		isEmpty: function(changeRecord) {
+			this.empty = this.contact && this.contact.messages.length == 0;
+		}
+	});
+</script>

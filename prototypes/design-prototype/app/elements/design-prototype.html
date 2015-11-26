@@ -15,6 +15,8 @@
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="contact-menu.html">
 <link rel="import" href="chat-message.html">
+<link rel="import" href="group-feed.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 
 <dom-module id="design-prototype">
 	<style>
@@ -96,11 +98,33 @@
 		.content {
 			height: 100%;
 		}
+		#menu_button {
+			margin-right: 0;
+		}
+/*		paper-drawer-panel {
+			--paper-drawer-panel-drawer-container: {
+				height: 100%;
+			};
+			--paper-drawer-panel-main-container: {
+				height: 100%;
+				background-color: #000;
+			};
+		}*/
+		paper-header-panel::shadow #mainPanel {
+			height: 100%;
+		}
+		paper-header-panel::shadow #mainContainer {
+			height: 100%;
+		}
+		group-feed {
+			height: calc(100% - 65px);
+		}
+
     }
 
 	</style>
 	<template>
-		<paper-dialog id="dialog" with-backdrop>
+		<paper-dialog id="dialog" with-backdrop >
 		  <h2>Header</h2>
 		  <paper-dialog-scrollable>
 		    Lorem ipsum...
@@ -113,72 +137,74 @@
 
 		<paper-drawer-panel id="contact_drawer_panel" narrow="{{contactNarrow}}" disable-edge-swipe>
 		  <paper-header-panel id="contact-drawer" mode="seamed" drawer>
-		    <paper-toolbar id="contactToolbar"
-		    	on-mouseover="updateToolbar"
-		    	on-mouseout="updateToolbar">
+		    <paper-toolbar id="contactToolbar">
 		    	<div class="horizontal layout center flex">
-			    	
-			    	<paper-menu-button id="accountMenu" vertical-offset="40" horizontal-offset="20"
+			    	<paper-menu-button id="accountMenu" 
+			    		class="flex"
+			    		vertical-offset="40" 
+			    		horizontal-offset="10"
 			    		on-iron-select="openDialog">
-			    		<paper-button class="dropdown-trigger">
-			    			<span class="no_overflow flex">App Name</span><iron-icon icon="icons:expand-more"></iron-icon>
+			    		<paper-button class="flex horizontal layout center dropdown-trigger">
+			    			<span class="no_overflow flex">ZeroSum</span>
+			    			<iron-icon icon="icons:expand-more"></iron-icon>
 			    		</paper-button>
-			    		<paper-menu class="dropdown-content" selected="">
+			    		<paper-menu class="dropdown-content" selected="-1">
 			    			<paper-item>Preferences</paper-item>
 			    			<paper-item>Log out</paper-item>
 			    		</paper-menu>
 			    	</paper-menu-button>
 		    	</div>
 		    </paper-toolbar>
-		    <div class="content">
-			    <contact-menu></contact-menu>
-		    </div>
+		    <contact-menu
+		    	contacts="{{contacts}}"
+		    	groups="{{groups}}"
+		    	on-contact-select="contactSelect">
+		    </contact-menu>
 		  </paper-header-panel>
 		  <div main>
-		  	<paper-drawer-panel right-drawer id="info_drawer_panel" force-narrow disable-edge-swipe>
-	  		  <paper-header-panel mode="seamed" main>
-			    <paper-toolbar id="main-toolbar">
-			    	<div class="horizontal layout center flex">
-				    	<paper-icon-button icon="menu" on-tap="contactToggle" hidden$="{{!contactNarrow}}"></paper-icon-button>
-				    	<!-- <h1 class="no_overflow">Group Name</h1> -->
-				    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
-				    		<paper-button class="no_overflow horizontal layout dropdown-trigger">
-				    			<span class="no_overflow">Group Name</span>
-				    			<iron-icon icon="icons:expand-more"></iron-icon>
-				    		</paper-button>
-				    		<!-- <paper-icon-button icon="icons:expand-more" class="dropdown-trigger"></paper-icon-button> -->
-				    		<paper-menu class="dropdown-content" on-iron-select="openDialog">
-				    			<paper-item>Preferences</paper-item>
-				    			<paper-item>Add User</paper-item>
-				    			<paper-item>Leave Group</paper-item>
-				    		</paper-menu>
-			    		</paper-menu-button>
-			    		<div class="flex"></div>
-				    	<paper-icon-button icon="editor:attach-money" on-tap="debtsOpen"></paper-icon-button>
-				    	<paper-icon-button icon="social:people" on-tap="peopleOpen"></paper-icon-button>
-			    	</div>
-			    </paper-toolbar>
-			    <div class="content vertical layout flex">
-			    	<div class="flex">
-			    		<template is="dom-repeat" items="[[messages]]">
-			    			<chat-message user="[[item.user]]" time="[[item.time]]">[[item.message]]</chat-message>
-			    		</template>
-			    	</div>
-			    	<div>
-			    		<paper-input class="flex" label="Enter a message..."></paper-input>
-			    	</div>
-			    </div>
-			  </paper-header-panel>
-			  <paper-header-panel id="info-drawer" mode="seamed" drawer>
-			    <paper-toolbar id="info-toolbar">
-				    <div class="horizontal layout center flex">
-				    	<h1 class="flex">[[infoTitle]]</h1>
-				    	<paper-icon-button icon="icons:close" on-tap="infoClose"></paper-icon-button>
+		  	<!-- <template is="dom-if" if="[[contact]]"> -->
+			  	<paper-drawer-panel right-drawer id="info_drawer_panel" force-narrow disable-edge-swipe>
+		  		  <paper-header-panel mode="seamed" main>
+				    <paper-toolbar id="main-toolbar">
+				    	<div class="horizontal layout center flex">
+					    	<paper-icon-button id="menu_button" icon="menu" on-tap="contactToggle" hidden$="{{!contactNarrow}}"></paper-icon-button>
+					    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
+					    		<paper-button class="no_overflow horizontal layout dropdown-trigger">
+					    			<span class="no_overflow">[[contact.name]]</span>
+					    			<iron-icon icon="icons:expand-more"></iron-icon>
+					    		</paper-button>
+					    		<paper-menu class="dropdown-content" on-iron-select="openDialog">
+					    			<paper-item>Preferences</paper-item>
+					    			<paper-item>Add User</paper-item>
+					    			<paper-item>Leave Group</paper-item>
+					    		</paper-menu>
+				    		</paper-menu-button>
+				    		<div class="flex"></div>
+					    	<paper-icon-button icon="editor:attach-money" on-tap="debtsOpen"></paper-icon-button>
+					    	<paper-icon-button icon="social:people" on-tap="peopleOpen"></paper-icon-button>
+				    	</div>
+				    </paper-toolbar>
+				    <group-feed contact="{{contact}}"></group-feed>
+				  </paper-header-panel>
+				  <paper-header-panel id="info-drawer" mode="seamed" drawer>
+				    <paper-toolbar id="info-toolbar">
+					    <div class="horizontal layout center flex">
+					    	<h1 class="flex">[[infoSelection]]</h1>
+					    	<paper-icon-button icon="icons:close" on-tap="infoClose"></paper-icon-button>
+					    </div>
+				    </paper-toolbar>
+				    <div class="content">
+				    	<iron-pages attr-for-selected="type" selected="{{infoSelection}}">
+				    		<div type="Transactions">Content 1</div>
+				    		<div type="People">Content 2</div>
+				    	</iron-pages>
 				    </div>
-			    </paper-toolbar>
-			    <div class="content"> Main content... </div>
-			  </paper-header-panel>
-		  	</paper-drawer-panel>
+				  </paper-header-panel>
+			  	</paper-drawer-panel>
+			<!-- </template> -->
+			<template is="dom-if" if="[[!contact]]">
+				<div class="content">Please select a contact to start messaging.</div>
+			</template>
 		  </div>
 		</paper-drawer-panel>
 	</template>
@@ -189,17 +215,51 @@
 		is: "design-prototype",
 
 		properties: {
-			infoTitle: String,
-			messages: {
+			infoSelection: String,
+			contacts: {
 				type: Array,
 				value: [
-					{user: 'Josh Heinrichs', time: '1:23 PM', message: 'hello'},
-					{user: 'Ken Slawinski', time: '1:24 PM', message: 'hi'},
-					{user: 'William van der Kamp', time: '1:25 PM', message: 'hey'},
-					{user: 'Jordan Lys', time: '1:25 PM', message: 'whats up'},
-					{user: 'Evan Closson', time: '1:25 PM', message: 'hows it going'}
+					{name: "William van der Kamp", balance: 500, unread: 0,
+						members: [],
+						messages: [
+							{name: 'Josh Heinrichs', time: '1:23 PM', message: 'hello'},
+							{name: 'Ken Slawinski', time: '1:24 PM', message: 'hi'},
+							{name: 'William van der Kamp', time: '1:25 PM', message: 'hey'},
+							{name: 'Jordan Lys', time: '1:25 PM', message: 'whats up'},
+							{name: 'Evan Closson', time: '1:25 PM', message: 'hows it going'}],
+					}, 
+					{name: "Josh Heinrichs", balance: -500, unread: 1,
+						members: [],
+						messages: [],
+					}, 
+					{name: "Ken Slawinksi", balance: 0, unread: 22,
+						members: [],
+						messages: [],
+					}, 
+					{name: "Jordan Lys", balance: 0, unread: 323,
+						members: [],
+						messages: [],
+					}, 
+					{name: "Evan Closson", balance: 10, unread: 1231,
+						members: [],
+						messages: [],
+					}
 				]
-			}
+			},
+			groups: {
+				type: Array,
+				value: [
+					{name: "Camping", balance: 500, unread: 0,
+						members: [],
+						messages: [],
+					}, 
+					{name: "Vegas, Baby!", balance: 500, unread: 10,
+						members: [],
+						messages: [],
+					}
+				]
+			},
+			contact: Object,
 		},
 
 		peopleOpen: function() {
@@ -207,7 +267,7 @@
 		},
 
 		debtsOpen: function() {
-			this.infoToggle("Debts");
+			this.infoToggle("Transactions");
 		},
 
 		contactToggle: function() {
@@ -215,37 +275,43 @@
 		},
 
 		infoOpen: function() {
-			drawer = this.$.info_drawer_panel;
+			var drawer = this.$.info_drawer_panel;
 			drawer.forceNarrow = false;
 			drawer.openDrawer();
 		},
 
 		infoClose: function() {
-			drawer = this.$.info_drawer_panel;
+			var drawer = this.$.info_drawer_panel;
 			drawer.forceNarrow = true;
 			drawer.closeDrawer();
 		},
 
-		infoToggle: function(infoTitle) {
-			drawer = this.$.info_drawer_panel;
-			if (!drawer.narrow && infoTitle == this.infoTitle) {
+		infoToggle: function(infoSelection) {
+			var drawer = this.$.info_drawer_panel;
+			console.log(drawer);
+			if (!drawer.narrow && infoSelection == this.infoSelection) {
 				this.infoClose();
 			} else {
-				this.infoTitle = infoTitle;
+				this.infoSelection = infoSelection;
 				this.infoOpen();
 			}
 		},
 
-		updateToolbar: function() {
-			this.$.contactToolbar.updateStyles();
-		},
-
-		openAccountMenu: function() {
-			this.$.accountMenu.open();
-		},
-
-		openDialog: function() {
+		openDialog: function(event) {
+			event.target.selected = -1;
 			this.$.dialog.open();
+		},
+
+		contactSelect: function(event) {
+			console.log(event);
+			this.contact = event.detail.contact;
+			var i = this.contacts.indexOf(this.contact);
+			if (i > 0) {
+				this.set('contacts.'+i+'.unread', 0);
+			} else {
+				i = this.groups.indexOf(this.contact);
+				this.set('groups.'+i+'.unread', 0);
+			}	
 		}
 
 	});

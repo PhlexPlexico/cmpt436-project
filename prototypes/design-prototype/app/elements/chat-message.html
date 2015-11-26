@@ -20,6 +20,10 @@
 			margin-right: 10px;
 			border-radius: 40px;
 		}
+		.img_spacer {
+			width: 40px;
+			margin-right: 10px;
+		}
 		.header {
 			margin-bottom: 5px;
 		}
@@ -32,12 +36,19 @@
 	</style>
 	<template>
 		<div class="horizontal layout">
-			<img src="../images/profile-picture.svg">
+			<template is="dom-if" if="[[!noHeader]]">
+				<img src="../images/profile-picture.svg">
+			</template>
+			<template is="dom-if" if="[[noHeader]]">
+				<div class="img_spacer"></div>
+			</template>
 			<div class="message vertical layout flex">
-				<div class="no_overflow header horizontal layout">
-					<div class="no_overflow username">[[user]]</div>
-					<div class="time">[[time]]</div><br>
-				</div>
+				<template is="dom-if" if="[[!noHeader]]">
+					<div class="no_overflow header horizontal layout">
+						<div class="no_overflow username">[[user]]</div>
+						<div class="time">[[time]]</div><br>
+					</div>
+				</template>
 				<content></content>
 			</div>
 		</div>
@@ -52,6 +63,10 @@
 			user: String,
 			time: String,
 			message: String,
+			noHeader: {
+				type: Boolean,
+				value: false
+			},
 		},
 	});
 </script>
