@@ -24,7 +24,6 @@ const (
 	SESSION_DURATION_MINUTES    int    = 30
 	USER_KEY                    string = "goth_user"
 	AUTHCONFIG_FILE_PATH               = ".authconfig.json"
-	SESSION_KEY_USERNAME               = "username"
 	AUTH_CALLBACK_RELATIVE_PATH        = "/oauth2callback"
 )
 
@@ -60,6 +59,10 @@ func putUserInSession(user *goth.User, s *sessions.Session) error {
 	return nil
 }
 
+/**
+ * Validate the session for this request. If it is invalid, serve a new login.
+ * @return the session, if valid, or nil if serving a new login
+ */
 func validateSessionAndLogInIfNecessary(
 	w http.ResponseWriter, r *http.Request) *sessions.Session {
 	session, err := validateSession(w, r)
@@ -68,6 +71,7 @@ func validateSessionAndLogInIfNecessary(
 			log.Println(err.Error())
 		}
 		serveNewLogin(w, r)
+		return nil
 	}
 
 	return session
@@ -80,7 +84,7 @@ func validateSessionAndLogInIfNecessary(
  */
 func validateSession(
 	w http.ResponseWriter, r *http.Request) (*sessions.Session, error) {
-	session, err := gothic.Store.Get(r, gothic.SessionName)
+	session, err := getSession(r)
 	log.Println("validating session...")
 
 	if err != nil {
@@ -89,14 +93,12 @@ func validateSession(
 	}
 
 	if session.IsNew {
-		endSession(session, w, r)
 		return nil, nil
 	}
 
 	_, err = getUserFromSession(session)
 	if err != nil {
 		log.Println("unable to unmarshal user from session.")
-		endSession(session, w, r)
 		return nil, err
 	}
 
@@ -106,15 +108,10 @@ func validateSession(
 func authHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
-	session, err := validateSession(w, r)
-	if err != nil {
-		log.Println(err)
-	} else if session != nil {
+	session := validateSessionAndLogInIfNecessary(w, r)
+	if session != nil {
 		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
-		return
 	}
-
-	serveNewLogin(w, r)
 }
 
 func serveNewLogin(w http.ResponseWriter, r *http.Request) {
@@ -123,12 +120,6 @@ func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
-	}
-
-	_, err = gothic.Store.Get(r, gothic.SessionName)
-	if err != nil {
-		http.Error(w, "unable to get session", 500)
-		log.Println(err.Error())
 	}
 
 	t.Execute(w, nil)
@@ -144,16 +135,12 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := gothic.Store.Get(r, gothic.SessionName)
-
+	session, err := getSession(r)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	// log.Printf("number of values already in new session: %d.\n",
-	// len(session.Values))
 
 	err = putUserInSession(&user, session)
 	if err != nil {
@@ -166,9 +153,39 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("serving logout")
+	session, err := getSession(r)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	endSession(session, w, r)
+}
+
+// func handleError(err error, s *sessions.Session,
+// 	w http.ResponseWriter, r *http.Request) {
+// 	if s == nil {
+// 		s, err2 = getSession(r)
+// 		if err2 != nil {
+// 			http.Error(w, err2.Error(), 500)
+// 			log.Println(err2.Error())
+// 			return
+// 		}
+// 	}
+
+// 	endSession(s, w, r)
+// }
+
 func endSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	s.Options = &sessions.Options{MaxAge: -1}
 	s.Save(r, w)
+}
+
+func getSession(r *http.Request) (*sessions.Session, error) {
+	return gothic.Store.Get(r, gothic.SessionName)
 }
 
 //TODO add more providers
@@ -203,9 +220,9 @@ func initAuth(router *pat.Router) {
 	}
 
 	//get all the providers set up.
-	AUTH_CALLBACK_PATH := fmt.Sprint(DOMAIN_NAME, AUTH_CALLBACK_RELATIVE_PATH)
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
+	AUTH_CALLBACK_PATH := fmt.Sprint(DOMAIN_NAME, AUTH_CALLBACK_RELATIVE_PATH)
 	goth.UseProviders(
 		gplus.New(config.Gplus.Client_id, config.Gplus.Client_secret,
 			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
@@ -225,5 +242,6 @@ func initAuth(router *pat.Router) {
 	router.Get(fmt.Sprint(AUTH_CALLBACK_RELATIVE_PATH, "/{provider}"),
 		authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
+	router.Delete("/logout", logoutHandler)
 	router.Get("/", authHandler)
 }

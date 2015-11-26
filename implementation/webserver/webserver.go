@@ -73,7 +73,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	chat.leave <- ws
 }
 
-func Init() {
+func Serve() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	chat = NewChat()
