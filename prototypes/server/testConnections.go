@@ -72,18 +72,6 @@ var (
 	err 		error
 )
 
-func ThisPanic(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func ConnectToDB() {
-	Session, err = mgo.Dial("127.0.0.1")
-	ThisPanic(err)
-}
-
-
 func AddUser(name string, email string, phone string, isRealUser bool) {
 	Col = Session.DB("test").C("User")
 	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
@@ -145,14 +133,19 @@ func GetGroupChanges(g Group) {
 	ThisPanic(err)
 }
 
-// func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) {
-// 	group := FindGroup(groupId)
-	
-	
-
-
-	
-// }
+func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) bool {
+	g := FindGroup(groupId)
+	index = Index(memberArray, groupId)
+	if (index >= 0) {
+		g.UserIDs = append(g.UserIDs[:index], g.UserIDs[index+1:]...)
+		g.Expected = append(g.Expected[:index], g.Expected[index+1:]...)
+		g.Actual = append(g.Actual[:index], g.Actual[index+1:]...)
+		GetGroupChanges(g)
+		return true
+	} else {
+		return false
+	}
+}
 
 func DeleteGroup(id bson.ObjectId) bool {
 	Col = Session.DB("test").C("Group")
@@ -162,14 +155,7 @@ func DeleteGroup(id bson.ObjectId) bool {
 }
 
 
-func ConfigDB() {
-	Session.SetMode(mgo.Monotonic, true)
-	// Drop Database
-	if IsDrop {
-		err = Session.DB("test").DropDatabase()
-		ThisPanic(err)
-	}
-}
+
 
 func main() {
 
@@ -284,4 +270,25 @@ func main() {
 	fmt.Println("\n")
 	fmt.Printf("%v",g)
 	fmt.Println("\n")
+}
+
+
+func ConfigDB() {
+	Session.SetMode(mgo.Monotonic, true)
+	// Drop Database
+	if IsDrop {
+		err = Session.DB("test").DropDatabase()
+		ThisPanic(err)
+	}
+}
+
+func ThisPanic(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func ConnectToDB() {
+	Session, err = mgo.Dial("127.0.0.1")
+	ThisPanic(err)
 }
