@@ -201,13 +201,12 @@ func initAuth(router *pat.Router, conf *config) {
 	//get all the providers set up.
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
-	AUTH_CALLBACK_PATH := fmt.Sprint(conf.Website_url, conf.Https_portNum,
-		authCallbackRelativePath)
+	AUTH_CALLBACK_PATH := "https://" + conf.Website_url + conf.Https_portNum + authCallbackRelativePath
 	goth.UseProviders(
 		gplus.New(conf.Gplus.Client_id, conf.Gplus.Client_secret,
-			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
+			AUTH_CALLBACK_PATH+"/gplus"),
 		facebook.New(conf.Facebook.Client_id, conf.Facebook.Client_secret,
-			fmt.Sprint(AUTH_CALLBACK_PATH, "/facebook")),
+			AUTH_CALLBACK_PATH+"/facebook"),
 	)
 
 	//initialize the gothic store.
@@ -219,8 +218,7 @@ func initAuth(router *pat.Router, conf *config) {
 		Secure:   true,
 	}
 
-	router.Get(fmt.Sprint(authCallbackRelativePath, "/{provider}"),
-		authCallbackHandler)
+	router.Get(authCallbackRelativePath+"/{provider}", authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
 	router.Delete("/logout", logoutHandler)
 	router.Get("/", authHandler)

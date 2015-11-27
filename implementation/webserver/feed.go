@@ -36,7 +36,7 @@ func (fm *FeedsManager) Listen() {
 			case client := <-fm.leave:
 				fm.Leave(client)
 			case message := <-fm.incoming:
-				if err := server.HandleFeedItem((*server.FeedItem)(message)); err == nil {
+				if err := server.HandleFeedItem(message); err == nil {
 					fm.Broadcast(message)
 				} else {
 					log.Println("could not handle message", message,

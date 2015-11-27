@@ -18,7 +18,9 @@ Within that file, you should edit the website_url variable to be the url on whic
 
 website_url should be formatted like:
 
-  "https://localhost"
+  "localhost" or "www.williamvanderkamp.com"
+
+(no https:// prefix).
 
 https_portnum and http_portnum should be formatted like:
 

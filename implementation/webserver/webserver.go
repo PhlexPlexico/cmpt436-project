@@ -22,8 +22,11 @@ var upgrader = websocket.Upgrader{
 
 var router *pat.Router
 
-func redirectHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "https://localhost:8080"+r.RequestURI, http.StatusMovedPermanently)
+func redirectHandler(conf *config) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://"+conf.Website_url+conf.Https_portNum+r.RequestURI,
+			http.StatusMovedPermanently)
+	}
 }
 
 type receiver struct {
@@ -50,7 +53,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("opening websocket")
 
-	// may not need user name, but if we do, we can get it like this.
+	// may not need user info, but if we do, we can get it like this.
 	// user, err := getUserFromSession(session)
 	// if err != nil {
 	// 	http.Error(w, "unable to retrieve user info",
@@ -66,19 +69,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serveWs(ws)
-	// receiver := newReceiver()
-	// fm.join <- ws
-	// var message Message
-	// for receiver.receive(ws, &message) {
-	// 	message.Username = userName
-	// 	message.Time = time.Now()
-	// 	chat.incoming <- &message
-	// }
-	// if receiver.err != nil {
-	// 	log.Println(receiver.err)
-	// }
-
-	// chat.leave <- ws
 }
 
 func writeJson(w http.ResponseWriter, v interface{}) {
@@ -113,7 +103,6 @@ func Serve() {
 	if err != nil {
 		log.Fatalln("unable to unmarshal config file:", err)
 	}
-
 	fm = NewFeedsManager()
 	router = pat.New()
 	router.Get("/ws", wsHandler)
@@ -125,6 +114,8 @@ func Serve() {
 	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
-	go log.Fatal(http.ListenAndServeTLS(conf.Https_portNum, "cert.crt", "key.key", nil))
-	log.Fatal(http.ListenAndServe(conf.Http_portNum, http.HandlerFunc(redirectHandler)))
+	go log.Fatal(http.ListenAndServeTLS(conf.Https_portNum,
+		"cert.crt", "key.key", nil))
+	log.Fatal(http.ListenAndServe(conf.Http_portNum,
+		http.HandlerFunc(redirectHandler(conf))))
 }
