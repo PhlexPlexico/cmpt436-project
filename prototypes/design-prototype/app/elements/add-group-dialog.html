@@ -20,6 +20,10 @@
 		is: "add-group-dialog",
 
 		properties: {
+			user: {
+				type: Object,
+				value: null,
+			},
 			contacts: {
 				type: Object,
 				value: null
@@ -34,12 +38,13 @@
 		submit: function() {
 			console.log("submitted group");
 			this.fire('add-group', {group: {
-				name: this.$.input.value,
+				group: {name: this.$.input.value, id: 3}, //TODO
 				balance: 0,
 				unread: 0,
 				members: [
-					{name: "Josh Heinrichs", balance: 0},
-					{name: this.$.input.value, balance: 0}],
+					{user: this.user, balance: 0},
+					{user: {name: this.$.input.value, id: 5}, balance: 0} //TODO
+				],
 				messages: [],
 			}});
 			this.$.input.value = "";

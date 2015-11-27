@@ -70,7 +70,7 @@
 			<div class="message vertical layout flex">
 				<template is="dom-if" if="[[!noHeader]]">
 					<div class="no_overflow header horizontal layout">
-						<div class="no_overflow username">[[message.name]]</div>
+						<div class="no_overflow username">[[message.user.name]]</div>
 						<div class="time">[[message.time]]</div><br>
 					</div>
 				</template>
@@ -99,7 +99,7 @@
 							<div class="more_splits">
 								<template is="dom-repeat" items="[[message.purchase.split]]">
 									<div class="split horizontal layout flex">
-										<div class="flex no_overflow">[[item.name]]</div>
+										<div class="flex no_overflow">[[item.user.name]]</div>
 										<div>[[formatCost(item.cost)]]</div>
 									</div>
 								</template>
@@ -126,6 +126,10 @@
 		is: "chat-message",
 
 		properties: {
+			user: {
+				type: Object,
+				value: null,
+			},
 			message: {
 				type: Object,
 				value: null,
@@ -137,7 +141,7 @@
 			noAvatar: {
 				type: Boolean,
 				value: false
-			}
+			},
 		},
 
 		formatCost: function(balance) {
@@ -145,12 +149,14 @@
 		},
 
 		myCost: function(split) {
-			for (var i=0; i<split.length; i++) {
-				if (split[i].name == "Josh Heinrichs") {
-					return this.formatCost(split[i].cost);
+			if (this.user) {
+				for (var i=0; i<split.length; i++) {
+					if (split[i].user.id == this.user.id) {
+						return this.formatCost(split[i].cost);
+					}
 				}
+				return this.formatCost(0);
 			}
-			return this.formatCost(0);
 		},
 
 		toggle: function(selector) {

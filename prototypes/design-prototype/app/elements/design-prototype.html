@@ -140,21 +140,25 @@
 	<template>
 		<add-contact-dialog 
 			id="add_contact_dialog"
+			user="[[user]]"
 			on-add-contact="addContact">
 		</add-contact-dialog>
 
 		<add-group-dialog
 			id="add_group_dialog"
+			user="[[user]]"
 			on-add-group="addGroup">
 		</add-group-dialog>
 
 		<add-payment-dialog
 			id="add_payment_dialog"
+			user="[[user]]"
 			on-add-payment="addPayment">
 		</add-payment-dialog>
 
 		<add-purchase-dialog
 			id="add_purchase_dialog"
+			user="[[user]]"
 			on-add-purchase="addPurchase">
 		</add-purchase-dialog>
 
@@ -196,7 +200,8 @@
 					    	<template is="dom-if" if="[[contact]]">
 						    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
 						    		<paper-button class="title no_overflow horizontal layout center dropdown-trigger">
-						    			<span class="no_overflow">[[contact.name]]</span>
+						    			<span class="no_overflow">[[contact.user.name]]</span>
+						    			<span class="no_overflow">[[contact.group.name]]</span>
 						    			<iron-icon icon="icons:expand-more"></iron-icon>
 						    		</paper-button>
 						    		<paper-menu class="dropdown-content" on-iron-select="deselect">
@@ -215,6 +220,7 @@
 						<div class="content">Please select a contact to start messaging.</div>
 					</template>
 				    <group-feed 
+				    	user="{{user}}"
 				    	contact="{{contact}}"
 				    	on-open-add-purchase-dialog="openAddPurchaseDialog"
 				    	on-open-add-payment-dialog="openAddPaymentDialog">
@@ -265,37 +271,40 @@
 
 		properties: {
 			user: {
-				name: "Josh Heinrichs", 
-				id: 0
+				type: Object,
+				value: {
+					name: "Josh Heinrichs", 
+					id: 0,
+				},
 			},
 			contacts: {
 				type: Array,
 				value: [
-					{name: "William van der Kamp", balance: 500, unread: 0,
+					{user: {name: "William van der Kamp", id: 1}, balance: 500, unread: 0,
 						members: [
-							{name: "Josh Heinrichs", balance: 500},
-							{name: "William van der Kamp", balance: -500}
+							{user: {name: "Josh Heinrichs", id: 0}, balance: 500},
+							{user: {name: "William van der Kamp", id: 1}, balance: -500}
 						],
 						messages: [],
 					}, 
-					{name: "Ken Slawinksi", balance: 0, unread: 22,
+					{user: {name: "Ken Slawinksi", id: 2}, balance: 0, unread: 22,
 						members: [
-							{name: "Josh Heinrichs", balance: 0},
-							{name: "Ken Slawinksi", balance: 0}
+							{user: {name: "Josh Heinrichs", id: 0}, balance: 0},
+							{user: {name: "Ken Slawinksi", id: 2}, balance: 0}
 						],
 						messages: [],
 					}, 
-					{name: "Jordan Lys", balance: -50, unread: 323,
+					{user: {name: "Jordan Lys", id: 3}, balance: -50, unread: 323,
 						members: [
-							{name: "Josh Heinrichs", balance: -50},
-							{name: "Jordan Lys", balance: 50}
+							{user: {name: "Josh Heinrichs", id: 0}, balance: -50},
+							{user: {name: "Jordan Lys", id: 3}, balance: 50}
 						],
 						messages: [],
 					}, 
-					{name: "Evan Closson", balance: 10, unread: 1231,
+					{user: {name: "Evan Closson", id: 4}, balance: 10, unread: 1231,
 						members: [
-							{name: "Josh Heinrichs", balance: 10},
-							{name: "Evan Closson", balance: -10}
+							{user: {name: "Josh Heinrichs", id: 0}, balance: 10},
+							{user: {name: "Evan Closson", id: 4}, balance: -10}
 						],
 						messages: [],
 					}
@@ -304,42 +313,42 @@
 			groups: {
 				type: Array,
 				value: [
-					{name: "Camping", balance: 500, unread: 0,
+					{group: {name: "Camping", id: 0}, balance: 500, unread: 0,
 						members: [
-							{name: "Josh Heinrichs", balance: 500},
-							{name: "Ken Slawinksi", balance: 20},
-							{name: "William van der Kamp", balance: -500},
-							{name: "Jordan Lys", balance: 50},
-							{name: "Evan Closson", balance: -70}
+							{user: {name: "Josh Heinrichs", id: 0}, balance: 500},
+							{user: {name: "Ken Slawinksi", id: 2}, balance: 20},
+							{user: {name: "William van der Kamp", id: 1}, balance: -500},
+							{user: {name: "Jordan Lys", id: 3}, balance: 50},
+							{user: {name: "Evan Closson", id: 4}, balance: -70}
 						],
 						messages: [],
 					}, 
-					{name: "Vegas, Baby!", balance: 500, unread: 10,
+					{group: {name: "Vegas, Baby!", id: 1}, balance: 500, unread: 10,
 						members: [
-							{name: "Josh Heinrichs", balance: 500},
-							{name: "Ken Slawinksi", balance: 20},
-							{name: "William van der Kamp", balance: -500},
-							{name: "Jordan Lys", balance: 50},
-							{name: "Evan Closson", balance: -70}
+							{user: {name: "Josh Heinrichs", id: 0}, balance: 500},
+							{user: {name: "Ken Slawinksi", id: 2}, balance: 20},
+							{user: {name: "William van der Kamp", id: 1}, balance: -500},
+							{user: {name: "Jordan Lys", id: 3}, balance: 50},
+							{user: {name: "Evan Closson", id: 4}, balance: -70}
 						],
 						messages: [
-							{name: 'Josh Heinrichs', time: '1:23 PM', message: 'hello'},
-							{name: 'Ken Slawinski', time: '1:24 PM', message: 'hi'},
-							{name: 'William van der Kamp', time: '1:25 PM', message: 'hey'},
-							{name: 'Jordan Lys', time: '1:25 PM', message: 'whats up'},
-							{name: 'Evan Closson', time: '1:25 PM', message: 'hows it going'},
-							{name: 'William van der Kamp', time: '1:26 PM',
+							{user: {name: "Josh Heinrichs", id: 0}, time: "1:23 PM", message: "hello"},
+							{user: {name: "Ken Slawinski", id: 2}, time: "1:24 PM", message: "hi"},
+							{user: {name: "William van der Kamp", id: 1}, time: "1:25 PM", message: "hey"},
+							{user: {name: "Jordan Lys", id: 3}, time: "1:25 PM", message: "whats up"},
+							{user: {name: "Evan Closson", id: 4}, time: "1:25 PM", message: "hows it going"},
+							{user: {name: "William van der Kamp", id: 1}, time: "1:26 PM",
 								purchase: {title: "Marshmallows", cost: 100,
 									split: [
-										{name: 'Josh Heinrichs', cost: 20},
-										{name: 'Ken Slawinski', cost: 20},
-										{name: 'William van der Kamp', cost : 20},
-										{name: 'Jordan Lys', cost: 20},
-										{name: 'Evan Closson', cost: 20}
+										{user: {name: "Josh Heinrichs", id: 0}, cost: 20},
+										{user: {name: "Ken Slawinski", id: 2}, cost: 20},
+										{user: {name: "William van der Kamp", id: 1}, cost : 20},
+										{user: {name: "Jordan Lys", id: 3}, cost: 20},
+										{user: {name: "Evan Closson", id: 4}, cost: 20}
 									]
 								}
 							},
-							{name: 'William van der Kamp', time: '1:26 PM',
+							{user: {name: "William van der Kamp", id: 1}, time: "1:26 PM",
 								payment: {
 									from: "William van der Kamp", 
 									to: "Josh Heinrichs", 
