@@ -4,8 +4,13 @@ import (
 	"encoding/json"
 	"github.com/gorilla/pat"
 	"github.com/gorilla/websocket"
+	"io/ioutil"
 	"log"
 	"net/http"
+)
+
+const (
+	configFilePath = ".config.json"
 )
 
 var upgrader = websocket.Upgrader{
@@ -84,8 +89,30 @@ func writeJson(w http.ResponseWriter, v interface{}) {
 	}
 }
 
+//These will be marshaled directly from json
+type config struct {
+	Gplus          genericAuthConfig `json:"gplus"`
+	Facebook       genericAuthConfig `json:"facebook"`
+	Session_secret string            `json:"session_secret"`
+	Website_url    string            `json:"website_url"`
+	Https_portNum  string            `json:"https_portnum"`
+	Http_portNum   string            `json:"http_portnum"`
+}
+
 func Serve() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	configBytes, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		log.Fatalln("unable to read file ", configFilePath,
+			":", err)
+	}
+
+	conf := &config{}
+	err = json.Unmarshal(configBytes, conf)
+	if err != nil {
+		log.Fatalln("unable to unmarshal config file:", err)
+	}
 
 	fm = NewFeedsManager()
 	router = pat.New()
@@ -93,11 +120,11 @@ func Serve() {
 
 	//This has to be the last thing called with the router, because it sets
 	//the handler for the website root.
-	initAuth(router)
+	initAuth(router, conf)
 	http.Handle("/", router)
 	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
-	go http.ListenAndServeTLS(":8080", "cert.crt", "key.key", nil)
-	http.ListenAndServe(":8000", http.HandlerFunc(redirectHandler))
+	go http.ListenAndServeTLS(conf.Https_portNum, "cert.crt", "key.key", nil)
+	http.ListenAndServe(conf.Http_portNum, http.HandlerFunc(redirectHandler))
 }

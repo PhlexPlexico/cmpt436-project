@@ -15,7 +15,6 @@ import (
 	"github.com/markbates/goth/providers/facebook"
 	"github.com/markbates/goth/providers/gplus"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -23,7 +22,6 @@ import (
 const (
 	sessionDurationMinutes   int    = 30
 	userKey                  string = "goth_user"
-	authConfigFilePath              = ".authconfig.json"
 	authCallbackRelativePath        = "/oauth2callback"
 )
 
@@ -194,47 +192,26 @@ var indexTemplate = `
 <p><a href="/auth/facebook">Log in with Facebook</a></p>
 `
 
-//These will be marshaled directly from json
-type authConfig struct {
-	Gplus          genericConfig `json:"gplus"`
-	Facebook       genericConfig `json:"facebook"`
-	Session_secret string        `json:"session_secret"`
-	Domain_name    string        `json:"domain_name"`
-}
-
-type genericConfig struct {
+type genericAuthConfig struct {
 	Client_id     string `json:"client_id"`
 	Client_secret string `json:"client_secret"`
 }
 
-func initAuth(router *pat.Router) {
-
-	authConfigBytes, err := ioutil.ReadFile(authConfigFilePath)
-	if err != nil {
-		log.Fatalln("unable to read file ", authConfigFilePath,
-			":", err)
-	}
-
-	config := &authConfig{}
-	err = json.Unmarshal(authConfigBytes, config)
-	if err != nil {
-		log.Fatalln("unable to unmarshal config file:", err)
-	}
-
-	domainName := config.Domain_name
+func initAuth(router *pat.Router, conf *config) {
 	//get all the providers set up.
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
-	AUTH_CALLBACK_PATH := fmt.Sprint(domainName, authCallbackRelativePath)
+	AUTH_CALLBACK_PATH := fmt.Sprint(conf.Website_url, "/", conf.Https_portNum,
+		authCallbackRelativePath)
 	goth.UseProviders(
-		gplus.New(config.Gplus.Client_id, config.Gplus.Client_secret,
+		gplus.New(conf.Gplus.Client_id, conf.Gplus.Client_secret,
 			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
-		facebook.New(config.Facebook.Client_id, config.Facebook.Client_secret,
+		facebook.New(conf.Facebook.Client_id, conf.Facebook.Client_secret,
 			fmt.Sprint(AUTH_CALLBACK_PATH, "/facebook")),
 	)
 
 	//initialize the gothic store.
-	gothic.Store = sessions.NewCookieStore([]byte(config.Session_secret))
+	gothic.Store = sessions.NewCookieStore([]byte(conf.Session_secret))
 	gothic.Store.(*sessions.CookieStore).Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   60 * sessionDurationMinutes,

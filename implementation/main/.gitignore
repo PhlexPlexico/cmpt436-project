@@ -1,4 +1,4 @@
 #ignore all the 'secrets' from our auth providers. 
-.authconfig.json
+.config.json
 cert.crt
 key.key
