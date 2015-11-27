@@ -1,12 +1,33 @@
 package server
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"testing"
 	"time"
 )
+
+const (
+	FEEDITEM_TYPE_COMMENT      string = "comment"
+	FEEDITEM_TYPE_NOTIFICATION string = "notification"
+	FEEDITEM_TYPE_PURCHASE     string = "purchase"
+	FEEDITEM_TYPE_PAYMENT      string = "payment"
+)
+
+/* This will likely change to a different type. */
+type GroupId struct {
+	Id int `json:"id"`
+}
+
+type FeedItem struct {
+	/* The actual feed item to be unmarshaled, based upon the type. */
+	Content json.RawMessage `json:"content"`
+	GId     GroupId         `json:"gid"`
+	Type    string          `json:"type"`
+}
 
 type User struct {
 	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
@@ -37,11 +58,12 @@ type Group struct {
 }
 
 type Comment struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	UserName  string        `json:"userName"`
-	Subject   string        `json:"subject"`
-	Content   string        `json:"content"`
-	Timestamp time.Time     `json:"time"`
+	//William changed this to int for testing purposes.
+	ID       int    `json:"id" bson:"_id, omitempty"`
+	UserName string `json:"userName"`
+	Content  string `json:"content"`
+	//William changed this from time.Time to int for testing purposes.
+	Timestamp int64 `json:"time"`
 }
 
 type Payment struct {
@@ -73,11 +95,38 @@ var (
 	err        error
 )
 
+func (fi *FeedItem) String() string {
+	return fmt.Sprint(fi.GId, ":", fi.Type, ":", string(fi.Content))
+}
+
+func HandleFeedItem(fi *FeedItem) error {
+	switch fi.Type {
+	case FEEDITEM_TYPE_COMMENT:
+		comment := &Comment{}
+		err := json.Unmarshal(fi.Content, comment)
+		if err != nil {
+			return err
+		}
+		/* handler code here, verifying the contents, and
+		 * doing DB insertions, etc. There is no need to rebroadcast the
+		 * new feed item, as the webserver handles that automatically.
+		 */
+		return nil
+	case FEEDITEM_TYPE_NOTIFICATION:
+		return nil
+	case FEEDITEM_TYPE_PAYMENT:
+		return nil
+	case FEEDITEM_TYPE_PURCHASE:
+		return nil
+	default:
+		return errors.New(fmt.Sprint("invalid FeedItem type: ", fi.Type))
+	}
+}
+
 func ThisPanic(err error) {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func ConnectToDB() {
@@ -132,11 +181,11 @@ func Init() *mgo.Collection {
 
 // func FindGroup(id bson.ObjectId) g *Group
 
-// func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId )
+// func AddMemberToGroupByID(server.GroupId bson.ObjectId, userId bson.ObjectId )
 
 // func GetGroupChanges(g Group)
 
-// func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId )
+// func RemoveMemberFromGroup(server.GroupId bson.ObjectId, userId bson.ObjectId )
 
 // func DeleteGroup(id bson.ObjectId) b bool
 
