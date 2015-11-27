@@ -201,7 +201,7 @@ func initAuth(router *pat.Router, conf *config) {
 	//get all the providers set up.
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
-	AUTH_CALLBACK_PATH := fmt.Sprint(conf.Website_url, "/", conf.Https_portNum,
+	AUTH_CALLBACK_PATH := fmt.Sprint(conf.Website_url, conf.Https_portNum,
 		authCallbackRelativePath)
 	goth.UseProviders(
 		gplus.New(conf.Gplus.Client_id, conf.Gplus.Client_secret,

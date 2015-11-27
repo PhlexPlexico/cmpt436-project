@@ -125,6 +125,6 @@ func Serve() {
 	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
-	go http.ListenAndServeTLS(conf.Https_portNum, "cert.crt", "key.key", nil)
-	http.ListenAndServe(conf.Http_portNum, http.HandlerFunc(redirectHandler))
+	go log.Fatal(http.ListenAndServeTLS(conf.Https_portNum, "cert.crt", "key.key", nil))
+	log.Fatal(http.ListenAndServe(conf.Http_portNum, http.HandlerFunc(redirectHandler)))
 }
