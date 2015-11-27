@@ -17,8 +17,11 @@ The program expects to find a config file containing the session secret, all cli
 Within that file, you should edit the website_url variable to be the url on which you will be hosting the server. You should also edit https_portnum and http_portnum. 
 
 website_url should be formatted like:
+
   "https://localhost"
+  
 https_portnum and http_portnum should be formatted like:
+
   ":XXXX"
 
 (no trailing slashes).
@@ -27,6 +30,6 @@ After that, run
 
 `go run main.go`
 
-in the `main/` directory, and the site will be accessible via the url you specified in 
+in the `main/` directory, and the site will be accessible via the url and portnum you specified in 
 .config.json
 
