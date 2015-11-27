@@ -1,0 +1,41 @@
+<dom-module id="add-contact-dialog">
+	<style>
+	</style>
+	<template>
+		<paper-dialog id="dialog" with-backdrop>
+		  <h2>Add a Contact</h2>
+		  <paper-dialog-scrollable>
+		    <paper-input id="input" label="Enter a name..."></paper-input>
+		  </paper-dialog-scrollable>
+		  <div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+		    <paper-button dialog-confirm on-tap="submit">Submit</paper-button>
+		  </div>
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "add-contact-dialog",
+		
+		open: function() {
+			console.log("opened contact dialog");
+			this.$.dialog.open();
+		},
+
+		submit: function() {
+			console.log("submitted contact");
+			this.fire('add-contact', {contact: {
+				name: this.$.input.value,
+				balance: 0,
+				unread: 0,
+				members: [
+					{name: "Josh Heinrichs", balance: 0},
+					{name: this.$.input.value, balance: 0}],
+				messages: [],
+			}});
+			this.$.input.value = "";
+		}
+	});
+</script>

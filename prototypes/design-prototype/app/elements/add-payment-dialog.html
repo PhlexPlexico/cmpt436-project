@@ -1,0 +1,55 @@
+<dom-module id="add-payment-dialog">
+	<style>
+	</style>
+	<template>
+		<paper-dialog id="dialog" with-backdrop>
+		  <h2>Add a Payment</h2>
+		  <paper-dialog-scrollable>
+		  	<div>From</div>
+		  	<paper-input id="from" label="From"></paper-input>
+		  	<div>To</div>
+		  	<paper-input id="to" label="To"></paper-input>
+		  	<div>Amount</div>
+		    <paper-input id="amount" label="Amount" value="{{cost}}" type="number">
+        		<div prefix>$</div>
+      		</paper-input>
+		  </paper-dialog-scrollable>
+		  <div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+		    <paper-button dialog-confirm on-tap="submit">Submit</paper-button>
+		  </div>
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "add-payment-dialog",
+
+		properties: {
+			contact: {
+				type: Object,
+				value: null
+			}
+		},
+
+		open: function() {
+			console.log("opened payment dialog");
+			this.$.dialog.open();
+		},
+
+		submit: function() {
+			console.log("submitted payment");
+			this.fire('add-payment', {payment: {
+				name: this.$.input.value,
+				balance: 0,
+				unread: 0,
+				members: [
+					{name: "Josh Heinrichs", balance: 0},
+					{name: this.$.input.value, balance: 0}],
+				messages: [],
+			}});
+			this.$.input.value = "";
+		}
+	});
+</script>

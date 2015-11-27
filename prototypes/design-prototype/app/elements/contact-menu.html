@@ -47,42 +47,22 @@
 		}
 	</style>
 	<template>
-
-		<paper-dialog id="dialog" with-backdrop>
-		  <h2>Add a Contact</h2>
-		  <paper-dialog-scrollable>
-		  	<paper-input></paper-input>
-		  </paper-dialog-scrollable>
-		  <div class="buttons">
-		    <paper-button dialog-dismiss>Cancel</paper-button>
-		    <paper-button dialog-confirm>Submit</paper-button>
-		  </div>
-		</paper-dialog>
-
 		<div class="header horizontal layout center flex">
 			<div class="flex">Contacts</div>
-			<paper-icon-button icon="add" on-tap="openDialog"></paper-icon-button>
+			<paper-icon-button icon="add" on-tap="openAddContactDialog"></paper-icon-button>
 		</div>
 		<div class="contacts">
 			<template is="dom-repeat" items="[[contacts]]">
 				<contact-item contact="[[item]]"></contact-item>
-<!-- 				<div class="item">
-					<div class="no_overflow">{{item.name}}</div>
-					<span>{{outputDebt(item.debt)}}</span>
-				</div> -->
 			</template>
 	    </div>
 		<div class="header horizontal layout center flex">
 			<div class="flex">Groups</div>
-			<paper-icon-button icon="add" on-tap="openDialog"></paper-icon-button>
+			<paper-icon-button icon="add" on-tap="openAddGroupDialog"></paper-icon-button>
 		</div>
 	    <div class="groups">
 			<template is="dom-repeat" items="[[groups]]">
 				<contact-item contact="[[item]]"></contact-item>
-<!-- 				<div class="item">
-					<div class="no_overflow">{{item.name}}</div>
-					<div>{{outputDebt(item.debt)}}</div>
-				</div> -->
 			</template>
 	    </div>
 	</template>
@@ -103,8 +83,12 @@
 			},
 		},
 
-		openDialog: function() {
-			this.$.dialog.open();
+		openAddContactDialog: function() {
+			this.fire('open-add-contact-dialog');
+		},
+
+		openAddGroupDialog: function() {
+			this.fire('open-add-group-dialog');
 		},
 
 	});

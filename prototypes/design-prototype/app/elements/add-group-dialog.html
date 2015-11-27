@@ -1,0 +1,48 @@
+<dom-module id="add-group-dialog">
+	<style>
+	</style>
+	<template>
+		<paper-dialog id="dialog" with-backdrop>
+		  <h2>Add a Group</h2>
+		  <paper-dialog-scrollable>
+		    <paper-input id="input" label="Enter a name..."></paper-input>
+		  </paper-dialog-scrollable>
+		  <div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+		    <paper-button dialog-confirm on-tap="submit">Submit</paper-button>
+		  </div>
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "add-group-dialog",
+
+		properties: {
+			contacts: {
+				type: Object,
+				value: null
+			}
+		},
+
+		open: function() {
+			console.log("opened group dialog");
+			this.$.dialog.open();
+		},
+
+		submit: function() {
+			console.log("submitted group");
+			this.fire('add-group', {group: {
+				name: this.$.input.value,
+				balance: 0,
+				unread: 0,
+				members: [
+					{name: "Josh Heinrichs", balance: 0},
+					{name: this.$.input.value, balance: 0}],
+				messages: [],
+			}});
+			this.$.input.value = "";
+		}
+	});
+</script>

@@ -1,14 +1,10 @@
-<link rel="import" href="contact-menu.html">
-<link rel="import" href="chat-message.html">
 <link rel="import" href="../bower_components/iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="chat-message.html">
 
 <dom-module id="group-feed">
 	<style>
 		:host {
 			display: block;
-		}
-		.content {
-			margin: 0 20px;
 		}
 		paper-menu-button {
 			padding: 0;
@@ -22,6 +18,10 @@
 		.fill {
 			height: 100%;
 		}
+		.content {
+			padding: 20px;
+			padding-bottom: 0;
+		}
 	</style>
 	<template>
 		<div class="fill vertical layout flex">
@@ -31,22 +31,19 @@
 				</template>
 				<template is="dom-repeat" items="[[contact.messages]]">
 					<chat-message 
-						no-header="[[sameAsPrevious(index)]]"
-						user="[[item.name]]" 
-						time="[[item.time]]">
-						[[item.message]]
+						message="[[item]]"
+						no-header="[[sameAsPrevious(index)]]">
 					</chat-message>
 				</template>
 			</div>
 			<div class="horizontal layout end">
 				<paper-menu-button id="accountMenu"
 					vertical-offset="40"
-					vertical-align="bottom"
-					on-iron-select="openDialog">
+					vertical-align="bottom">
 					<paper-icon-button icon="add" class="dropdown-trigger"></paper-icon-button>
-					<paper-menu class="dropdown-content" selected="-1">
-						<paper-item>Add Purchase</paper-item>
-						<paper-item>Add Payment</paper-item>
+					<paper-menu class="dropdown-content" selected="-1" on-iron-select="deselect">
+						<paper-item on-tap="openAddPurchaseDialog">Add Purchase</paper-item>
+						<paper-item on-tap="openAddPaymentDialog">Add Payment</paper-item>
 					</paper-menu>
 				</paper-menu-button>
 				<paper-input id="input" class="flex" no-label-float label="Enter a message..."></paper-input>
@@ -65,6 +62,7 @@
 			contact: {
 				type: Object,
 				value: null,
+				observe: 'contactChanged'
 			},
 			empty: {
 				type: Boolean,
@@ -82,9 +80,7 @@
 			if (str) {
 				this.push('contact.messages', {name: 'Josh Heinrichs', time: '1:26 PM', message: str})
 				this.$.input.value = "";
-				this.async(function() {
-					this.$.chat.scrollTop = this.$.chat.scrollHeight;
-				});   
+				this.scrollToBottom();
 			}
 		},
 
@@ -93,7 +89,26 @@
 		},
 
 		isEmpty: function(changeRecord) {
+			this.scrollToBottom();
 			this.empty = this.contact && this.contact.messages.length == 0;
-		}
+		},
+
+		scrollToBottom: function() {
+			this.async(function() {
+				this.$.chat.scrollTop = this.$.chat.scrollHeight;
+			}, 1);
+		},
+
+		deselect: function(event) {
+			event.target.selected = -1;
+		},
+
+		openAddPurchaseDialog: function() {
+			this.fire('open-add-purchase-dialog');
+		},
+
+		openAddPaymentDialog: function() {
+			this.fire('open-add-payment-dialog');
+		},
 	});
 </script>

@@ -13,10 +13,15 @@
 <link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="contact-menu.html">
 <link rel="import" href="chat-message.html">
 <link rel="import" href="group-feed.html">
-<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="cost-splitter.html">
+<link rel="import" href="add-contact-dialog.html">
+<link rel="import" href="add-group-dialog.html">
+<link rel="import" href="add-payment-dialog.html">
+<link rel="import" href="add-purchase-dialog.html">
 
 <dom-module id="design-prototype">
 	<style>
@@ -46,7 +51,7 @@
 			--paper-menu-color: #fff;
 		}
 		#main-toolbar {
-			--paper-toolbar-background: #transparent;
+			--paper-toolbar-background: #f3f3f3;
 			--paper-toolbar-color: #333;
 			text-overflow: ellipsis;
 		}
@@ -54,7 +59,7 @@
 			background-color: #f5f5f5;
 		}
 		#info-toolbar {
-			--paper-toolbar-background: #transparent;
+			--paper-toolbar-background: #ddd;
 			--paper-toolbar-color: #333;
 		}
 		.dropdown-content {
@@ -86,6 +91,9 @@
 		}
 		paper-button {
 			text-transform: none;
+			margin: 0;
+		}
+		paper-button.title {
 			font-weight: 400;
 			font-size: 22px;
 			padding: 10px;
@@ -119,21 +127,36 @@
 		group-feed {
 			height: calc(100% - 65px);
 		}
-
+		.transactions {
+			margin: 20px;
+			margin-bottom: 0;
+		}
+		.people {
+			margin-top: 15px;
+		}
     }
 
 	</style>
 	<template>
-		<paper-dialog id="dialog" with-backdrop >
-		  <h2>Header</h2>
-		  <paper-dialog-scrollable>
-		    Lorem ipsum...
-		  </paper-dialog-scrollable>
-		  <div class="buttons">
-		    <paper-button dialog-dismiss>Cancel</paper-button>
-		    <paper-button dialog-confirm>Accept</paper-button>
-		  </div>
-		</paper-dialog>
+		<add-contact-dialog 
+			id="add_contact_dialog"
+			on-add-contact="addContact">
+		</add-contact-dialog>
+
+		<add-group-dialog
+			id="add_group_dialog"
+			on-add-group="addGroup">
+		</add-group-dialog>
+
+		<add-payment-dialog
+			id="add_payment_dialog"
+			on-add-payment="addPayment">
+		</add-payment-dialog>
+
+		<add-purchase-dialog
+			id="add_purchase_dialog"
+			on-add-purchase="addPurchase">
+		</add-purchase-dialog>
 
 		<paper-drawer-panel id="contact_drawer_panel" narrow="{{contactNarrow}}" disable-edge-swipe>
 		  <paper-header-panel id="contact-drawer" mode="seamed" drawer>
@@ -143,8 +166,8 @@
 			    		class="flex"
 			    		vertical-offset="40" 
 			    		horizontal-offset="10"
-			    		on-iron-select="openDialog">
-			    		<paper-button class="flex horizontal layout center dropdown-trigger">
+			    		on-iron-select="deselect">
+			    		<paper-button class="title flex horizontal layout center dropdown-trigger">
 			    			<span class="no_overflow flex">ZeroSum</span>
 			    			<iron-icon icon="icons:expand-more"></iron-icon>
 			    		</paper-button>
@@ -158,7 +181,9 @@
 		    <contact-menu
 		    	contacts="{{contacts}}"
 		    	groups="{{groups}}"
-		    	on-contact-select="contactSelect">
+		    	on-contact-select="contactSelect"
+		    	on-open-add-contact-dialog="openAddContactDialog"
+		    	on-open-add-group-dialog="openAddGroupDialog">
 		    </contact-menu>
 		  </paper-header-panel>
 		  <div main>
@@ -168,23 +193,32 @@
 				    <paper-toolbar id="main-toolbar">
 				    	<div class="horizontal layout center flex">
 					    	<paper-icon-button id="menu_button" icon="menu" on-tap="contactToggle" hidden$="{{!contactNarrow}}"></paper-icon-button>
-					    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
-					    		<paper-button class="no_overflow horizontal layout dropdown-trigger">
-					    			<span class="no_overflow">[[contact.name]]</span>
-					    			<iron-icon icon="icons:expand-more"></iron-icon>
-					    		</paper-button>
-					    		<paper-menu class="dropdown-content" on-iron-select="openDialog">
-					    			<paper-item>Preferences</paper-item>
-					    			<paper-item>Add User</paper-item>
-					    			<paper-item>Leave Group</paper-item>
-					    		</paper-menu>
-				    		</paper-menu-button>
-				    		<div class="flex"></div>
-					    	<paper-icon-button icon="editor:attach-money" on-tap="debtsOpen"></paper-icon-button>
-					    	<paper-icon-button icon="social:people" on-tap="peopleOpen"></paper-icon-button>
+					    	<template is="dom-if" if="[[contact]]">
+						    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
+						    		<paper-button class="title no_overflow horizontal layout center dropdown-trigger">
+						    			<span class="no_overflow">[[contact.name]]</span>
+						    			<iron-icon icon="icons:expand-more"></iron-icon>
+						    		</paper-button>
+						    		<paper-menu class="dropdown-content" on-iron-select="deselect">
+						    			<paper-item>Preferences</paper-item>
+						    			<paper-item>Add User</paper-item>
+						    			<paper-item>Leave Group</paper-item>
+						    		</paper-menu>
+					    		</paper-menu-button>
+					    		<div class="flex"></div>
+						    	<paper-icon-button icon="editor:attach-money" on-tap="debtsOpen"></paper-icon-button>
+						    	<paper-icon-button icon="social:people" on-tap="peopleOpen"></paper-icon-button>
+					    	</template>
 				    	</div>
 				    </paper-toolbar>
-				    <group-feed contact="{{contact}}"></group-feed>
+		    		<template is="dom-if" if="[[!contact]]">
+						<div class="content">Please select a contact to start messaging.</div>
+					</template>
+				    <group-feed 
+				    	contact="{{contact}}"
+				    	on-open-add-purchase-dialog="openAddPurchaseDialog"
+				    	on-open-add-payment-dialog="openAddPaymentDialog">
+				    </group-feed>
 				  </paper-header-panel>
 				  <paper-header-panel id="info-drawer" mode="seamed" drawer>
 				    <paper-toolbar id="info-toolbar">
@@ -193,18 +227,33 @@
 					    	<paper-icon-button icon="icons:close" on-tap="infoClose"></paper-icon-button>
 					    </div>
 				    </paper-toolbar>
-				    <div class="content">
 				    	<iron-pages attr-for-selected="type" selected="{{infoSelection}}">
-				    		<div type="Transactions">Content 1</div>
-				    		<div type="People">Content 2</div>
+				    		<div type="Transactions">
+				    			<div class="transactions">
+					    			<template is="dom-repeat" items="[[contact.messages]]">
+					    				<template is="dom-if" if="[[isTransaction(item)]]">
+					    					<chat-message no-avatar message="[[item]]"></chat-message>
+					    				</template>
+					    			</template>
+					    			<div class="vertical layout flex">
+						    			<paper-button class="flex">Add Purchase</paper-button>
+						    			<paper-button class="flex">Add Payment</paper-button>
+					    			</div>
+				    			</div>
+				    		</div>
+				    		<div type="People">
+				    			<div class="people">
+					    			<template is="dom-repeat" items="[[contact.members]]">
+					    				<contact-item contact="[[item]]"></contact-item>
+					    			</template>
+					    			<div class="vertical layout flex">
+					    				<paper-button class="flex">Add Contact to Group</paper-button>
+					    			</div>
+				    			</div>
+				    		</div>
 				    	</iron-pages>
-				    </div>
 				  </paper-header-panel>
 			  	</paper-drawer-panel>
-			<!-- </template> -->
-			<template is="dom-if" if="[[!contact]]">
-				<div class="content">Please select a contact to start messaging.</div>
-			</template>
 		  </div>
 		</paper-drawer-panel>
 	</template>
@@ -215,33 +264,39 @@
 		is: "design-prototype",
 
 		properties: {
-			infoSelection: String,
+			user: {
+				name: "Josh Heinrichs", 
+				id: 0
+			},
 			contacts: {
 				type: Array,
 				value: [
 					{name: "William van der Kamp", balance: 500, unread: 0,
-						members: [],
-						messages: [
-							{name: 'Josh Heinrichs', time: '1:23 PM', message: 'hello'},
-							{name: 'Ken Slawinski', time: '1:24 PM', message: 'hi'},
-							{name: 'William van der Kamp', time: '1:25 PM', message: 'hey'},
-							{name: 'Jordan Lys', time: '1:25 PM', message: 'whats up'},
-							{name: 'Evan Closson', time: '1:25 PM', message: 'hows it going'}],
-					}, 
-					{name: "Josh Heinrichs", balance: -500, unread: 1,
-						members: [],
+						members: [
+							{name: "Josh Heinrichs", balance: 500},
+							{name: "William van der Kamp", balance: -500}
+						],
 						messages: [],
 					}, 
 					{name: "Ken Slawinksi", balance: 0, unread: 22,
-						members: [],
+						members: [
+							{name: "Josh Heinrichs", balance: 0},
+							{name: "Ken Slawinksi", balance: 0}
+						],
 						messages: [],
 					}, 
-					{name: "Jordan Lys", balance: 0, unread: 323,
-						members: [],
+					{name: "Jordan Lys", balance: -50, unread: 323,
+						members: [
+							{name: "Josh Heinrichs", balance: -50},
+							{name: "Jordan Lys", balance: 50}
+						],
 						messages: [],
 					}, 
 					{name: "Evan Closson", balance: 10, unread: 1231,
-						members: [],
+						members: [
+							{name: "Josh Heinrichs", balance: 10},
+							{name: "Evan Closson", balance: -10}
+						],
 						messages: [],
 					}
 				]
@@ -250,16 +305,60 @@
 				type: Array,
 				value: [
 					{name: "Camping", balance: 500, unread: 0,
-						members: [],
+						members: [
+							{name: "Josh Heinrichs", balance: 500},
+							{name: "Ken Slawinksi", balance: 20},
+							{name: "William van der Kamp", balance: -500},
+							{name: "Jordan Lys", balance: 50},
+							{name: "Evan Closson", balance: -70}
+						],
 						messages: [],
 					}, 
 					{name: "Vegas, Baby!", balance: 500, unread: 10,
-						members: [],
-						messages: [],
+						members: [
+							{name: "Josh Heinrichs", balance: 500},
+							{name: "Ken Slawinksi", balance: 20},
+							{name: "William van der Kamp", balance: -500},
+							{name: "Jordan Lys", balance: 50},
+							{name: "Evan Closson", balance: -70}
+						],
+						messages: [
+							{name: 'Josh Heinrichs', time: '1:23 PM', message: 'hello'},
+							{name: 'Ken Slawinski', time: '1:24 PM', message: 'hi'},
+							{name: 'William van der Kamp', time: '1:25 PM', message: 'hey'},
+							{name: 'Jordan Lys', time: '1:25 PM', message: 'whats up'},
+							{name: 'Evan Closson', time: '1:25 PM', message: 'hows it going'},
+							{name: 'William van der Kamp', time: '1:26 PM',
+								purchase: {title: "Marshmallows", cost: 100,
+									split: [
+										{name: 'Josh Heinrichs', cost: 20},
+										{name: 'Ken Slawinski', cost: 20},
+										{name: 'William van der Kamp', cost : 20},
+										{name: 'Jordan Lys', cost: 20},
+										{name: 'Evan Closson', cost: 20}
+									]
+								}
+							},
+							{name: 'William van der Kamp', time: '1:26 PM',
+								payment: {
+									from: "William van der Kamp", 
+									to: "Josh Heinrichs", 
+									cost: 100
+								}
+							}
+						]
 					}
 				]
 			},
-			contact: Object,
+			contact: {
+				type: Object,
+				value: null,
+			},
+			infoSelection: String,
+		},
+
+		ready: function() {
+			this.$.contact_drawer_panel.openDrawer();
 		},
 
 		peopleOpen: function() {
@@ -297,13 +396,12 @@
 			}
 		},
 
-		openDialog: function(event) {
+		deselect: function(event) {
 			event.target.selected = -1;
-			this.$.dialog.open();
 		},
 
 		contactSelect: function(event) {
-			console.log(event);
+			this.$.contact_drawer_panel.closeDrawer();
 			this.contact = event.detail.contact;
 			var i = this.contacts.indexOf(this.contact);
 			if (i > 0) {
@@ -312,7 +410,46 @@
 				i = this.groups.indexOf(this.contact);
 				this.set('groups.'+i+'.unread', 0);
 			}	
-		}
+		},
 
+		openAddContactDialog: function() {
+			this.$.add_contact_dialog.open();
+		},
+
+		addContact: function(event) {
+			console.log(event.detail.contact);
+			this.push('contacts', event.detail.contact);
+			this.contact = event.detail.contact;
+		},
+
+		openAddGroupDialog: function() {
+			this.$.add_group_dialog.open();
+		},
+
+		addGroup: function(event) {
+			console.log(event.detail.group);
+			this.push('groups', event.detail.group);
+			this.contact = event.detail.group;
+		},
+
+		openAddPaymentDialog: function() {
+			this.$.add_payment_dialog.open();
+		},
+
+		addPayment: function(event) {
+			console.log("TODO");
+		},
+
+		openAddPurchaseDialog: function() {
+			this.$.add_purchase_dialog.open();
+		},
+
+		addPurchase: function(event) {
+			console.log("TODO");
+		},
+
+		isTransaction: function(message) {
+			return message.purchase || message.payment;
+		}
 	});
 </script>
