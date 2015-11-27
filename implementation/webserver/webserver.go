@@ -8,10 +8,6 @@ import (
 	"net/http"
 )
 
-const (
-	DOMAIN_NAME = "https://localhost:8080"
-)
-
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,

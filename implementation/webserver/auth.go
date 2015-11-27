@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	SESSION_DURATION_MINUTES    int    = 30
-	USER_KEY                    string = "goth_user"
-	AUTHCONFIG_FILE_PATH               = ".authconfig.json"
-	AUTH_CALLBACK_RELATIVE_PATH        = "/oauth2callback"
+	sessionDurationMinutes   int    = 30
+	userKey                  string = "goth_user"
+	authConfigFilePath              = ".authconfig.json"
+	authCallbackRelativePath        = "/oauth2callback"
 )
 
 func marshalUser(user *goth.User) (string, error) {
@@ -39,7 +39,7 @@ func unmarshalUser(data string) (*goth.User, error) {
 }
 
 func getUserFromSession(s *sessions.Session) (*goth.User, error) {
-	val := s.Values[USER_KEY]
+	val := s.Values[userKey]
 	if val == nil {
 		return nil, errors.New("user not stored in session")
 	}
@@ -55,7 +55,7 @@ func putUserInSession(user *goth.User, s *sessions.Session) error {
 	if err != nil {
 		return err
 	}
-	s.Values[USER_KEY] = userString
+	s.Values[userKey] = userString
 	return nil
 }
 
@@ -199,7 +199,9 @@ type authConfig struct {
 	Gplus          genericConfig `json:"gplus"`
 	Facebook       genericConfig `json:"facebook"`
 	Session_secret string        `json:"session_secret"`
+	Domain_name    string        `json:"domain_name"`
 }
+
 type genericConfig struct {
 	Client_id     string `json:"client_id"`
 	Client_secret string `json:"client_secret"`
@@ -207,9 +209,9 @@ type genericConfig struct {
 
 func initAuth(router *pat.Router) {
 
-	authConfigBytes, err := ioutil.ReadFile(AUTHCONFIG_FILE_PATH)
+	authConfigBytes, err := ioutil.ReadFile(authConfigFilePath)
 	if err != nil {
-		log.Fatalln("unable to read file ", AUTHCONFIG_FILE_PATH,
+		log.Fatalln("unable to read file ", authConfigFilePath,
 			":", err)
 	}
 
@@ -219,10 +221,11 @@ func initAuth(router *pat.Router) {
 		log.Fatalln("unable to unmarshal config file:", err)
 	}
 
+	domainName := config.Domain_name
 	//get all the providers set up.
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
-	AUTH_CALLBACK_PATH := fmt.Sprint(DOMAIN_NAME, AUTH_CALLBACK_RELATIVE_PATH)
+	AUTH_CALLBACK_PATH := fmt.Sprint(domainName, authCallbackRelativePath)
 	goth.UseProviders(
 		gplus.New(config.Gplus.Client_id, config.Gplus.Client_secret,
 			fmt.Sprint(AUTH_CALLBACK_PATH, "/gplus")),
@@ -234,12 +237,12 @@ func initAuth(router *pat.Router) {
 	gothic.Store = sessions.NewCookieStore([]byte(config.Session_secret))
 	gothic.Store.(*sessions.CookieStore).Options = &sessions.Options{
 		Path:     "/",
-		MaxAge:   60 * SESSION_DURATION_MINUTES,
+		MaxAge:   60 * sessionDurationMinutes,
 		HttpOnly: true,
 		Secure:   true,
 	}
 
-	router.Get(fmt.Sprint(AUTH_CALLBACK_RELATIVE_PATH, "/{provider}"),
+	router.Get(fmt.Sprint(authCallbackRelativePath, "/{provider}"),
 		authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
 	router.Delete("/logout", logoutHandler)

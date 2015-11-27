@@ -13,11 +13,12 @@ in the `app/` directory to get all of the website dependencies. After that, you 
 `sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.key -out cert.crt`
 
 The program expects to find a config file containing the session secret, and all client
-ids and client secrets, in a specifically formatted json file called '.authconfig.json', within 'main/'. You probably need to get this from William.
+ids and client secrets, in a specifically formatted json file called '.authconfig.json', within 'main/'. You probably need to get this from William. Within that file, you should
+edit the domain_name variable to be the domain name on which you will be hosting the server.
 
 After that, run
 
 `go run main.go`
 
-in the `main/` directory, and the site will be accessible via [http://localhost:8000/](http://localhost:8000/)
+in the `main/` directory, and the site will be accessible via the domain name you specified in .authconfig.json
 
