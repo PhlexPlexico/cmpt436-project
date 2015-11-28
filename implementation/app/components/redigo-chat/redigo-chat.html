@@ -112,11 +112,22 @@
         send: function() {
             var str = this.$.input.value;
             if (str) {
-                var msg = {
+                var content = {
+                    id: 1,
                     username: this.$.username.value,
-                    message: str
+                    content: str,
+                    time: Date.now()
                 }
-                this.conn.send(JSON.stringify(msg));
+                var gid = {
+                    id: 2,
+                }
+                var feeditem = {
+                    content: content,
+                    gid: gid,
+                    type: "comment"
+                }
+                this.conn.send(JSON.stringify(gid))
+                this.conn.send(JSON.stringify(feeditem));
                 this.$.input.value = "";
             }
         },

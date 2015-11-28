@@ -1,24 +1,28 @@
+//package logic
 package main
 
 import (
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	//"strings"
 )
 
 type user struct {
-	userName       string
+	userName       bson.ObjectId
 	expected, owed int
 }
 
+// this can be deleted
 //TODO will need to work out how to divy up existing debt
-func addMember(group *[]*user, x *user) []*user {
+func AddMember(group *[]*user, x *user) []*user {
 	*group = append(*group, x)
 	return *group
 }
 
+// this can deleted
 //TODO work out how to spread the remainder of his money around
 //MaybeTODO an error if the user is not in the group.
-func removeMember(group *[]*user, x *user) []*user {
+func RemoveMember(group *[]*user, x *user) []*user {
 	t := make([]*user, len(*group)-1) // can't use the append cut trick with *s
 	t = *group
 	for i, ele := range *group {
@@ -32,7 +36,7 @@ func removeMember(group *[]*user, x *user) []*user {
 	return *group
 }
 
-func printGroup(group *[]*user) {
+func PrintGroup(group *[]*user) {
 	t := make([]*user, len(*group)-1)
 	t = *group
 	//output := []string {""}
@@ -44,7 +48,7 @@ func printGroup(group *[]*user) {
 
 // Adds a purchase for the buyer, increasing the expeced by (cost-average)
 // lowers all other group members expected by average
-func addPurchase(group *[]*user, buyer *user, cost int) []*user {
+func AddPurchase(group *[]*user, buyer *user, cost int) []*user {
 	var length int = len(*group)
 	var average int = (cost / length)
 	for _, ele := range *group {
@@ -61,7 +65,7 @@ func addPurchase(group *[]*user, buyer *user, cost int) []*user {
 // payer pays payee
 // payers expected and owed increase
 // payees expected and owed decrease
-func payMember(payer *user, payee *user, amount int) {
+func PayMember(payer *user, payee *user, amount int) {
 	payer.expected += amount
 	payer.owed += amount
 	payee.expected -= amount
@@ -69,7 +73,7 @@ func payMember(payer *user, payee *user, amount int) {
 }
 
 // take on the entirety of someone elses expected/owed
-func takeDebt(taker *user, giver *user) {
+func TakeDebt(taker *user, giver *user) {
 	taker.expected += giver.expected
 	taker.owed += giver.owed
 	giver.expected = 0
@@ -77,7 +81,7 @@ func takeDebt(taker *user, giver *user) {
 }
 
 // split the entirety of one persons finances to other members
-func splitDebt(group *[]*user, debtHolder *user) []*user {
+func SplitDebt(group *[]*user, debtHolder *user) []*user {
 	var length int = (len(*group) - 1)
 	for _, ele := range *group {
 		if *ele != *debtHolder {
@@ -103,44 +107,44 @@ func main() {
 	//Group = append(Group, K, W, J, E)
 	//fmt.Println("Group = ", Group)
 	fmt.Println("Group Creation")
-	printGroup(&Group)
+	PrintGroup(&Group)
 
 	fmt.Println("Group Add")
-	addMember(&Group, &X)
-	printGroup(&Group)
+	AddMember(&Group, &X)
+	PrintGroup(&Group)
 
 	fmt.Println("Group Remove")
-	removeMember(&Group, &X)
-	printGroup(&Group) //fmt.Println("Removed Group = ", Group)
+	RemoveMember(&Group, &X)
+	PrintGroup(&Group) //fmt.Println("Removed Group = ", Group)
 
 	//fmt.Println("Group Modify Values Directly")
 	//Group[1].expected = 10
 	//E.expected = 15
-	//printGroup(&Group)
+	//PrintGroup(&Group)
 
 	fmt.Println("Add purchase for K")
-	addPurchase(&Group, &K, 90)
-	printGroup(&Group)
+	AddPurchase(&Group, &K, 90)
+	PrintGroup(&Group)
 
 	fmt.Println("W pay K 22")
-	payMember(&W, &K, 22)
-	printGroup(&Group)
+	PayMember(&W, &K, 22)
+	PrintGroup(&Group)
 
 	fmt.Println("E takes Josh's debt over")
-	takeDebt(&E, &J)
-	printGroup(&Group)
+	TakeDebt(&E, &J)
+	PrintGroup(&Group)
 
 	fmt.Println("Split Ken's debt")
-	splitDebt(&Group, &K)
-	printGroup(&Group)
+	SplitDebt(&Group, &K)
+	PrintGroup(&Group)
 
 	// balance check
 	fmt.Println("Evan Pay Will 15")
-	payMember(&E, &W, 15)
-	printGroup(&Group)
+	PayMember(&E, &W, 15)
+	PrintGroup(&Group)
 
 	fmt.Println("Evan Pay Josh 14")
-	payMember(&E, &J, 14)
-	printGroup(&Group)
+	PayMember(&E, &J, 14)
+	PrintGroup(&Group)
 
 }
