@@ -136,13 +136,14 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession(r)
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = putUserInSession(&user, session)
 	if err != nil {
-		http.Error(w, "unable to store user in session", 500)
+		http.Error(w, "unable to store user in session",
+			http.StatusInternalServerError)
 		endSession(session, w, r)
 		return
 	}
@@ -155,12 +156,13 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving logout")
 	session, err := getSession(r)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Println(err.Error())
-		http.Error(w, err.Error(), 500)
 		return
 	}
 
 	endSession(session, w, r)
+	serveNewLogin(w, r)
 }
 
 // func handleError(err error, s *sessions.Session,
@@ -168,7 +170,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 // 	if s == nil {
 // 		s, err2 = getSession(r)
 // 		if err2 != nil {
-// 			http.Error(w, err2.Error(), 500)
+// 			http.Error(w, err2.Error(), http.StatusInternalServerError)
 // 			log.Println(err2.Error())
 // 			return
 // 		}

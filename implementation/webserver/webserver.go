@@ -29,21 +29,6 @@ func redirectHandler(conf *config) func(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-type receiver struct {
-	err error
-}
-
-func newReceiver() *receiver {
-	return &receiver{
-		err: nil,
-	}
-}
-
-func (r *receiver) receive(ws *websocket.Conn, v interface{}) bool {
-	r.err = ws.ReadJSON(v)
-	return r.err == nil
-}
-
 // handles websocket requests from the client.
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	session := validateSessionAndLogInIfNecessary(w, r)
@@ -65,12 +50,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err.Error())
 		return
 	}
 
 	serveWs(ws)
 }
 
+//To be used for any REST calls.
 func writeJson(w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -90,8 +77,6 @@ type config struct {
 }
 
 func Serve() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	configBytes, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		log.Fatalln("unable to read file ", configFilePath,
@@ -111,6 +96,8 @@ func Serve() {
 	//the handler for the website root.
 	initAuth(router, conf)
 	http.Handle("/", router)
+	//This static final can only be reached via explicit redirect: typing it into
+	//the address bar just makes the router handle it.
 	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
