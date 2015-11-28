@@ -24,7 +24,8 @@ var router *pat.Router
 
 func redirectHandler(conf *config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://"+conf.Website_url+conf.Https_portNum+r.RequestURI,
+		log.Print("https://" + conf.WebsiteUrl + conf.HttpsPortNum + r.RequestURI)
+		http.Redirect(w, r, "https://"+conf.WebsiteUrl+conf.HttpsPortNum+r.RequestURI,
 			http.StatusMovedPermanently)
 	}
 }
@@ -71,9 +72,9 @@ type config struct {
 	Gplus          genericAuthConfig `json:"gplus"`
 	Facebook       genericAuthConfig `json:"facebook"`
 	Session_secret string            `json:"session_secret"`
-	Website_url    string            `json:"website_url"`
-	Https_portNum  string            `json:"https_portnum"`
-	Http_portNum   string            `json:"http_portnum"`
+	WebsiteUrl     string            `json:"website_url"`
+	HttpsPortNum   string            `json:"https_portnum"`
+	HttpPortNum    string            `json:"http_portnum"`
 }
 
 func Serve() {
@@ -101,8 +102,13 @@ func Serve() {
 	http.Handle("/app/", http.StripPrefix("/app/",
 		http.FileServer(http.Dir("app/"))))
 
-	go log.Fatal(http.ListenAndServeTLS(conf.Https_portNum,
-		"cert.crt", "key.key", nil))
-	log.Fatal(http.ListenAndServe(conf.Http_portNum,
+	log.Print("https://" + conf.WebsiteUrl + conf.HttpsPortNum)
+
+	go func() {
+		log.Fatal(http.ListenAndServeTLS(conf.HttpsPortNum,
+			"cert.crt", "key.key", nil))
+	}()
+
+	log.Fatal(http.ListenAndServe(conf.HttpPortNum,
 		http.HandlerFunc(redirectHandler(conf))))
 }

@@ -195,19 +195,19 @@ var indexTemplate = `
 `
 
 type genericAuthConfig struct {
-	Client_id     string `json:"client_id"`
-	Client_secret string `json:"client_secret"`
+	ClientId     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
 }
 
 func initAuth(router *pat.Router, conf *config) {
 	//get all the providers set up.
 	//I need "profile", "email", scopes. gplus and facebook provide these by
 	//default.
-	AUTH_CALLBACK_PATH := "https://" + conf.Website_url + conf.Https_portNum + authCallbackRelativePath
+	AUTH_CALLBACK_PATH := "https://" + conf.WebsiteUrl + conf.HttpsPortNum + authCallbackRelativePath
 	goth.UseProviders(
-		gplus.New(conf.Gplus.Client_id, conf.Gplus.Client_secret,
+		gplus.New(conf.Gplus.ClientId, conf.Gplus.ClientSecret,
 			AUTH_CALLBACK_PATH+"/gplus"),
-		facebook.New(conf.Facebook.Client_id, conf.Facebook.Client_secret,
+		facebook.New(conf.Facebook.ClientId, conf.Facebook.ClientSecret,
 			AUTH_CALLBACK_PATH+"/facebook"),
 	)
 
