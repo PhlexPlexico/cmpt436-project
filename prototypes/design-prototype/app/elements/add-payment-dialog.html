@@ -65,16 +65,15 @@
 		submit: function() {
 			console.log("submitted payment");
 
-			this.push('contact.messages',
-				{
-					user: this.user,
-					time: "1:27 PM",
-					payment: {
-						from: this.contact.members[this.$.from.selected].user.name,
-						to: this.contact.members[this.$.to.selected].user.name,
-						cost: this.$.amount.value
-					}
-				});
+			this.push('contact.messages', {
+				user: this.user,
+				time: "1:27 PM",
+				payment: {
+					from: this.contact.members[this.$.from.selected].user.name,
+					to: this.contact.members[this.$.to.selected].user.name,
+					cost: this.$.amount.value
+				}
+			});
 		}
 	});
 </script>

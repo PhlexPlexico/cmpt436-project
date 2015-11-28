@@ -60,6 +60,8 @@
 					split: this.$.splitter.getSplit()
 				}
 			});
+			console.log(this.contact.balance);
+			this.set('contact.balance', this.contact.balance - this.$.splitter.cost);			
 		}
 	});
 </script>
