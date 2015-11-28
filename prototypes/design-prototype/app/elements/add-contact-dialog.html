@@ -1,5 +1,11 @@
 <dom-module id="add-contact-dialog">
 	<style>
+		paper-input {
+			margin: 0 25px;
+		}
+		paper-dialog {
+			width: 400px;
+		}
 	</style>
 	<template>
 		<paper-dialog id="dialog" with-backdrop>
@@ -23,17 +29,16 @@
 			user: Object,
 		},
 
-		ready: function() {
-			console.log("user ", this.user);
-		},
-
 		open: function() {
-			console.log("opened contact dialog");
+			this.clear();
 			this.$.dialog.open();
 		},
 
+		clear: function() {
+			this.$.input.value = "";
+		},
+
 		submit: function() {
-			console.log("submitted contact");
 			this.fire('add-contact', {contact: {
 				user: {name: this.$.input.value, id: 5}, //TODO
 				balance: 0,
@@ -43,7 +48,6 @@
 					{user: {name: this.$.input.value, id: 5}, balance: 0}], //TODO
 				messages: [],
 			}});
-			this.$.input.value = "";
 		}
 	});
 </script>

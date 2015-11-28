@@ -1,11 +1,42 @@
 <dom-module id="add-group-dialog">
 	<style>
+		paper-input {
+			margin: 0 25px;
+		}
+		paper-dialog {
+			width: 400px;
+			font-size: 16px;
+		}
+		paper-dropdown-menu {
+			margin: 0 25px;
+		}
+		.members {
+			margin: 0 25px;
+			margin-top: 25px;
+		}
+		paper-button {
+			font-size: 14px;
+		}
 	</style>
 	<template>
 		<paper-dialog id="dialog" with-backdrop>
 		  <h2>Add a Group</h2>
 		  <paper-dialog-scrollable>
-		    <paper-input id="input" label="Enter a name..."></paper-input>
+		    <paper-input id="input" label="Enter a group name..."></paper-input>
+		    <div class="members">
+		    	<div><b>Members:</b></div>
+			    <template is="dom-repeat" items="[[members]]">
+			    	<div>[[item.user.name]]</div>
+			    </template>
+		    </div>
+		    <paper-dropdown-menu label="Add a member...">
+				<paper-menu class="dropdown-content" id="contacts" on-iron-select="addMember">
+					<template is="dom-repeat" items="[[contacts]]">
+						<paper-item>[[item.user.name]]</paper-item>
+					</template>
+				</paper-menu>
+			</paper-dropdown-menu>
+
 		  </paper-dialog-scrollable>
 		  <div class="buttons">
 		    <paper-button dialog-dismiss>Cancel</paper-button>
@@ -24,6 +55,10 @@
 				type: Object,
 				value: null,
 			},
+			members: {
+				type: Array,
+				value: [],
+			},
 			contacts: {
 				type: Object,
 				value: null
@@ -31,8 +66,13 @@
 		},
 
 		open: function() {
-			console.log("opened group dialog");
+			this.clear();
+			this.push('members', {user: this.user, balance: 0});
 			this.$.dialog.open();
+		},
+
+		clear: function() {
+			this.members = [];
 		},
 
 		submit: function() {
@@ -41,13 +81,14 @@
 				group: {name: this.$.input.value, id: 3}, //TODO
 				balance: 0,
 				unread: 0,
-				members: [
-					{user: this.user, balance: 0},
-					{user: {name: this.$.input.value, id: 5}, balance: 0} //TODO
-				],
+				members: this.members,
 				messages: [],
 			}});
 			this.$.input.value = "";
+		},
+
+		addMember: function() {
+			this.push('members', {user: this.contacts[this.$.contacts.selected].user, balance: 0});
 		}
 	});
 </script>

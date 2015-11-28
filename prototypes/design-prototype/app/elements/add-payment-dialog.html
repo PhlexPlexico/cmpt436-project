@@ -1,23 +1,37 @@
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+
 <dom-module id="add-payment-dialog">
 	<style>
+		paper-input {
+			margin: 0 25px;
+		}
 	</style>
 	<template>
 		<paper-dialog id="dialog" with-backdrop>
-		  <h2>Add a Payment</h2>
-		  <paper-dialog-scrollable>
-		  	<div>From</div>
-		  	<paper-input id="from" label="From"></paper-input>
-		  	<div>To</div>
-		  	<paper-input id="to" label="To"></paper-input>
-		  	<div>Amount</div>
-		    <paper-input id="amount" label="Amount" value="{{cost}}" type="number">
-        		<div prefix>$</div>
-      		</paper-input>
-		  </paper-dialog-scrollable>
-		  <div class="buttons">
-		    <paper-button dialog-dismiss>Cancel</paper-button>
-		    <paper-button dialog-confirm on-tap="submit">Submit</paper-button>
-		  </div>
+			<h2>Add a Payment</h2>
+			<paper-dialog-scrollable>
+				<paper-dropdown-menu label="From">
+					<paper-menu class="dropdown-content" id="from">
+						<template is="dom-repeat" items="[[contact.members]]">
+							<paper-item>[[item.user.name]]</paper-item>
+						</template>
+					</paper-menu>
+				</paper-dropdown-menu>
+				<paper-dropdown-menu label="To">
+					<paper-menu class="dropdown-content" id="to">
+						<template is="dom-repeat" items="[[contact.members]]">
+							<paper-item>[[item.user.name]]</paper-item>
+						</template>
+					</paper-menu>
+				</paper-dropdown-menu>
+				<paper-input id="amount" label="Amount" value="{{cost}}" type="number">
+					<div prefix>$</div>
+				</paper-input>
+			</paper-dialog-scrollable>
+			<div class="buttons">
+				<paper-button dialog-dismiss>Cancel</paper-button>
+				<paper-button dialog-confirm on-tap="submit">Submit</paper-button>
+			</div>
 		</paper-dialog>
 	</template>
 </dom-module>
@@ -38,22 +52,29 @@
 		},
 
 		open: function() {
-			console.log("opened payment dialog");
+			this.clear();
 			this.$.dialog.open();
+		},
+
+		clear: function() {
+			this.$.from.selected = -1;
+			this.$.to.selected = -1;
+			this.$.amount.value = "";
 		},
 
 		submit: function() {
 			console.log("submitted payment");
-			this.fire('add-payment', {payment: {
-				name: this.$.input.value,
-				balance: 0,
-				unread: 0,
-				members: [
-					{name: this.user, balance: 0},
-					{name: this.$.input.value, balance: 0}],
-				messages: [],
-			}});
-			this.$.input.value = "";
+
+			this.push('contact.messages',
+				{
+					user: this.user,
+					time: "1:27 PM",
+					payment: {
+						from: this.contact.members[this.$.from.selected].user.name,
+						to: this.contact.members[this.$.to.selected].user.name,
+						cost: this.$.amount.value
+					}
+				});
 		}
 	});
 </script>
