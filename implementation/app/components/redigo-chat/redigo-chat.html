@@ -107,17 +107,17 @@
             var str = this.$.input.value;
             if (str) {
                 var content = {
-                    id: "1",
+                    id: 1,
                     username: this.$.username.value,
                     content: str,
                     time: Date.now()
                 }
                 var feeditem = {
                     content: content,
-                    gid: "1",
+                    group_id: "1",
                     type: "comment"
                 }
-                this.conn.send(JSON.stringify(gid))
+                console.log(JSON.stringify(feeditem));
                 this.conn.send(JSON.stringify(feeditem));
                 this.$.input.value = "";
             }

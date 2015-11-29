@@ -40,7 +40,7 @@ type Group struct {
 type Comment struct {
 	//William changed this to int for testing purposes.
 	ID       int    `json:"id" bson:"_id, omitempty"`
-	UserName string `json:"userName"`
+	UserName string `json:"username"`
 	Content  string `json:"content"`
 	//William changed this from time.Time to int for testing purposes.
 	Timestamp int64 `json:"time"`

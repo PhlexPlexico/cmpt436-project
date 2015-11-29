@@ -104,8 +104,6 @@ func (c *connection) readPump() {
 		// 	log.Println("bad message has both groupId and contactsId")
 		// 	break
 		// }
-		log.Println()
-		log.Println(message)
 		fm.incoming <- message
 	}
 }

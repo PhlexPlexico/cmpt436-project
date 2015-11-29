@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	FEEDITEM_TYPE_COMMENT      string = "comment"
-	FEEDITEM_TYPE_NOTIFICATION string = "notification"
-	FEEDITEM_TYPE_PURCHASE     string = "purchase"
-	FEEDITEM_TYPE_PAYMENT      string = "payment"
+	feedItemTypeComment      string = "comment"
+	feedItemTypeNotification string = "notification"
+	feedItemTypePurchase     string = "purchase"
+	feedItemTypePayment      string = "payment"
 )
 
 type FeedItem struct {
 	// The actual feed item to be unmarshaled, based upon the type.
-	Content *json.RawMessage `json:"content"`
+	Content json.RawMessage `json:"content"`
 	// Either a non-empty group id or contact id will be provided, but not both.
 	// These are just string representations of bson.ObjectIds.
 	GroupId string `json:"group_id"`
@@ -26,14 +26,14 @@ type FeedItem struct {
 
 func (fi *FeedItem) String() string {
 
-	return fmt.Sprint(fi.GroupId, ":", fi.Type, ":", string(*fi.Content))
+	return fmt.Sprint(fi.GroupId, ":", fi.Type, ":", string(fi.Content))
 }
 
 func HandleFeedItem(fi *FeedItem) error {
 	switch fi.Type {
-	case FEEDITEM_TYPE_COMMENT:
+	case feedItemTypeComment:
 		comment := &Comment{}
-		err := json.Unmarshal(*fi.Content, comment)
+		err := json.Unmarshal(fi.Content, comment)
 		if err != nil {
 			return err
 		}
@@ -41,16 +41,14 @@ func HandleFeedItem(fi *FeedItem) error {
 		 * doing DB insertions, etc. There is no need to rebroadcast the
 		 * new feed item, as the webserver handles that automatically.
 		 */
-		return nil
-	case FEEDITEM_TYPE_NOTIFICATION:
-		return nil
-	case FEEDITEM_TYPE_PAYMENT:
-		return nil
-	case FEEDITEM_TYPE_PURCHASE:
-		return nil
+	case feedItemTypeNotification:
+	case feedItemTypePayment:
+	case feedItemTypePurchase:
 	default:
 		return errors.New(fmt.Sprint("invalid FeedItem type: ", fi.Type))
 	}
+
+	return nil
 }
 
 /**

@@ -93,7 +93,7 @@ func (fm *feedsManager) joinHandler(client *connection) {
 	for _, group := range groups {
 		//register the client for notifications from each of its groups.
 		fm.addClientToFeed(client, string(group.ID), fm.clientsPerGroup)
-
+		log.Println(group.ID)
 		users, err := db.GetUsers(group.UserIDs)
 		if err != nil {
 			log.Println(err)
@@ -182,6 +182,7 @@ func (fm *feedsManager) broadcast(message *db.FeedItem) {
 	}
 	// if message.Gid != "" {
 	for _, client := range fm.clientsPerGroup[message.GroupId] {
+		log.Println()
 		client.outgoing <- wsMessage
 	}
 	// } else {
@@ -189,8 +190,7 @@ func (fm *feedsManager) broadcast(message *db.FeedItem) {
 	// 		client.outgoing <- wsMessage
 	// 	}
 	// }
-
-	log.Println("broadcasted message")
+	log.Println("broadcasted message to group " + message.GroupId)
 }
 
 /*
