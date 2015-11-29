@@ -1,0 +1,67 @@
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="cost-splitter.html">
+
+<dom-module id="add-purchase-dialog">
+	<style>
+		cost-splitter {
+			margin: 0 25px;
+		}
+		paper-input {
+			margin: 0 25px;
+		}
+	</style>
+	<template>
+		<paper-dialog id="dialog" with-backdrop>
+			<h2>Add a Payment</h2>
+			<paper-dialog-scrollable>
+				<paper-input id="title" label="title"></paper-input>
+				<cost-splitter id="splitter"
+					people="[[contact.members]]">
+				</cost-splitter>
+			</paper-dialog-scrollable>
+			<div class="buttons">
+				<paper-button dialog-dismiss>Cancel</paper-button>
+				<paper-button dialog-confirm on-tap="submit">Submit</paper-button>
+			</div>
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "add-purchase-dialog",
+
+		properties: {
+			user: {
+				type: Object,
+				value: null,
+			},
+			contact: {
+				type: Object,
+				value: null
+			}
+		},
+
+		open: function() {
+			this.clear();
+			this.$.dialog.open();
+		},
+
+		clear: function() {
+		},
+
+		submit: function() {
+			this.push('contact.messages', {
+				user: this.user,
+				time: "1:27 PM",
+				purchase: {
+					title: this.$.title.value,
+					cost: this.$.splitter.cost,
+					split: this.$.splitter.getSplit()
+				}
+			});
+			console.log(this.contact.balance);
+			this.set('contact.balance', this.contact.balance - this.$.splitter.cost);			
+		}
+	});
+</script>
