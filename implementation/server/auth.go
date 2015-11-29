@@ -2,9 +2,10 @@
  * Uses goth/gothic for authentication, and also makes use of the session that
  * gothic uses (so that there are not two sessions being used.)
  */
-package webserver
+package server
 
 import (
+	"../db"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,22 +22,29 @@ import (
 
 const (
 	sessionDurationMinutes   int    = 30
-	userKey                  string = "goth_user"
+	userKey                  string = "key_user"
 	authCallbackRelativePath        = "/oauth2callback"
 )
 
-func marshalUser(user *goth.User) (string, error) {
+type authUser struct {
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Id        string `json:"id"` //This is the bson.ObjectId from the db.
+	AvatarUrl string `json:"avatar_url"`
+}
+
+func marshalUser(user *authUser) (string, error) {
 	b, err := json.Marshal(user)
 	return string(b), err
 }
 
-func unmarshalUser(data string) (*goth.User, error) {
-	user := &goth.User{}
+func unmarshalUser(data string) (*authUser, error) {
+	user := &authUser{}
 	err := json.Unmarshal([]byte(data), user)
 	return user, err
 }
 
-func getUserFromSession(s *sessions.Session) (*goth.User, error) {
+func getUserFromSession(s *sessions.Session) (*authUser, error) {
 	val := s.Values[userKey]
 	if val == nil {
 		return nil, errors.New("user not stored in session")
@@ -48,7 +56,7 @@ func getUserFromSession(s *sessions.Session) (*goth.User, error) {
 /*
  * Does not save the session.
  */
-func putUserInSession(user *goth.User, s *sessions.Session) error {
+func putUserInSession(user *authUser, s *sessions.Session) error {
 	userString, err := marshalUser(user)
 	if err != nil {
 		return err
@@ -58,13 +66,13 @@ func putUserInSession(user *goth.User, s *sessions.Session) error {
 }
 
 /**
- * Validate the session for this request. If it is invalid, serve a new login.
- * @return the session, if valid, or nil if serving a new login
+ * Validate the user for this request. If it is invalid, serve a new login.
+ * @return the user, if valid, or nil if serving a new login
  */
-func validateSessionAndLogInIfNecessary(
-	w http.ResponseWriter, r *http.Request) *sessions.Session {
-	session, err := validateSession(w, r)
-	if session == nil {
+func validateUserAndLogInIfNecessary(
+	w http.ResponseWriter, r *http.Request) *authUser {
+	user, err := validateUser(w, r)
+	if user == nil {
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -72,7 +80,7 @@ func validateSessionAndLogInIfNecessary(
 		return nil
 	}
 
-	return session
+	return user
 }
 
 /**
@@ -80,35 +88,34 @@ func validateSessionAndLogInIfNecessary(
  * (and thus the session is unauthorized). An error is also returned, if one
  * exists.
  */
-func validateSession(
-	w http.ResponseWriter, r *http.Request) (*sessions.Session, error) {
+func validateUser(
+	w http.ResponseWriter, r *http.Request) (*authUser, error) {
+	log.Println("validating user...")
 	session, err := getSession(r)
-	log.Println("validating session...")
 
 	if err != nil {
-		log.Println("unable to get session.")
-		return nil, err
+		return nil, errors.New("unable to get user session: " + err.Error())
 	}
 
 	if session.IsNew {
 		return nil, nil
 	}
 
-	_, err = getUserFromSession(session)
+	user, err := getUserFromSession(session)
 	if err != nil {
-		log.Println("unable to unmarshal user from session.")
-		return nil, err
+		return nil, errors.New("unable to unmarshal user from session: " +
+			err.Error())
 	}
 
-	return session, nil
+	return user, nil
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
-	session := validateSessionAndLogInIfNecessary(w, r)
-	if session != nil {
-		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
+		serveIndexTemplate(w, user)
+		// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 	}
 }
 
@@ -121,6 +128,15 @@ func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t.Execute(w, nil)
+}
+
+func serveIndexTemplate(w http.ResponseWriter, user *authUser) {
+	indexTemplate := template.Must(template.ParseFiles("app/index.html"))
+	err := indexTemplate.Execute(w, user)
+	if err != nil {
+		log.Println("error rendering template:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +156,21 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = putUserInSession(&user, session)
+	userId, err := db.GetUserIdString(user.Email)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newAuthUser := &authUser{
+		Name:      user.Name,
+		Email:     user.Email,
+		AvatarUrl: user.AvatarURL,
+		Id:        userId,
+	}
+
+	err = putUserInSession(newAuthUser, session)
 	if err != nil {
 		http.Error(w, "unable to store user in session",
 			http.StatusInternalServerError)
@@ -149,7 +179,9 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.Save(r, w)
-	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+
+	serveIndexTemplate(w, newAuthUser)
+	// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -164,20 +196,6 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	endSession(session, w, r)
 	serveNewLogin(w, r)
 }
-
-// func handleError(err error, s *sessions.Session,
-// 	w http.ResponseWriter, r *http.Request) {
-// 	if s == nil {
-// 		s, err2 = getSession(r)
-// 		if err2 != nil {
-// 			http.Error(w, err2.Error(), http.StatusInternalServerError)
-// 			log.Println(err2.Error())
-// 			return
-// 		}
-// 	}
-
-// 	endSession(s, w, r)
-// }
 
 func endSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 	s.Options = &sessions.Options{MaxAge: -1}
@@ -222,6 +240,6 @@ func initAuth(router *pat.Router, conf *config) {
 
 	router.Get(authCallbackRelativePath+"/{provider}", authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
-	router.Delete("/logout", logoutHandler)
+	router.Post("/logout", logoutHandler)
 	router.Get("/", authHandler)
 }

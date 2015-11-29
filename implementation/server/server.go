@@ -2,307 +2,99 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-	"testing"
-	"time"
+	"github.com/gorilla/pat"
+	"github.com/gorilla/websocket"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
 
 const (
-	FEEDITEM_TYPE_COMMENT      string = "comment"
-	FEEDITEM_TYPE_NOTIFICATION string = "notification"
-	FEEDITEM_TYPE_PURCHASE     string = "purchase"
-	FEEDITEM_TYPE_PAYMENT      string = "payment"
+	configFilePath = ".config.json"
 )
 
-/* This will likely change to a different type. */
-type GroupId struct {
-	Id int `json:"id"`
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	//We shouldn't need a CheckOrigin function, because at this point the session is
+	//already validated.
 }
 
-type FeedItem struct {
-	/* The actual feed item to be unmarshaled, based upon the type. */
-	Content json.RawMessage `json:"content"`
-	GId     GroupId         `json:"gid"`
-	Type    string          `json:"type"`
-}
+var router *pat.Router
 
-type User struct {
-	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	Name       string        `json:"name"`
-	Phone      string        `json:"phone"`
-	Email      string        `json:"email"`
-	IsRealUser bool          `json:"isRealUser"`
-	Groups     []Group       `json:"groups" bson:"groups"`
-	Contacts   []Contact     `json:"contacts" bson:"contacts"`
-	Timestamp  time.Time     `json:"time"`
-}
-
-type Contact struct {
-	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	Name       string        `json:"name"`
-	Phone      string        `json:"phone"`
-	Email      string        `json:"email"`
-	IsRealUser bool          `json:"isRealUser`
-	Timestamp  time.Time     `json:"time"`
-}
-
-type Group struct {
-	ID        bson.ObjectId   `json:"id" bson:"_id"`
-	GroupName string          `json:"groupName"`
-	UserIDs   []bson.ObjectId `json:"users"`
-	Expected  []int           `json:"expected"`
-	Actual    []int           `json:"actual"`
-}
-
-type Comment struct {
-	//William changed this to int for testing purposes.
-	ID       int    `json:"id" bson:"_id, omitempty"`
-	UserName string `json:"userName"`
-	Content  string `json:"content"`
-	//William changed this from time.Time to int for testing purposes.
-	Timestamp int64 `json:"time"`
-}
-
-type Payment struct {
-	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Payer         string        `json:"payer"`
-	Payee         string        `json:"payee"`
-	AmountInCents int           `json:"amountInCents"`
-	Timestamp     time.Time     `json:"time"`
-}
-
-type Purchase struct {
-	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Payer         string        `json:"payer"`
-	AmountInCents int           `json:"amountInCents"`
-	Timestamp     time.Time     `json:"time"`
-}
-
-type Notification struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Subject   string        `json:"subject"`
-	Content   string        `json:"content"`
-	Timestamp time.Time     `json:"time"`
-}
-
-var (
-	IsDrop     = true
-	Session    *mgo.Session
-	Collection *mgo.Database
-	err        error
-)
-
-func (fi *FeedItem) String() string {
-	return fmt.Sprint(fi.GId, ":", fi.Type, ":", string(fi.Content))
-}
-
-func HandleFeedItem(fi *FeedItem) error {
-	switch fi.Type {
-	case FEEDITEM_TYPE_COMMENT:
-		comment := &Comment{}
-		err := json.Unmarshal(fi.Content, comment)
-		if err != nil {
-			return err
-		}
-		/* handler code here, verifying the contents, and
-		 * doing DB insertions, etc. There is no need to rebroadcast the
-		 * new feed item, as the webserver handles that automatically.
-		 */
-		return nil
-	case FEEDITEM_TYPE_NOTIFICATION:
-		return nil
-	case FEEDITEM_TYPE_PAYMENT:
-		return nil
-	case FEEDITEM_TYPE_PURCHASE:
-		return nil
-	default:
-		return errors.New(fmt.Sprint("invalid FeedItem type: ", fi.Type))
+func redirectHandler(conf *config) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Print("https://" + conf.WebsiteUrl + conf.HttpsPortNum + r.RequestURI)
+		http.Redirect(w, r, "https://"+conf.WebsiteUrl+conf.HttpsPortNum+r.RequestURI,
+			http.StatusMovedPermanently)
 	}
 }
 
-func ThisPanic(err error) {
+// handles websocket requests from the client.
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	user := validateUserAndLogInIfNecessary(w, r)
+	if user == nil {
+		return
+	}
+
+	log.Println("opening websocket")
+
+	ws, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err.Error())
+		return
 	}
+
+	serveWs(ws, user.Id)
 }
 
-func ConnectToDB() {
-
-	Session, err = mgo.Dial("127.0.0.1")
-	ThisPanic(err)
-	Collection = Session.DB("")
-
+//These will be marshaled directly from json
+type config struct {
+	Gplus          genericAuthConfig `json:"gplus"`
+	Facebook       genericAuthConfig `json:"facebook"`
+	Session_secret string            `json:"session_secret"`
+	WebsiteUrl     string            `json:"website_url"`
+	HttpsPortNum   string            `json:"https_portnum"`
+	HttpPortNum    string            `json:"http_portnum"`
+	RestPortNum    string            `json:"rest_portnum"`
 }
 
-func Init() *mgo.Collection {
-
-	ConnectToDB()
-	ThisPanic(err)
-
-	defer Session.Close()
-
-	Session.SetMode(mgo.Monotonic, true)
-
-	// Drop Database
-	if IsDrop {
-		err = Session.DB("test").DropDatabase()
-		ThisPanic(err)
-
-	}
-	c := Session.DB("test").C("User")
-
-	index := mgo.Index{
-		Key:        []string{"name", "phone"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
+func Serve() {
+	configBytes, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		log.Fatalln("unable to read file ", configFilePath,
+			":", err)
 	}
 
-	err = c.EnsureIndex(index)
-
-	ThisPanic(err)
-	return c
-}
-
-//func AddUser(name string, email string, phone string, isRealUser bool) {
-//	c := Session.DB("test").C("User")
-//	err = c.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
-//{}
-
-// func FindUserByID(id bson.ObjectId)
-
-// func GetIDbyEmail(email string)
-
-// func AddGroup(groupName string, id bson.ObjectId)
-
-// func FindGroup(id bson.ObjectId) g *Group
-
-// func AddMemberToGroupByID(server.GroupId bson.ObjectId, userId bson.ObjectId )
-
-// func GetGroupChanges(g Group)
-
-// func RemoveMemberFromGroup(server.GroupId bson.ObjectId, userId bson.ObjectId )
-
-// func DeleteGroup(id bson.ObjectId) b bool
-
-func TestServer(t *testing.T) {
-
-	ConnectToDB()
-	ThisPanic(err)
-
-	defer Session.Close()
-
-	Session.SetMode(mgo.Monotonic, true)
-
-	// Drop Database
-	if IsDrop {
-		err = Session.DB("test").DropDatabase()
-		ThisPanic(err)
-
+	conf := &config{}
+	err = json.Unmarshal(configBytes, conf)
+	if err != nil {
+		log.Fatalln("unable to unmarshal config file:", err)
 	}
-	c := Session.DB("test").C("User")
+	fm = NewFeedsManager()
+	router = pat.New()
+	router.Get("/ws", wsHandler)
 
-	index := mgo.Index{
-		Key:        []string{"name", "phone"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
-	}
+	//Serve all the rest api calls.
+	go serveRestApi(conf)
 
-	err = c.EnsureIndex(index)
+	//This has to be the last thing called with the router, because it sets
+	//the handler for the website root.
+	initAuth(router, conf)
+	http.Handle("/", router)
+	//This static final can only be reached via explicit redirect: typing it into
+	//the address bar just makes the router handle it.
+	http.Handle("/app/", http.StripPrefix("/app/",
+		http.FileServer(http.Dir("app/"))))
 
-	ThisPanic(err)
+	log.Print("https://" + conf.WebsiteUrl + conf.HttpsPortNum)
 
-	err = c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-	err = c.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
+	go func() {
+		log.Fatal(http.ListenAndServeTLS(conf.HttpsPortNum,
+			"cert.crt", "key.key", nil))
+	}()
 
-	c = Session.DB("test").C("Contact")
-	err = c.Insert(&Contact{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-
-	result := Contact{}
-	err = c.Find(bson.M{"name": "Ale"}).One(&result)
-	ThisPanic(err)
-
-	fmt.Println("\n")
-	fmt.Println(result)
-	fmt.Println("\n")
-
-	findJ := User{}
-	c = Session.DB("test").C("User")
-	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
-	fmt.Println(findJ)
-	ThisPanic(err)
-
-	fmt.Println("\nHexID of JRock\n")
-	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\nResult Object\n")
-	fmt.Println(result)
-
-	query := bson.M{"_id": bson.ObjectId(findJ.ID)}
-	fmt.Println("\nQuery\n")
-	fmt.Println(query)
-	change := bson.M{"$push": bson.M{"contacts": result}}
-	//change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
-
-	fmt.Println("\nUpdate Params\n")
-	fmt.Println(change)
-	err = c.Update(query, change)
-	ThisPanic(err)
-
-	findJ = User{}
-	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	ThisPanic(err)
-
-	fmt.Println("\nContacts of JRock\n")
-	fmt.Println(findJ.Contacts[0])
-
-	c = Session.DB("test").C("Contact")
-	err = c.Insert(&Contact{Name: "Eclo", Phone: "+306", IsRealUser: true, Email: "eclo@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-	result = Contact{}
-	err = c.Find(bson.M{"name": "Eclo"}).One(&result)
-
-	c = Session.DB("test").C("User")
-	/*ADD ANOTHER CONTACT*/
-	findJ = User{}
-	c = Session.DB("test").C("User")
-	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
-	fmt.Println(findJ)
-
-	ThisPanic(err)
-
-	fmt.Println("\nHexID of JRock\n")
-	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\nResult Object\n")
-	fmt.Println(result)
-
-	query = bson.M{"_id": bson.ObjectId(findJ.ID)}
-	fmt.Println("\nQuery\n")
-	fmt.Println(query)
-	change = bson.M{"$push": bson.M{"contacts": result}}
-	//change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
-
-	fmt.Println("\nUpdate Params\n")
-	fmt.Println(change)
-	err = c.Update(query, change)
-	ThisPanic(err)
-
-	findJ = User{}
-	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	ThisPanic(err)
-	fmt.Println(findJ)
-	array := []bson.ObjectId{findJ.ID}
-
-	c = Session.DB("test").C("Group")
-	err = c.Insert(&Group{GroupName: "test", UserIDs: array})
-	ThisPanic(err)
-
+	log.Fatal(http.ListenAndServe(conf.HttpPortNum,
+		http.HandlerFunc(redirectHandler(conf))))
 }

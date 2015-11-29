@@ -30,10 +30,11 @@ https://github.com/gorilla/websocket/blob/master/examples/chat/conn.go
 
 , with modifications.
 */
-package webserver
+package server
 
 import (
-	"../server"
+	"../db"
+	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
@@ -51,6 +52,11 @@ const (
 
 	// Maximum message size allowed.
 	maxMessageSize = 512
+
+	messageTypeFeedItem = "feedItem"
+	messageTypeGroups   = "groups"
+	messageTypeContacts = "contacts"
+	messageTypeGroupId  = "groupId"
 )
 
 // connection is an middleman between the websocket connection and
@@ -59,11 +65,16 @@ type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
 
-	//the server.GroupId
-	gId server.GroupId
+	//the user's unique Id.
+	userId string
 
 	// Buffered channel of outbound messages.
-	outgoing chan *server.FeedItem
+	outgoing chan *websocketOutMessage
+}
+
+type websocketOutMessage struct {
+	Content json.RawMessage `json:"content"`
+	Type    string          `json:"type"`
 }
 
 // readPump pumps messages from the websocket connection to the Feeds Manager.
@@ -83,12 +94,17 @@ func (c *connection) readPump() {
 	// })
 
 	for {
-		message := &server.FeedItem{}
+		message := &db.FeedItem{}
 		err := c.ws.ReadJSON(message)
 		if err != nil {
 			log.Println("error reading ws message: ", err)
 			break
 		}
+		// if (message.GroupId == "") == (message.ContactsId == "") {
+		// 	log.Println("bad message has both groupId and contactsId")
+		// 	break
+		// }
+
 		fm.incoming <- message
 	}
 }
@@ -101,7 +117,7 @@ func (c *connection) writeMessage(mt int, payload []byte) error {
 	return c.writeGeneric(func() error { return c.ws.WriteMessage(mt, payload) })
 }
 
-func (c *connection) writeFeedItem(msg *server.FeedItem) error {
+func (c *connection) writeWebsocketMessage(msg *websocketOutMessage) error {
 	return c.writeGeneric(func() error { return c.ws.WriteJSON(msg) })
 }
 
@@ -127,7 +143,7 @@ func (c *connection) writePump() {
 			// c.writeMessage(websocket.CloseMessage, []byte{})
 			return
 		}
-		if err := c.writeFeedItem(message); err != nil {
+		if err := c.writeWebsocketMessage(message); err != nil {
 			log.Println("error writing ws message: ", err)
 			return
 		}
@@ -141,16 +157,13 @@ func (c *connection) writePump() {
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(ws *websocket.Conn) {
-	gid := server.GroupId{}
-	err := ws.ReadJSON(&gid)
-	if err != nil {
-		ws.Close()
-		log.Println("error serving ws: ", err)
-		return
+func serveWs(ws *websocket.Conn, userId string) {
+	c := &connection{
+		outgoing: make(chan *websocketOutMessage, 256),
+		userId:   userId,
+		ws:       ws,
 	}
 
-	c := &connection{outgoing: make(chan *server.FeedItem, 256), gId: gid, ws: ws}
 	fm.join <- c
 	go c.writePump()
 	c.readPump()
