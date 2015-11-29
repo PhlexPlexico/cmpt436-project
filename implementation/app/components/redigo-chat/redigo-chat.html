@@ -89,12 +89,6 @@
             }
         },
 
-        // handleResponse: function(request) {
-        //     console.log(request.detail.response);
-
-        //     this.openSocket();
-        // },
-
         openSocket: function() {
             this.conn = new WebSocket("wss://" + window.location.host + "/ws");
             var self = this;
@@ -113,17 +107,14 @@
             var str = this.$.input.value;
             if (str) {
                 var content = {
-                    id: 1,
+                    id: "1",
                     username: this.$.username.value,
                     content: str,
                     time: Date.now()
                 }
-                var gid = {
-                    id: 2,
-                }
                 var feeditem = {
                     content: content,
-                    gid: gid,
+                    gid: "1",
                     type: "comment"
                 }
                 this.conn.send(JSON.stringify(gid))

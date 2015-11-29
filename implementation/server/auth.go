@@ -114,14 +114,15 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
 	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
-		serveIndexTemplate(w, user)
-		// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+		// TODO change this
+		// serveIndexTemplate(w, user)
+		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 	}
 }
 
 func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving new login.")
-	t, err := template.New("login").Parse(indexTemplate)
+	t, err := template.New("login").Parse(loginTemplate)
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -179,9 +180,9 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.Save(r, w)
-
-	serveIndexTemplate(w, newAuthUser)
-	// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+	//TODO change this
+	// serveIndexTemplate(w, newAuthUser)
+	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -207,7 +208,7 @@ func getSession(r *http.Request) (*sessions.Session, error) {
 }
 
 //TODO add more providers
-var indexTemplate = `
+var loginTemplate = `
 <p><a href="/auth/gplus">Log in with Google</a></p>
 <p><a href="/auth/facebook">Log in with Facebook</a></p>
 `
