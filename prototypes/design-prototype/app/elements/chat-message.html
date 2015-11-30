@@ -1,7 +1,11 @@
 <link rel="import" href="../bower_components/iron-menu-behavior/iron-menu-behavior.html">
+<link rel="import" href="../bower_components/iron-collapse/iron-collapse.html">
 
 <dom-module id="chat-message">
 	<style>
+		:host {
+			display: block;
+		}
 		.message {
 			margin-bottom: 15px;
 		}
@@ -20,6 +24,10 @@
 			margin-right: 10px;
 			border-radius: 40px;
 		}
+		.img_spacer {
+			width: 40px;
+			margin-right: 10px;
+		}
 		.header {
 			margin-bottom: 5px;
 		}
@@ -29,16 +37,85 @@
 			overflow: hidden;
 			min-width: 0;
 		}
+		.transaction {
+			margin-top: 5px;
+			background-color: #fff;
+			padding: 10px;
+			border-radius: 5px;
+			max-width: 400px;
+			border: 1px solid #ddd;
+		}
+		.more_splits {
+			margin-top: 5px;
+		}
+		.split {
+			padding: 5px 0;
+			/*border-bottom: 1px solid #DDDDDD;*/
+		}
+		/*.split:nth-child(odd) {
+			background-color: #fff;
+			border-radius: 5px;
+		}*/
 	</style>
 	<template>
 		<div class="horizontal layout">
-			<img src="../images/profile-picture.svg">
+			<template is="dom-if" if="[[!noAvatar]]">
+				<template is="dom-if" if="[[!noHeader]]">
+					<img src="../images/profile-picture.svg">
+				</template>
+				<template is="dom-if" if="[[noHeader]]">
+					<div class="img_spacer"></div>
+				</template>
+			</template>
 			<div class="message vertical layout flex">
-				<div class="no_overflow header horizontal layout">
-					<div class="no_overflow username">[[user]]</div>
-					<div class="time">[[time]]</div><br>
-				</div>
-				<content></content>
+				<template is="dom-if" if="[[!noHeader]]">
+					<div class="no_overflow header horizontal layout">
+						<div class="no_overflow username">[[message.user.name]]</div>
+						<div class="time">[[message.time]]</div><br>
+					</div>
+				</template>
+				<template is="dom-if" if="[[message.message]]">
+					<div>[[message.message]]</div>
+				</template>
+				<template is="dom-if" if="[[message.purchase]]">
+					<div>Added a purchase.</div>
+					<div class="flex transaction">
+						<div class="horizontal layout flex">
+							
+							<div class="flex"><b>[[message.purchase.title]]</b></div>
+							<div><b>[[formatCost(message.purchase.cost)]]</b></div>
+
+						</div>
+						<div class="horizontal layout flex">
+							<div class="flex">You pay</div>
+							<div>[[myCost(message.purchase.split)]]</div>
+						</div>
+						<div class="flex transaction">
+						<div on-tap="toggle" class="horizontal layout flex center">
+							<div class="flex">See Details</div>
+							<iron-icon icon="expand-more"></iron-icon>
+						</div>
+						<iron-collapse id="collapse">
+							<div class="more_splits">
+								<template is="dom-repeat" items="[[message.purchase.split]]">
+									<div class="split horizontal layout flex">
+										<div class="flex no_overflow">[[item.user.name]]</div>
+										<div>[[formatCost(item.cost)]]</div>
+									</div>
+								</template>
+							</div>
+						</iron-collapse>
+						</div>
+					</div>
+				</template>
+				<template is="dom-if" if="[[message.payment]]">
+					<div>Added a payment.</div>
+					<div class="flex transaction">
+						<b>From: </b><span>[[message.payment.from]]</span><br>
+						<b>To: </b><span>[[message.payment.to]]</span><br>
+						<b>Amount: </b><span>[[formatCost(message.payment.cost)]]</span>
+					</div>
+				</template>
 			</div>
 		</div>
 	</template>
@@ -49,9 +126,43 @@
 		is: "chat-message",
 
 		properties: {
-			user: String,
-			time: String,
-			message: String,
+			user: {
+				type: Object,
+				value: null,
+			},
+			message: {
+				type: Object,
+				value: null,
+			},
+			noHeader: {
+				type: Boolean,
+				value: false
+			},
+			noAvatar: {
+				type: Boolean,
+				value: false
+			},
 		},
+
+		formatCost: function(balance) {
+			return "$" + Math.abs(balance).toFixed(2);
+		},
+
+		myCost: function(split) {
+			if (this.user) {
+				for (var i=0; i<split.length; i++) {
+					if (split[i].user.id == this.user.id) {
+						return this.formatCost(split[i].cost);
+					}
+				}
+				return this.formatCost(0);
+			}
+		},
+
+		toggle: function(selector) {
+			this.$$('#collapse').toggle();
+		}
+
+
 	});
 </script>
