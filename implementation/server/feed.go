@@ -33,10 +33,11 @@ type uiUser struct {
 }
 
 type uiGroup struct {
-	Name     string   `json:"name"`
-	Id       string   `json:"id"`
-	Balances []int    `json:"balances"`
-	Users    []uiUser `json:"users"`
+	Name      string        `json:"name"`
+	Id        string        `json:"id"`
+	Balances  []int         `json:"balances"`
+	Users     []uiUser      `json:"users"`
+	FeedItems []db.FeedItem `json:"feed_items"`
 }
 
 func NewFeedsManager() *feedsManager {
@@ -89,31 +90,14 @@ func (fm *feedsManager) joinHandler(client *connection) {
 		return
 	}
 	uiGroups := make([]uiGroup, len(groups))
-	i := 0
-	for _, group := range groups {
+	for i, group := range groups {
 		//register the client for notifications from each of its groups.
-		fm.addClientToFeed(client, string(group.ID), fm.clientsPerGroup)
-		log.Println(group.ID)
-		users, err := db.GetUsers(group.UserIDs)
+		newUiGroup, err := createUiGroup(&group)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		uiUsers := make([]uiUser, len(users))
-		for j, user := range users {
-			uiUsers[j] = uiUser{
-				Name:      user.Name,
-				Id:        string(user.ID),
-				AvatarUrl: user.AvatarUrl,
-			}
-		}
-		uiGroups[i] = uiGroup{
-			Name:     group.GroupName,
-			Id:       string(group.ID),
-			Balances: group.Actual,
-			Users:    uiUsers,
-		}
-		i++
+		uiGroups[i] = *newUiGroup
 	}
 	//Give the client all group data up to this point.
 	uiGroupsBytes, err := json.Marshal(uiGroups)
@@ -199,13 +183,31 @@ func (fm *feedsManager) broadcast(message *db.FeedItem) {
  */
 func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	feeds map[string]map[string]*connection) {
-	wsMessage := &websocketOutMessage{
-		Content: []byte(feedId),
-		Type:    messageTypeGroupId,
-	}
 
+	var wsMessage *websocketOutMessage
 	for _, userId := range userIds {
 		if client, ok := fm.clients[userId]; ok {
+			if wsMessage == nil {
+				group, err := db.GetGroup(feedId)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				newUiGroup, err := createUiGroup(group)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				uiGroupBytes, err := json.Marshal(newUiGroup)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				wsMessage = &websocketOutMessage{
+					Content: uiGroupBytes,
+					Type:    messageTypeGroup,
+				}
+			}
 			fm.addClientToFeed(client, feedId, feeds)
 			client.outgoing <- wsMessage
 			log.Println("added client to group broadcast")
@@ -237,4 +239,30 @@ func removeClientFromFeed(client *connection, feedId string,
 			}
 		}
 	}
+}
+
+func createUiGroup(group *db.Group) (*uiGroup, error) {
+	users, err := db.GetUsers(group.UserIDs)
+	if err != nil {
+		return nil, err
+	}
+	uiUsers := make([]uiUser, len(users))
+	for j, user := range users {
+		uiUsers[j] = uiUser{
+			Name:      user.Name,
+			Id:        string(user.ID),
+			AvatarUrl: user.AvatarUrl,
+		}
+	}
+	feedItems, err := db.GetAllFeedItems(group.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &uiGroup{
+		Name:      group.GroupName,
+		Id:        string(group.ID),
+		Balances:  group.Actual,
+		Users:     uiUsers,
+		FeedItems: feedItems,
+	}, nil
 }

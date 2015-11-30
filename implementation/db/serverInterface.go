@@ -120,10 +120,28 @@ func CreateGroup(name string, userIds []string) (string, error) {
 }
 
 /*
+ * Return the group object for the given group name (or an error if it
+ * does not exist).
+ * If the error is not nil, the returned value must be ignored.
+ */
+func GetGroup(groupId string) (*Group, error) {
+	return nil, nil
+}
+
+/*
  * Add a contact with the given email to the given user's list of contacts.
  * Return the new Contact object.
  * If the error is not nil, the returned value must be ignored.
  */
-func AddContact(userId string, contactEmail string) (Contact, error) {
-	return Contact{}, nil
+func AddContact(userId string, contactEmail string) (*Contact, error) {
+	return nil, nil
+}
+
+/*
+ * Get the list of all feed items for the given group,
+ * ordered in ascending order of timestamp.
+ * If the error is not nil, the returned value must be ignored.
+ */
+func GetAllFeedItems(groupId bson.ObjectId) ([]FeedItem, error) {
+	return nil, nil
 }
