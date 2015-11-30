@@ -116,6 +116,14 @@ func (pa *Payment) Insert() error {
  * If the error is not nil, the returned value must be ignored.
  */
 func GetUserIdString(email string) (string, error) {
+	/* userID := GetIDbyEmail(email)
+	 * if userID == "" {
+	 * 	AddUser("", email, "", 0)
+	 *  userID = GetIDbyEmail(email)
+	 *  return userID
+	 * }
+	 * return userID, nil
+	 */
 	return "", nil
 }
 
