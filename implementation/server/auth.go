@@ -157,7 +157,7 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := db.GetUserIdString(user.Email)
+	userId, err := db.CreateUserIfNecessary(user.Email, user.Name, user.AvatarURL, false)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)

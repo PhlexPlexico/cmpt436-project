@@ -112,10 +112,11 @@ func (pa *Payment) Insert() error {
 
 /**
  * creates a new user if necessary, and returns a string representation of
- * the user's id.
+ * the user's id. If the user already exists, just return the userId anyway.
  * If the error is not nil, the returned value must be ignored.
  */
-func GetUserIdString(email string) (string, error) {
+func CreateUserIfNecessary(
+	email, name, avatarUrl string, isRealUser bool) (string, error) {
 	return "", nil
 }
 

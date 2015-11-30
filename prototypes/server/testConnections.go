@@ -13,8 +13,8 @@ type User struct {
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
 	IsRealUser bool          `json:"isRealUser"`
-	Groups     []Group      `json:"groups" bson:"groups"`
-	Contacts   []Contact    `json:"contacts" bson:"contacts"`
+	Groups     []Group       `json:"groups" bson:"groups"`
+	Contacts   []Contact     `json:"contacts" bson:"contacts"`
 	Timestamp  time.Time     `json:"time"`
 }
 
@@ -28,11 +28,11 @@ type Contact struct {
 }
 
 type Group struct {
-	ID        bson.ObjectId 	`json:"id" bson:"_id,omitempty"`
-	GroupName string        	`json:"groupName" bson:"groupName"`
-	UserIDs   []string			`json:"users" bson:"users"`
-	Expected  []int        		`json:"expected"`
-	Actual    []int        		`json:"actual"`
+	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	GroupName string        `json:"groupName" bson:"groupName"`
+	UserIDs   []string      `json:"users" bson:"users"`
+	Expected  []int         `json:"expected"`
+	Actual    []int         `json:"actual"`
 }
 
 type Comment struct {
@@ -66,10 +66,10 @@ type Notification struct {
 }
 
 var (
-	IsDrop     	= true
-	Session    	*mgo.Session
-	Col 		*mgo.Collection
-	err 		error
+	IsDrop  = true
+	Session *mgo.Session
+	Col     *mgo.Collection
+	err     error
 )
 
 func AddUser(name string, email string, phone string, isRealUser bool) {
@@ -118,13 +118,13 @@ func FindGroup(id bson.ObjectId) Group {
 	return actualGroup
 }
 
-func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId ) bool {
+func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) bool {
 	foundGroup := FindGroup(groupId)
 	t := AddGroup(foundGroup.GroupName, userId)
 	return t
 
 }
-	
+
 func GetGroupChanges(g Group) {
 	Col = Session.DB("test").C("Group")
 	query := bson.M{"_id": g.ID}
@@ -133,10 +133,10 @@ func GetGroupChanges(g Group) {
 	ThisPanic(err)
 }
 
-func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) bool {
+func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId) bool {
 	g := FindGroup(groupId)
 	index = Index(memberArray, groupId)
-	if (index >= 0) {
+	if index >= 0 {
 		g.UserIDs = append(g.UserIDs[:index], g.UserIDs[index+1:]...)
 		g.Expected = append(g.Expected[:index], g.Expected[index+1:]...)
 		g.Actual = append(g.Actual[:index], g.Actual[index+1:]...)
@@ -153,9 +153,6 @@ func DeleteGroup(id bson.ObjectId) bool {
 	ThisPanic(err)
 	return true
 }
-
-
-
 
 func main() {
 
@@ -176,7 +173,6 @@ func main() {
 	err = Col.EnsureIndex(index)
 
 	ThisPanic(err)
-
 
 	err = Col.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
 	ThisPanic(err)
@@ -236,7 +232,7 @@ func main() {
 	Col = Session.DB("test").C("User")
 	err = Col.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
 	fmt.Println(findJ)
-	
+
 	ThisPanic(err)
 
 	fmt.Println("\nHexID of JRock\n")
@@ -262,16 +258,14 @@ func main() {
 	err = Col.Insert(&Group{GroupName: "test", UserIDs: array})
 	ThisPanic(err)
 
-
 	g := Group{}
 
 	err = Col.Find(bson.M{"groupName": "test"}).Select(bson.M{"_id": 1}).One(&g)
 	ThisPanic(err)
 	fmt.Println("\n")
-	fmt.Printf("%v",g)
+	fmt.Printf("%v", g)
 	fmt.Println("\n")
 }
-
 
 func ConfigDB() {
 	Session.SetMode(mgo.Monotonic, true)
