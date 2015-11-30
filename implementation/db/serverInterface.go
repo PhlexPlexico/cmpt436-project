@@ -20,8 +20,7 @@ const (
 type FeedItem struct {
 	// The actual feed item to be unmarshaled, based upon the type.
 	Content json.RawMessage `json:"content"`
-	// Either a non-empty group id or contact id will be provided, but not both.
-	// These are just string representations of bson.ObjectIds.
+	// This is just a string representation of a bson.ObjectId.
 	GroupId string `json:"group_id"`
 	// ContactsId string `json:"contact_id"`
 	Type string `json:"type"`
@@ -47,19 +46,61 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-		/* handler code here, verifying the contents, and
-		 * doing DB insertions, etc. There is no need to rebroadcast the
-		 * new feed item, as the webserver handles that automatically.
-		 */
+		err = comment.Insert()
+		if err != nil {
+			return err
+		}
 
-		/* The rest of the cases can be done exactly like the comment case. */
 	case feedItemTypeNotification:
+		notification := &Notification{}
+		err := json.Unmarshal(fi.Content, notification)
+		if err != nil {
+			return err
+		}
+		err = notification.Insert()
+		if err != nil {
+			return err
+		}
 	case feedItemTypePayment:
+		payment := &Payment{}
+		err := json.Unmarshal(fi.Content, payment)
+		if err != nil {
+			return err
+		}
+		err = payment.Insert()
+		if err != nil {
+			return err
+		}
 	case feedItemTypePurchase:
+		purchase := &Purchase{}
+		err := json.Unmarshal(fi.Content, purchase)
+		if err != nil {
+			return err
+		}
+		err = purchase.Insert()
+		if err != nil {
+			return err
+		}
 	default:
 		return errors.New(fmt.Sprint("invalid FeedItem type: ", fi.Type))
 	}
 
+	return nil
+}
+
+func (c *Comment) Insert() error {
+	return nil
+}
+
+func (n *Notification) Insert() error {
+	return nil
+}
+
+func (pu *Purchase) Insert() error {
+	return nil
+}
+
+func (pa *Payment) Insert() error {
 	return nil
 }
 
