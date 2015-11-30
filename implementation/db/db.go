@@ -72,7 +72,7 @@ var (
 	IsDrop     = true
 	Session    *mgo.Session
 	Collection *mgo.Database
-	err        error
+	//err        error
 )
 
 func ThisPanic(err error) {
@@ -82,7 +82,7 @@ func ThisPanic(err error) {
 }
 
 func ConnectToDB() {
-
+	var err error
 	Session, err = mgo.Dial("127.0.0.1")
 	ThisPanic(err)
 	Collection = Session.DB("")
@@ -91,6 +91,7 @@ func ConnectToDB() {
 
 func Init() *mgo.Collection {
 
+	var err error
 	ConnectToDB()
 	ThisPanic(err)
 
@@ -120,31 +121,127 @@ func Init() *mgo.Collection {
 	return c
 }
 
-//func AddUser(name string, email string, phone string, isRealUser bool) {
-//	c := Session.DB("test").C("User")
-//	err = c.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
-//{}
+func AddUser(name string, email string, phone string, isRealUser bool) (err error) {
+	Col = Session.DB("test").C("User")
+	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
+	//ThisPanic(err)
+	if err != nil {
+		//panic(err)
+		return err
+	}
+}
 
-// func FindUserByID(id bson.ObjectId)
+func FindUserByID(id bson.ObjectId) *User {
+	Col = Session.DB("test").C("User")
+	user := User{}
+	err := Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&user)
+	//ThisPanic(err)
+		if err != nil {
+		//panic(err)
+		return nil
+	}
+	return &user
+}
 
-// func GetIDbyEmail(email string)
+func GetIDbyEmail(email string) string {
+	Col = Session.DB("test").C("User")
+	user := User{}
+	err := Col.Find(bson.M{"email": email}).One(&user)
+	if err != nil {
+		//panic(err)
+		return ""
+	}
+	return user.ID.Hex()
+}
 
-// func AddGroup(groupName string, id bson.ObjectId)
+func AddGroup(groupName string, uid bson.ObjectId) bool {
+	Col = Session.DB("test").C("Group")
+	id := bson.NewObjectId()
+	err := Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}})
+	//ThisPanic(err)
+	if err != nil {
+		//panic(err)
+		return false
+	}
+	actualGroup := Group{}
+	err = Col.Find(bson.M{"_id": id}).All(&actualGroup)
+	//ThisPanic(err)
+	if err != nil {
+		//panic(err)
+		return ""
+	}
+	query := bson.M{"_id": id}
+	Col = Session.DB("test").C("User")
+	change := bson.M{"$push": bson.M{"groups": actualGroup}}
+	err = Col.Update(query, change)
+	if err != nil {
+		//panic(err)
+		return false
+	}
+	return true
+}
 
-// func FindGroup(id bson.ObjectId) g *Group
+func FindGroup(id bson.ObjectId) *Group {
+	Col = Session.DB("test").C("Group")
+	actualGroup := Group{}
+	err := Col.Find(bson.M{"_id": id}).All(&actualGroup)
+	//ThisPanic(err)
+	if err != nil {
+		//panic(err)
+		return nil
+	}
+	return &actualGroup
+}
 
-// func AddMemberToGroupByID(server.GroupId bson.ObjectId, userId bson.ObjectId )
+func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId ) bool {
+	foundGroup := FindGroup(groupId)
+	t := AddGroup(foundGroup.GroupName, userId)
+	return t
 
-// func GetGroupChanges(g Group)
+}
+	
+func GetGroupChanges(g Group) (err error) {
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$push": bson.M{"_id": g.ID, "groupName": g.GroupName, "users": g.UserIDs, "expected": g.Expected, "actual": g.Actual}}
+	err := Col.Update(query, change)
+	//ThisPanic(err)
+	if err != nil {
+		//panic(err)
+		return err
+	}
+}
 
-// func RemoveMemberFromGroup(server.GroupId bson.ObjectId, userId bson.ObjectId )
+/*func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) bool {
+	g := FindGroup(groupId)
+	index = Index(memberArray, groupId)
+	if (index >= 0) {
+		g.UserIDs = append(g.UserIDs[:index], g.UserIDs[index+1:]...)
+		g.Expected = append(g.Expected[:index], g.Expected[index+1:]...)
+		g.Actual = append(g.Actual[:index], g.Actual[index+1:]...)
+		GetGroupChanges(g)
+		return true
+	} else {
+		return false
+	}
+}*/
 
-// func DeleteGroup(id bson.ObjectId) b bool
+func DeleteGroup(id bson.ObjectId) bool {
+	Col = Session.DB("test").C("Group")
+	err := Col.RemoveId(id)
+	//ThisPanic(err)
+	if err != nil {
+		//panic(err)
+		return false
+	}
+	return true
+}
 
 func TestServer(t *testing.T) {
 
+	var err error
 	ConnectToDB()
-	ThisPanic(err)
+	//ThisPanic(err)
 
 	defer Session.Close()
 

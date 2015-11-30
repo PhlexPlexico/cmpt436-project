@@ -117,6 +117,15 @@ func (pa *Payment) Insert() error {
  */
 func CreateUserIfNecessary(
 	email, name, avatarUrl string, isRealUser bool) (string, error) {
+	// func GetUserIdString(email string) (string, error) {
+	/* userID := GetIDbyEmail(email)
+	 * if userID == "" {
+	 * 	AddUser("", email, "", 0)
+	 *  userID = GetIDbyEmail(email)
+	 *  return userID
+	 * }
+	 * return userID, nil
+	 */
 	return "", nil
 }
 
