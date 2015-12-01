@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	//"sort"
 	"time"
 )
 
@@ -13,8 +14,8 @@ type User struct {
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
 	IsRealUser bool          `json:"isRealUser"`
-	Groups     []Group       `json:"groups" bson:"groups"`
-	Contacts   []Contact     `json:"contacts" bson:"contacts"`
+	Groups     []string      `json:"groups"`
+	Contacts   []string      `json:"contacts"`
 	Timestamp  time.Time     `json:"time"`
 }
 
@@ -29,10 +30,10 @@ type Contact struct {
 
 type Group struct {
 	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	GroupName string        `json:"groupName" bson:"groupName"`
-	UserIDs   []string      `json:"users" bson:"users"`
-	Expected  []int         `json:"expected"`
-	Actual    []int         `json:"actual"`
+	GroupName string        `json:"groupName"`
+	UserIDs   []string      `json:"userids"`
+	Expected  []float32     `json:"expected"`
+	Actual    []float32     `json:"actual"`
 }
 
 type Comment struct {
@@ -72,6 +73,8 @@ var (
 	err     error
 )
 
+///////////////////////////////////////////////////////////
+
 func AddUser(name string, email string, phone string, isRealUser bool) {
 	Col = Session.DB("test").C("User")
 	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
@@ -86,65 +89,72 @@ func FindUserByID(id bson.ObjectId) User {
 	return user
 }
 
-func GetIDbyEmail(email string) string {
+func FindUserIdByEmail(email string) bson.ObjectId {
 	Col = Session.DB("test").C("User")
 	user := User{}
 	err = Col.Find(bson.M{"email": email}).One(&user)
 	ThisPanic(err)
-	return user.ID.Hex()
+	return user.ID
 }
 
-func AddGroup(groupName string, uid bson.ObjectId) bool {
-	Col = Session.DB("test").C("Group")
-	id := bson.NewObjectId()
-	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}})
-	ThisPanic(err)
-	actualGroup := Group{}
-	err = Col.Find(bson.M{"_id": id}).All(&actualGroup)
-	ThisPanic(err)
-	query := bson.M{"_id": id}
+func AddGroupToUser(userId bson.ObjectId, groupId bson.ObjectId) {
 	Col = Session.DB("test").C("User")
-	change := bson.M{"$push": bson.M{"groups": actualGroup}}
+	query := bson.M{"_id": bson.ObjectId(userId)}
+	change := bson.M{"$push": bson.M{"groups": groupId.Hex()}}
 	err = Col.Update(query, change)
 	ThisPanic(err)
+}
+
+////////////////////////////////////////////////////////
+
+func AddGroup(groupName string, uid bson.ObjectId) bool {
+
+	Col = Session.DB("test").C("Group")
+	id := bson.NewObjectId()
+	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []float32{0}, Actual: []float32{0}})
+	ThisPanic(err)
+	AddGroupToUser(uid, id)
 	return true
 }
 
 func FindGroup(id bson.ObjectId) Group {
 	Col = Session.DB("test").C("Group")
-	actualGroup := Group{}
-	err = Col.Find(bson.M{"_id": id}).All(&actualGroup)
+	group := Group{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&group)
 	ThisPanic(err)
-	return actualGroup
+	return group
 }
 
 func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) bool {
-	foundGroup := FindGroup(groupId)
-	t := AddGroup(foundGroup.GroupName, userId)
-	return t
-
+	g := FindGroup(groupId)
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$push": bson.M{"userids": userId.Hex(), "expected": 0, "actual": 0}}
+	err = Col.Update(query, change)
+	return true
 }
 
 func GetGroupChanges(g Group) {
 	Col = Session.DB("test").C("Group")
 	query := bson.M{"_id": g.ID}
-	change := bson.M{"$push": bson.M{"_id": g.ID, "groupName": g.GroupName, "users": g.UserIDs, "expected": g.Expected, "actual": g.Actual}}
+	change := bson.M{"$set": bson.M{"groupName": g.GroupName, "users": g.UserIDs, "expected": g.Expected, "actual": g.Actual}}
 	err = Col.Update(query, change)
 	ThisPanic(err)
 }
 
 func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId) bool {
 	g := FindGroup(groupId)
-	index = Index(memberArray, groupId)
-	if index >= 0 {
-		g.UserIDs = append(g.UserIDs[:index], g.UserIDs[index+1:]...)
-		g.Expected = append(g.Expected[:index], g.Expected[index+1:]...)
-		g.Actual = append(g.Actual[:index], g.Actual[index+1:]...)
-		GetGroupChanges(g)
-		return true
-	} else {
-		return false
+	fmt.Println("\n%s\n", userId)
+	for i, oldUser := range g.UserIDs {
+		if userId.Hex() == oldUser {
+			g.UserIDs = append(g.UserIDs[:i], g.UserIDs[i+1:]...)
+			g.Actual = append(g.Actual[:i], g.Actual[i+1:]...)
+			g.Expected = append(g.Expected[:i], g.Expected[i+1:]...)
+			GetGroupChanges(g)
+			return true
+		}
 	}
+	return false
 }
 
 func DeleteGroup(id bson.ObjectId) bool {
@@ -153,6 +163,8 @@ func DeleteGroup(id bson.ObjectId) bool {
 	ThisPanic(err)
 	return true
 }
+
+////////////////////////////////////////////////////////
 
 func main() {
 
@@ -174,97 +186,38 @@ func main() {
 
 	ThisPanic(err)
 
-	err = Col.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-	err = Col.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
+	// test Functions for Users
 
-	Col = Session.DB("test").C("Contact")
-	err = Col.Insert(&Contact{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
+	// add Users to DB
+	AddUser("blah", "abc@mail.com", "12334", true)
+	AddUser("jrock", "asdf@mail.com", "12345", true)
+	AddUser("plexico", "bvcx@mail.com", "12321", true)
+	AddUser("garmu", "zcxv@mail.com", "12314", true)
 
-	result := Contact{}
-	err = Col.Find(bson.M{"name": "Ale"}).One(&result)
-	ThisPanic(err)
+	id1 := FindUserIdByEmail("abc@mail.com")
+	id2 := FindUserIdByEmail("asdf@mail.com")
+	id3 := FindUserIdByEmail("bvcx@mail.com")
+	id4 := FindUserIdByEmail("zcxv@mail.com")
 
-	fmt.Println("\n")
-	fmt.Println(result)
-	fmt.Println("\n")
+	fmt.Printf("\nUserId1: %s\n", id1)
 
-	findJ := User{}
-	Col = Session.DB("test").C("User")
-	err = Col.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
-	fmt.Println(findJ)
-	ThisPanic(err)
+	//Add Users to Groups
+	AddGroup("group1", id1)
 
-	fmt.Println("\nHexID of JRock\n")
-	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\nResult Object\n")
-	fmt.Println(result)
+	user1 := FindUserByID(id1)
 
-	query := bson.M{"_id": bson.ObjectId(findJ.ID)}
-	fmt.Println("\nQuery\n")
-	fmt.Println(query)
-	change := bson.M{"$push": bson.M{"contacts": result}}
-	//change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
+	groupid1 := bson.ObjectIdHex(user1.Groups[0])
+	fmt.Printf("Group1: %s\n", groupid1)
 
-	fmt.Println("\nUpdate Params\n")
-	fmt.Println(change)
-	err = Col.Update(query, change)
-	ThisPanic(err)
+	AddMemberToGroupByID(groupid1, id2)
+	AddMemberToGroupByID(groupid1, id3)
+	AddMemberToGroupByID(groupid1, id4)
 
-	findJ = User{}
-	err = Col.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	ThisPanic(err)
+	group1 := FindGroup(groupid1)
+	fmt.Printf("Group1: %s\n", group1.UserIDs)
 
-	fmt.Println("\nContacts of JRock\n")
-	fmt.Println(findJ.Contacts[0])
+	RemoveMemberFromGroup(groupid1, id2)
 
-	Col = Session.DB("test").C("Contact")
-	err = Col.Insert(&Contact{Name: "Eclo", Phone: "+306", IsRealUser: true, Email: "eclo@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-	result = Contact{}
-	err = Col.Find(bson.M{"name": "Eclo"}).One(&result)
-
-	Col = Session.DB("test").C("User")
-	/*ADD ANOTHER CONTACT*/
-	findJ = User{}
-	Col = Session.DB("test").C("User")
-	err = Col.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
-	fmt.Println(findJ)
-
-	ThisPanic(err)
-
-	fmt.Println("\nHexID of JRock\n")
-	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\nResult Object\n")
-	fmt.Println(result)
-
-	query = bson.M{"_id": bson.ObjectId(findJ.ID)}
-	fmt.Println("\nQuery\n")
-	fmt.Println(query)
-	change = bson.M{"$push": bson.M{"contacts": result}}
-	//change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
-
-	fmt.Println("\nUpdate Params\n")
-	fmt.Println(change)
-	err = Col.Update(query, change)
-	ThisPanic(err)
-
-	value := findJ.ID.Hex()
-	array := []string{value}
-	fmt.Println(array[0])
-	Col = Session.DB("test").C("Group")
-	err = Col.Insert(&Group{GroupName: "test", UserIDs: array})
-	ThisPanic(err)
-
-	g := Group{}
-
-	err = Col.Find(bson.M{"groupName": "test"}).Select(bson.M{"_id": 1}).One(&g)
-	ThisPanic(err)
-	fmt.Println("\n")
-	fmt.Printf("%v", g)
-	fmt.Println("\n")
 }
 
 func ConfigDB() {
