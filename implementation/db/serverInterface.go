@@ -130,7 +130,7 @@ func CreateUserIfNecessary(
 }
 
 func CreateNotification(subject, content, groupId string) (Notification, error) {
-	return nil, nil
+	return Notification{}, nil
 }
 
 /*
