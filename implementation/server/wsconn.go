@@ -56,7 +56,7 @@ const (
 	messageTypeFeedItem = "feedItem"
 	messageTypeGroups   = "groups"
 	messageTypeContacts = "contacts"
-	messageTypeGroup    = "group"
+	messageTypeUsers    = "users"
 )
 
 // connection is an middleman between the websocket connection and
@@ -74,6 +74,7 @@ type connection struct {
 
 type websocketOutMessage struct {
 	Content json.RawMessage `json:"content"`
+	GroupId string          `json:"group_id"`
 	Type    string          `json:"type"`
 }
 

@@ -71,7 +71,7 @@ func (fm *feedsManager) listen() {
 				fm.leaveHandler(client)
 			case message := <-fm.incoming:
 				if err := db.HandleFeedItem(message); err == nil {
-					fm.broadcast(message)
+					fm.broadcastFeedItem(message)
 				} else {
 					log.Println("could not handle message", message,
 						",\ndue to error:", err.Error())
@@ -154,7 +154,7 @@ func (fm *feedsManager) leaveHandler(client *connection) {
 	log.Println("client left")
 }
 
-func (fm *feedsManager) broadcast(message *db.FeedItem) {
+func (fm *feedsManager) broadcastFeedItem(message *db.FeedItem) {
 	messageBytes, err := json.Marshal(message)
 	if err != nil {
 		log.Println(err.Error())
@@ -162,19 +162,26 @@ func (fm *feedsManager) broadcast(message *db.FeedItem) {
 	}
 	wsMessage := &websocketOutMessage{
 		Content: messageBytes,
+		GroupId: message.GroupId,
 		Type:    messageTypeFeedItem,
 	}
+
+	broadcast(wsMessage)
 	// if message.Gid != "" {
-	for _, client := range fm.clientsPerGroup[message.GroupId] {
-		log.Println()
-		client.outgoing <- wsMessage
-	}
+
 	// } else {
 	// 	for client := range fm.clientsPerContacts[message.ContactsId] {
 	// 		client.outgoing <- wsMessage
 	// 	}
 	// }
 	log.Println("broadcasted message to group " + message.GroupId)
+}
+
+func (fm *feedsManager) broadcast(message *websocketOutMessage) {
+	for _, client := range fm.clientsPerGroup[message.GroupId] {
+		log.Println()
+		client.outgoing <- wsMessage
+	}
 }
 
 /*
@@ -185,7 +192,9 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	feeds map[string]map[string]*connection) {
 
 	var wsMessage *websocketOutMessage
-	for _, userId := range userIds {
+	uiUsers := make([]uiUser, len(userIds))
+	notifs := make([]db.Notification, len(userIds))
+	for i, userId := range userIds {
 		if client, ok := fm.clients[userId]; ok {
 			if wsMessage == nil {
 				group, err := db.GetGroup(feedId)
@@ -198,14 +207,15 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 					log.Println(err)
 					return
 				}
-				uiGroupBytes, err := json.Marshal(newUiGroup)
+
+				uiGroupsBytes, err := json.Marshal([]uiGroup{newUiGroup})
 				if err != nil {
 					log.Println(err)
 					return
 				}
 				wsMessage = &websocketOutMessage{
-					Content: uiGroupBytes,
-					Type:    messageTypeGroup,
+					Content: uiGroupsBytes,
+					Type:    messageTypeGroups,
 				}
 			}
 			fm.addClientToFeed(client, feedId, feeds)
@@ -214,6 +224,41 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 		} else {
 			log.Println("client not connected; no need to add it to a new broadcast.")
 		}
+
+		user := db.FindUserById(userId)
+		uiUsers[i] = *createUiUser(user)
+
+		var err error
+		notifs[i], err = db.CreateNotification(userId, "joined the group.", feedId)
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+	}
+
+	uiUsersBytes, err := json.Marshal(uiUsers)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	fm.broadcast(&websocketOutMessage{
+		Content: uiUsersBytes,
+		GroupId: feedId,
+		Type:    messageTypeUsers,
+	})
+
+	for _, notif := range notifs {
+		notifBytes, err := json.Marshal(notif)
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		fm.broadcastFeedItem(&db.FeedItem{
+			Content: notifBytes,
+			GroupId: feedId,
+			Type:    db.FeedItemTypeNotification,
+		})
 	}
 }
 
@@ -248,11 +293,7 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 	}
 	uiUsers := make([]uiUser, len(users))
 	for j, user := range users {
-		uiUsers[j] = uiUser{
-			Name:      user.Name,
-			Id:        string(user.ID),
-			AvatarUrl: user.AvatarUrl,
-		}
+		uiUsers[j] = *createUiUser(user)
 	}
 	feedItems, err := db.GetAllFeedItems(group.ID)
 	if err != nil {
@@ -265,4 +306,12 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 		Users:     uiUsers,
 		FeedItems: feedItems,
 	}, nil
+}
+
+func createUiUser(user *db.User) *uiUser {
+	return &uiUser{
+		Name:      user.Name,
+		Id:        string(user.ID),
+		AvatarUrl: user.AvatarUrl,
+	}
 }

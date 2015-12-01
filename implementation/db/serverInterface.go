@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	feedItemTypeComment      string = "comment"
-	feedItemTypeNotification string = "notification"
-	feedItemTypePurchase     string = "purchase"
-	feedItemTypePayment      string = "payment"
+	FeedItemTypeComment      string = "comment"
+	FeedItemTypeNotification string = "notification"
+	FeedItemTypePurchase     string = "purchase"
+	FeedItemTypePayment      string = "payment"
 )
 
 /*
@@ -40,7 +40,7 @@ func (fi *FeedItem) String() string {
  */
 func HandleFeedItem(fi *FeedItem) error {
 	switch fi.Type {
-	case feedItemTypeComment:
+	case FeedItemTypeComment:
 		comment := &Comment{}
 		err := json.Unmarshal(fi.Content, comment)
 		if err != nil {
@@ -51,7 +51,7 @@ func HandleFeedItem(fi *FeedItem) error {
 			return err
 		}
 
-	case feedItemTypeNotification:
+	case FeedItemTypeNotification:
 		notification := &Notification{}
 		err := json.Unmarshal(fi.Content, notification)
 		if err != nil {
@@ -61,7 +61,7 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-	case feedItemTypePayment:
+	case FeedItemTypePayment:
 		payment := &Payment{}
 		err := json.Unmarshal(fi.Content, payment)
 		if err != nil {
@@ -71,7 +71,7 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-	case feedItemTypePurchase:
+	case FeedItemTypePurchase:
 		purchase := &Purchase{}
 		err := json.Unmarshal(fi.Content, purchase)
 		if err != nil {
@@ -129,6 +129,10 @@ func CreateUserIfNecessary(
 	return "", nil
 }
 
+func CreateNotification(subject, content, groupId string) (Notification, error) {
+	return nil, nil
+}
+
 /*
  * Get all groups associated with this user.
  * If the error is not nil, the returned value must be ignored.
@@ -141,7 +145,7 @@ func GetGroups(userId string) ([]Group, error) {
  * Get the user corresponding to each userId.
  * If the error is not nil, the returned value must be ignored.
  */
-func GetUsers(userIds []bson.ObjectId) ([]User, error) {
+func GetUsers(userIds []string) ([]User, error) {
 	return nil, nil
 }
 
