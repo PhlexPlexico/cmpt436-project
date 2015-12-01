@@ -35,7 +35,7 @@ type Contact struct {
 	Name       string        `json:"name"`
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
-	IsRealUser bool          `json:"isRealUser`
+	IsRealUser bool          `json:"isRealUser"`
 	Timestamp  time.Time     `json:"time"`
 }
 
@@ -48,23 +48,6 @@ type Comment struct {
 	Timestamp time.Time     `json:"time"`
 }
 
-type Payment struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Payer     string        `json:"payer"`
-	PayerID   string        `json:"payerid"`
-	Payee     string        `json:"payee"`
-	PayeeID   string        `json:"payeeid"`
-	Amount    int           `json:"amount"`
-	Timestamp time.Time     `json:"time"`
-}
-
-type Purchase struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Payer     string        `json:"payer"`
-	PayerID   string        `json:"payerid"`
-	Amount    int           `json:"amount"`
-	Timestamp time.Time     `json:"time"`
-}
 
 type Notification struct {
 	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
@@ -268,121 +251,11 @@ func DeleteComment(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
-//					PAYMENT FUNCTIONS				  //
-////////////////////////////////////////////////////////
-
-func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount int) error {
-	var err error
-	Col = Session.DB("test").C("Payment")
-	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), Amount: amount})
-	return err
-}
-
-//Only can be one payment between two people
-func FindPaymentById(id bson.ObjectId) (Payment, error) {
-	var err error
-	Col = Session.DB("test").C("Payment")
-	payment := Payment{}
-	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&payment)
-	return payment, err
-}
-
-func FindPaymentByPayeeIdAndPayerId(payeeid bson.ObjectId, payerid bson.ObjectId) (Payment, error) {
-	var err error
-	Col = Session.DB("test").C("Payment")
-	payment := Payment{}
-	err = Col.Find(bson.M{"payeeid": payeeid.Hex(), "payerid": payerid.Hex()}).One(&payment)
-	return payment, err
-}
-
-func GetPaymentChanges(p Payment) error {
-	var err error
-	Col = Session.DB("test").C("Payment")
-	query := bson.M{"_id": p.ID}
-	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amount": p.Amount}}
-	err = Col.Update(query, change)
-	return err
-}
-
-func DeletePayment(id bson.ObjectId) error {
-	var err error
-	Col = Session.DB("test").C("Payment")
-	err = Col.RemoveId(id)
-	return err
-}
-
-// ////////////////////////////////////////////////////////
-// //					PURCHASE FUNCTIONS				  //
-// ////////////////////////////////////////////////////////
-
-// func AddPurchase(payer string, payerID bson.ObjectId, amount int) error {
-// 	var err error
-// 	Col = Session.DB("test").C("Payment")
-// 	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), Amount: amount})
-// 	return err
-// }
-
-// //Only can be one payment between two people
-// func FindPaymentById(id bson.ObjectId) (Payment, error) {
-// 	var err error
-// 	Col = Session.DB("test").C("Payment")
-// 	payment := Payment{}
-// 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&payment)
-// 	return payment, err
-// }
-
-// func FindPaymentByPayeeIdAndPayerId(payeeid bson.ObjectId, payerid bson.ObjectId) (Payment, error) {
-// 	var err error
-// 	Col = Session.DB("test").C("Payment")
-// 	payment := Payment{}
-// 	err = Col.Find(bson.M{"payeeid": payeeid.Hex(), "payerid": payerid.Hex()}).One(&payment)
-// 	return payment, err
-// }
-
-// func GetPaymentChanges(p Payment) error {
-// 	var err error
-// 	Col = Session.DB("test").C("Payment")
-// 	query := bson.M{"_id": p.ID}
-// 	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amount": p.Amount}}
-// 	err = Col.Update(query, change)
-// 	return err
-// }
-
-// func DeletePayment(id bson.ObjectId) error {
-// 	var err error
-// 	Col = Session.DB("test").C("Payment")
-// 	err = Col.RemoveId(id)
-// 	return err
-// }
-
-////////////////////////////////////////////////////////
 //					TEST FUNCTIONS					  //
 ////////////////////////////////////////////////////////
-// func main() {
-// 	var err error
-// 	ConnectToDB(err)
-// 	defer Session.Close()
-// 	ConfigDB(err)
-
-// 	Col = Session.DB("test").C("User")
-
-// 	index := mgo.Index{
-// 		Key:        []string{"name", "phone"},
-// 		Unique:     true,
-// 		DropDups:   true,
-// 		Background: true,
-// 		Sparse:     true,
-// 	}
-
-// 	err = Col.EnsureIndex(index)
-
-// 	ThisPanic(err)
-
-// }
-func Init() {
+func main() {
 	var err error
 	ConnectToDB(err)
-	defer Session.Close()
 	ConfigDB(err)
 
 	Col = Session.DB("test").C("User")
@@ -398,10 +271,27 @@ func Init() {
 	err = Col.EnsureIndex(index)
 
 	ThisPanic(err)
+
 }
+func Init() {
+	var err error
+	ConnectToDB(err)
+	ConfigDB(err)
 
-func Test(err error) {
+	Col = Session.DB("test").C("User")
 
+	index := mgo.Index{
+		Key:        []string{"name", "phone"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+
+	err = Col.EnsureIndex(index)
+
+	ThisPanic(err)
+	
 	// test Functions for Users
 
 	// add Users to DB
@@ -451,11 +341,14 @@ func Test(err error) {
 
 }
 
+
+
 ////////////////////////////////////////////////////////
 //					DATABASE FUNCTIONS				  //
 ////////////////////////////////////////////////////////
 
-func ConfigDB(err error) {
+func ConfigDB() {
+	var err error
 	Session.SetMode(mgo.Monotonic, true)
 	// Drop Database
 	if IsDrop {
@@ -470,7 +363,8 @@ func ThisPanic(err error) {
 	}
 }
 
-func ConnectToDB(err error) {
+func ConnectToDB() {
+	var err error
 	Session, err = mgo.Dial("127.0.0.1")
 	ThisPanic(err)
 }
