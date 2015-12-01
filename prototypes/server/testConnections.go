@@ -26,8 +26,8 @@ type Group struct {
 	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	GroupName string        `json:"groupName"`
 	UserIDs   []string      `json:"userids"`
-	Expected  []float32     `json:"expected"`
-	Actual    []float32     `json:"actual"`
+	Expected  []int         `json:"expected"`
+	Actual    []int         `json:"actual"`
 }
 
 type Contact struct {
@@ -54,7 +54,7 @@ type Payment struct {
 	PayerID   string        `json:"payerid"`
 	Payee     string        `json:"payee"`
 	PayeeID   string        `json:"payeeid"`
-	Amount    float32       `json:"amount"`
+	Amount    int           `json:"amount"`
 	Timestamp time.Time     `json:"time"`
 }
 
@@ -62,7 +62,7 @@ type Purchase struct {
 	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
 	Payer     string        `json:"payer"`
 	PayerID   string        `json:"payerid"`
-	Amount    float32       `json:"amount"`
+	Amount    int           `json:"amount"`
 	Timestamp time.Time     `json:"time"`
 }
 
@@ -131,7 +131,7 @@ func AddGroup(groupName string, uid bson.ObjectId) error {
 	var err error
 	Col = Session.DB("test").C("Group")
 	id := bson.NewObjectId()
-	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []float32{0}, Actual: []float32{0}})
+	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}})
 	AddGroupToUser(uid, id)
 	return err
 }
@@ -270,17 +270,8 @@ func DeleteComment(id bson.ObjectId) error {
 ////////////////////////////////////////////////////////
 //					PAYMENT FUNCTIONS				  //
 ////////////////////////////////////////////////////////
-// type Payment struct {
-// 	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
-// 	Payer         string        `json:"payer"`
-// 	PayerID       string        `json:"userid"`
-// 	Payee         string        `json:"payee"`
-// 	PayeeID       string        `json:"userid"`
-// 	AmountInCents int           `json:"amountInCents"`
-// 	Timestamp     time.Time     `json:"time"`
-// }
 
-func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount float32) error {
+func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount int) error {
 	var err error
 	Col = Session.DB("test").C("Payment")
 	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), Amount: amount})
