@@ -39,11 +39,11 @@ type Group struct {
 
 type Comment struct {
 	//William changed this to int for testing purposes.
-	ID       int    `json:"id" bson:"_id, omitempty"`
-	UserName string `json:"username"`
-	Content  string `json:"content"`
+	ID      bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	UserId  bson.ObjectId `json:"userid"`
+	Content string        `json:"content"`
 	//William changed this from time.Time to int for testing purposes.
-	Timestamp int64 `json:"time"`
+	Timestamp time.Time `json:"time"`
 }
 
 type Payment struct {
@@ -136,7 +136,7 @@ func FindUserByID(id bson.ObjectId) *User {
 	user := User{}
 	err := Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&user)
 	//ThisPanic(err)
-		if err != nil {
+	if err != nil {
 		//panic(err)
 		return nil
 	}
@@ -193,13 +193,13 @@ func FindGroup(id bson.ObjectId) *Group {
 	return &actualGroup
 }
 
-func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId ) bool {
+func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) bool {
 	foundGroup := FindGroup(groupId)
 	t := AddGroup(foundGroup.GroupName, userId)
 	return t
 
 }
-	
+
 func GetGroupChanges(g Group) (err error) {
 	Col = Session.DB("test").C("Group")
 	query := bson.M{"_id": g.ID}

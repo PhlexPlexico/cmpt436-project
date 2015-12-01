@@ -115,7 +115,7 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	if contact, err := db.AddContact(user.Id, body.Email); contact.Name != "" {
-		if groupId, err := db.CreateGroup(user.Name+" and "+contact.Name,
+		if groupId, err := db.CreateGroup("",
 			[]string{user.Id, string(contact.ID)}); groupId != "" {
 			w.WriteHeader(http.StatusOK)
 			fm.addToGroup <- &userIdsGroupId{
