@@ -7,8 +7,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func AddPurchase(g server.Group, buyer string, cost []int) error {
-	g = logic.AddPurchase(g, buyer, cost)
+func AddPurchase(g server.Group, buyer string, cost int, expected []int) error {
+	g = logic.AddPurchase(g, buyer, cost, expected)
 	return server.GetGroupChanges(g)
 }
 
@@ -67,8 +67,8 @@ func main() {
 
 	// b := [2]string{"Penn", "Teller"}
 
-	purchase := []int{2, 2, 10, 2, 2}
-	_ = AddPurchase(group1, userid3.Hex(), purchase) // evan purchase 10
+	purchase := []int{2, 2, 2, 2, 2}
+	_ = AddPurchase(group1, userid3.Hex(), 10, purchase) // evan purchase 10
 	group1, _ = server.FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\n AddPurchase 3: %v\n", group1)
 

@@ -50,15 +50,15 @@ import (
 
 // Adds a purchase for the buyer, increasing the expeced by (cost-average)
 // lowers all other group members Actual by average
-func AddPurchase(group server.Group, buyer string, cost []int) server.Group {
+func AddPurchase(group server.Group, buyer string, cost int, expected []int) server.Group {
 	//var length int = len(group.UserIDs)
-	//var average int = (cost / length)
+	//var average int = (expected / length)
 	for ele := range group.UserIDs {
 		if group.UserIDs[ele] == buyer {
-			group.Expected[ele] = group.Expected[ele] + cost[ele]
-			group.Actual[ele] = group.Actual[ele] + cost[ele]
+			group.Expected[ele] = group.Expected[ele] + expected[ele]
+			group.Actual[ele] = group.Actual[ele] + cost
 		} else {
-			group.Actual[ele] = group.Actual[ele] - cost[ele]
+			group.Expected[ele] = group.Actual[ele] + expected[ele]
 		}
 	}
 	return group
@@ -74,9 +74,9 @@ func PayMember(group server.Group, payer string, payee string, amount int) serve
 	//fmt.Printf("\n Begin payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
 
 	group.Actual[payerPos] += amount
-	group.Expected[payerPos] += amount
+	group.Expected[payerPos] -= amount
 	group.Actual[payeePos] -= amount
-	group.Expected[payeePos] -= amount
+	group.Expected[payeePos] += amount
 
 	//fmt.Printf("\n End payer: %v %v",group.Expected[payerPos], group.Actual[payerPos] )
 	//fmt.Printf("\n End payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
