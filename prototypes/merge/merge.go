@@ -7,17 +7,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func AddPurchase(g server.Group, buyer string, cost int, expected []int) error {
+func AddPurchase_old(g server.Group, buyer string, cost int, expected []int) error {
 	g = logic.AddPurchase(g, buyer, cost, expected)
 	return server.GetGroupChanges(g)
 }
 
-func PayMember(g server.Group, payer string, payee string, amount int) error {
+func PayMember_old(g server.Group, payer string, payee string, amount int) error {
 	g = logic.PayMember(g, payer, payee, amount)
 	return server.GetGroupChanges(g)
 }
 
-func TakeDebt(g server.Group, taker string, payee string) error {
+func TakeDebt_old(g server.Group, taker string, payee string) error {
 	g = logic.TakeDebt(g, taker, payee)
 	return server.GetGroupChanges(g)
 }
@@ -68,15 +68,15 @@ func main() {
 	// b := [2]string{"Penn", "Teller"}
 
 	purchase := []int{2, 2, 2, 2, 2}
-	_ = AddPurchase(group1, userid3.Hex(), 10, purchase) // evan purchase 10
+	_ = AddPurchase_old(group1, userid3.Hex(), 10, purchase) // evan purchase 10
 	group1, _ = server.FindGroup(bson.ObjectIdHex(groupid1))
-	fmt.Printf("\n AddPurchase 3: %v\n", group1)
+	fmt.Printf("\n AddPurchase_old 3: %v\n", group1)
 
-	_ = PayMember(group1, userid1.Hex(), userid3.Hex(), 2) // Jordan pays Evan 2
+	_ = PayMember_old(group1, userid1.Hex(), userid3.Hex(), 2) // Jordan pays Evan 2
 	group1, _ = server.FindGroup(bson.ObjectIdHex(groupid1))
-	fmt.Printf("\nPayMember 1, 3: %v\n", group1)
+	fmt.Printf("\nPayMember_old 1, 3: %v\n", group1)
 
-	_ = TakeDebt(group1, userid2.Hex(), userid3.Hex()) // ken taking evans
+	_ = TakeDebt_old(group1, userid2.Hex(), userid3.Hex()) // ken taking evans
 	group1, _ = server.FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\nTake Debt 2, 3: %v\n", group1)
 
@@ -88,6 +88,6 @@ func main() {
 	// group = server.FindGroup("groupID")
 	// fmt.Printf(" %v ", t[i]) // use %+v for struct vals, %p for pointer
 
-	// //logic.AddPurchase(group server.FindUser("email") cost)
+	// //logic.AddPurchase_old(group server.FindUser("email") cost)
 
 }

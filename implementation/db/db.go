@@ -1,23 +1,33 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"testing"
 	"time"
 )
 
+////////////////////////////////////////////////////////
+//					DATABASE SCHEMA					  //
+////////////////////////////////////////////////////////
 type User struct {
 	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Name       string        `json:"name"`
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
 	IsRealUser bool          `json:"isRealUser"`
-	Groups     []Group       `json:"groups" bson:"groups"`
-	Contacts   []Contact     `json:"contacts" bson:"contacts"`
-	AvatarUrl  string        `json:"avatar_url"`
+	Groups     []string      `json:"groups"`
+	Contacts   []string      `json:"contacts"`
 	Timestamp  time.Time     `json:"time"`
+}
+
+type Group struct {
+	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	GroupName string        `json:"groupName"`
+	UserIDs   []string      `json:"userids"`
+	Expected  []int         `json:"expected"`
+	Actual    []int         `json:"actual"`
 }
 
 type Contact struct {
@@ -29,21 +39,21 @@ type Contact struct {
 	Timestamp  time.Time     `json:"time"`
 }
 
-type Group struct {
-	ID        bson.ObjectId   `json:"id" bson:"_id"`
-	GroupName string          `json:"groupName"`
-	UserIDs   []bson.ObjectId `json:"users"`
-	Expected  []int           `json:"expected"`
-	Actual    []int           `json:"actual"`
+type Comment struct {
+	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	UserName  string        `json:"userName"`
+	UserID    string        `json:"userid"`
+	Subject   string        `json:"subject"`
+	Content   string        `json:"content"`
+	Timestamp time.Time     `json:"time"`
 }
 
-type Comment struct {
-	//William changed this to int for testing purposes.
-	ID       int    `json:"id" bson:"_id, omitempty"`
-	UserName string `json:"username"`
-	Content  string `json:"content"`
-	//William changed this from time.Time to int for testing purposes.
-	Timestamp int64 `json:"time"`
+type Notification struct {
+	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	userid    string        `json:"userid"`
+	Subject   string        `json:"subject"`
+	Content   string        `json:"content"`
+	Timestamp time.Time     `json:"time"`
 }
 
 type Payment struct {
@@ -61,23 +71,245 @@ type Purchase struct {
 	Timestamp     time.Time     `json:"time"`
 }
 
-type Notification struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Subject   string        `json:"subject"`
-	Content   string        `json:"content"`
-	Timestamp time.Time     `json:"time"`
+var (
+	IsDrop  = true
+	Session *mgo.Session
+	Col     *mgo.Collection
+)
+
+////////////////////////////////////////////////////////
+//					USER FUNCTIONS					  //
+////////////////////////////////////////////////////////
+func AddUser(name string, email string, phone string, isRealUser bool) error {
+	var err error
+	Col = Session.DB("test").C("User")
+	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
+	ThisPanic(err)
+	return err
 }
 
-var (
-	IsDrop     = true
-	Session    *mgo.Session
-	Collection *mgo.Database
-	//err        error
-)
+func FindUserByID(id bson.ObjectId) (User, error) {
+	var err error
+	Col = Session.DB("test").C("User")
+	user := User{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&user)
+	return user, err
+}
+
+func FindUserIdByEmail(email string) (bson.ObjectId, error) {
+	var err error
+	Col = Session.DB("test").C("User")
+	user := User{}
+	err = Col.Find(bson.M{"email": email}).One(&user)
+	return user.ID, err
+}
+
+func AddGroupToUser(userId bson.ObjectId, groupId bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("User")
+	query := bson.M{"_id": bson.ObjectId(userId)}
+	change := bson.M{"$push": bson.M{"groups": groupId.Hex()}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func AddContactToUser(userId bson.ObjectId, contactId bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("User")
+	query := bson.M{"_id": bson.ObjectId(userId)}
+	change := bson.M{"$push": bson.M{"contacts": contactId.Hex()}}
+	err = Col.Update(query, change)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					GROUP FUNCTIONS					  //
+////////////////////////////////////////////////////////
+func AddGroup(groupName string, uid bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Group")
+	id := bson.NewObjectId()
+	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}})
+	AddGroupToUser(uid, id)
+	return err
+}
+
+func FindGroup(id bson.ObjectId) (Group, error) {
+	var err error
+	Col = Session.DB("test").C("Group")
+	group := Group{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&group)
+	ThisPanic(err)
+	return group, err
+}
+
+func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) error {
+	var err error
+	g, err := FindGroup(groupId)
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$push": bson.M{"userids": userId.Hex(), "expected": 0, "actual": 0}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func GetGroupChanges(g Group) error {
+	var err error
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$set": bson.M{"groupName": g.GroupName, "users": g.UserIDs, "expected": g.Expected, "actual": g.Actual}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId) error {
+	var err error
+	g, err := FindGroup(groupId)
+	fmt.Println("\n%s\n", userId)
+	for i, oldUser := range g.UserIDs {
+		if userId.Hex() == oldUser {
+			g.UserIDs = append(g.UserIDs[:i], g.UserIDs[i+1:]...)
+			g.Actual = append(g.Actual[:i], g.Actual[i+1:]...)
+			g.Expected = append(g.Expected[:i], g.Expected[i+1:]...)
+			GetGroupChanges(g)
+			return err
+		}
+	}
+	err = errors.New("Did not find member in Group")
+	return err
+}
+
+func DeleteGroup(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Group")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					CONTACT FUNCTIONS				  //
+////////////////////////////////////////////////////////
+func AddContact_other(contactName string, email string, phone string, isRealUser bool, uid bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Contact")
+	id := bson.NewObjectId()
+	err = Col.Insert(&Contact{ID: id, Name: contactName, Email: email, IsRealUser: isRealUser, Timestamp: time.Now()})
+	AddContactToUser(uid, id)
+	return err
+}
+
+func FindContact(id bson.ObjectId) (Contact, error) {
+	var err error
+	Col = Session.DB("test").C("Contact")
+	contact := Contact{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&contact)
+	return contact, err
+}
+
+func GetContactChanges(c Contact) error {
+	var err error
+	Col = Session.DB("test").C("Contact")
+	query := bson.M{"_id": c.ID}
+	change := bson.M{"$set": bson.M{"name": c.Name, "phone": c.Phone, "email": c.Email, "isRealUser": c.IsRealUser}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeleteContact(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Contact")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					COMMENT FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddComment(userName string, subject string, content string, uid bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Comment")
+	err = Col.Insert(&Comment{UserName: userName, UserID: uid.Hex(), Subject: subject, Content: content, Timestamp: time.Now()})
+	return err
+}
+
+func FindCommentById(id bson.ObjectId) (Comment, error) {
+	var err error
+	Col = Session.DB("test").C("Comment")
+	comment := Comment{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&comment)
+	return comment, err
+}
+
+func FindCommentByUserId(id bson.ObjectId) (Comment, error) {
+	var err error
+	Col = Session.DB("test").C("Comment")
+	comment := Comment{}
+	err = Col.Find(bson.M{"userid": bson.ObjectId(id)}).One(&comment)
+	return comment, err
+}
+
+func GetCommentChanges(c Comment) error {
+	var err error
+	Col = Session.DB("test").C("Comment")
+	query := bson.M{"_id": c.ID}
+	change := bson.M{"$set": bson.M{"userName": c.UserName, "userid": c.UserID, "subject": c.Subject, "content": c.Content}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeleteComment(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Comment")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					TEST FUNCTIONS					  //
+////////////////////////////////////////////////////////
+
+func Init() {
+	ConnectToDB()
+	//defer Session.Close()
+	ConfigDB()
+
+	Col = Session.DB("test").C("User")
+
+	index := mgo.Index{
+		Key:        []string{"name", "phone"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+
+	err := Col.EnsureIndex(index)
+	ThisPanic(err)
+
+}
+
+func Close() {
+	Session.Close()
+}
+
+////////////////////////////////////////////////////////
+//					DATABASE FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func ConfigDB() {
+	var err error
+	Session.SetMode(mgo.Monotonic, true)
+	// Drop Database
+	if IsDrop {
+		err = Session.DB("test").DropDatabase()
+		ThisPanic(err)
+	}
+}
 
 func ThisPanic(err error) {
 	if err != nil {
-		panic(err)
+		fmt.Printf("Panic: %s\n", err.Error())
 	}
 }
 
@@ -85,273 +317,4 @@ func ConnectToDB() {
 	var err error
 	Session, err = mgo.Dial("127.0.0.1")
 	ThisPanic(err)
-	Collection = Session.DB("")
-
-}
-
-func Init() *mgo.Collection {
-
-	var err error
-	ConnectToDB()
-	ThisPanic(err)
-
-	defer Session.Close()
-
-	Session.SetMode(mgo.Monotonic, true)
-
-	// Drop Database
-	if IsDrop {
-		err = Session.DB("test").DropDatabase()
-		ThisPanic(err)
-
-	}
-	c := Session.DB("test").C("User")
-
-	index := mgo.Index{
-		Key:        []string{"name", "phone"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
-	}
-
-	err = c.EnsureIndex(index)
-
-	ThisPanic(err)
-	return c
-}
-
-func AddUser(name string, email string, phone string, isRealUser bool) (err error) {
-	Col = Session.DB("test").C("User")
-	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
-	//ThisPanic(err)
-	if err != nil {
-		//panic(err)
-		return err
-	}
-}
-
-func FindUserByID(id bson.ObjectId) *User {
-	Col = Session.DB("test").C("User")
-	user := User{}
-	err := Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&user)
-	//ThisPanic(err)
-		if err != nil {
-		//panic(err)
-		return nil
-	}
-	return &user
-}
-
-func GetIDbyEmail(email string) string {
-	Col = Session.DB("test").C("User")
-	user := User{}
-	err := Col.Find(bson.M{"email": email}).One(&user)
-	if err != nil {
-		//panic(err)
-		return ""
-	}
-	return user.ID.Hex()
-}
-
-func AddGroup(groupName string, uid bson.ObjectId) bool {
-	Col = Session.DB("test").C("Group")
-	id := bson.NewObjectId()
-	err := Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}})
-	//ThisPanic(err)
-	if err != nil {
-		//panic(err)
-		return false
-	}
-	actualGroup := Group{}
-	err = Col.Find(bson.M{"_id": id}).All(&actualGroup)
-	//ThisPanic(err)
-	if err != nil {
-		//panic(err)
-		return ""
-	}
-	query := bson.M{"_id": id}
-	Col = Session.DB("test").C("User")
-	change := bson.M{"$push": bson.M{"groups": actualGroup}}
-	err = Col.Update(query, change)
-	if err != nil {
-		//panic(err)
-		return false
-	}
-	return true
-}
-
-func FindGroup(id bson.ObjectId) *Group {
-	Col = Session.DB("test").C("Group")
-	actualGroup := Group{}
-	err := Col.Find(bson.M{"_id": id}).All(&actualGroup)
-	//ThisPanic(err)
-	if err != nil {
-		//panic(err)
-		return nil
-	}
-	return &actualGroup
-}
-
-func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId ) bool {
-	foundGroup := FindGroup(groupId)
-	t := AddGroup(foundGroup.GroupName, userId)
-	return t
-
-}
-	
-func GetGroupChanges(g Group) (err error) {
-	Col = Session.DB("test").C("Group")
-	query := bson.M{"_id": g.ID}
-	change := bson.M{"$push": bson.M{"_id": g.ID, "groupName": g.GroupName, "users": g.UserIDs, "expected": g.Expected, "actual": g.Actual}}
-	err := Col.Update(query, change)
-	//ThisPanic(err)
-	if err != nil {
-		//panic(err)
-		return err
-	}
-}
-
-/*func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId ) bool {
-	g := FindGroup(groupId)
-	index = Index(memberArray, groupId)
-	if (index >= 0) {
-		g.UserIDs = append(g.UserIDs[:index], g.UserIDs[index+1:]...)
-		g.Expected = append(g.Expected[:index], g.Expected[index+1:]...)
-		g.Actual = append(g.Actual[:index], g.Actual[index+1:]...)
-		GetGroupChanges(g)
-		return true
-	} else {
-		return false
-	}
-}*/
-
-func DeleteGroup(id bson.ObjectId) bool {
-	Col = Session.DB("test").C("Group")
-	err := Col.RemoveId(id)
-	//ThisPanic(err)
-	if err != nil {
-		//panic(err)
-		return false
-	}
-	return true
-}
-
-func TestServer(t *testing.T) {
-
-	var err error
-	ConnectToDB()
-	//ThisPanic(err)
-
-	defer Session.Close()
-
-	Session.SetMode(mgo.Monotonic, true)
-
-	// Drop Database
-	if IsDrop {
-		err = Session.DB("test").DropDatabase()
-		ThisPanic(err)
-
-	}
-	c := Session.DB("test").C("User")
-
-	index := mgo.Index{
-		Key:        []string{"name", "phone"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
-	}
-
-	err = c.EnsureIndex(index)
-
-	ThisPanic(err)
-
-	err = c.Insert(&User{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-	err = c.Insert(&User{Name: "Jrock", Phone: "+911", IsRealUser: true, Email: "jcl@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-
-	c = Session.DB("test").C("Contact")
-	err = c.Insert(&Contact{Name: "Ale", Phone: "+922", IsRealUser: true, Email: "abc@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-
-	result := Contact{}
-	err = c.Find(bson.M{"name": "Ale"}).One(&result)
-	ThisPanic(err)
-
-	fmt.Println("\n")
-	fmt.Println(result)
-	fmt.Println("\n")
-
-	findJ := User{}
-	c = Session.DB("test").C("User")
-	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
-	fmt.Println(findJ)
-	ThisPanic(err)
-
-	fmt.Println("\nHexID of JRock\n")
-	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\nResult Object\n")
-	fmt.Println(result)
-
-	query := bson.M{"_id": bson.ObjectId(findJ.ID)}
-	fmt.Println("\nQuery\n")
-	fmt.Println(query)
-	change := bson.M{"$push": bson.M{"contacts": result}}
-	//change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
-
-	fmt.Println("\nUpdate Params\n")
-	fmt.Println(change)
-	err = c.Update(query, change)
-	ThisPanic(err)
-
-	findJ = User{}
-	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	ThisPanic(err)
-
-	fmt.Println("\nContacts of JRock\n")
-	fmt.Println(findJ.Contacts[0])
-
-	c = Session.DB("test").C("Contact")
-	err = c.Insert(&Contact{Name: "Eclo", Phone: "+306", IsRealUser: true, Email: "eclo@gmail.com", Timestamp: time.Now()})
-	ThisPanic(err)
-	result = Contact{}
-	err = c.Find(bson.M{"name": "Eclo"}).One(&result)
-
-	c = Session.DB("test").C("User")
-	/*ADD ANOTHER CONTACT*/
-	findJ = User{}
-	c = Session.DB("test").C("User")
-	err = c.Find(bson.M{"name": "Jrock"}).Select(bson.M{"_id": 1}).One(&findJ)
-	fmt.Println(findJ)
-
-	ThisPanic(err)
-
-	fmt.Println("\nHexID of JRock\n")
-	fmt.Println(findJ.ID.Hex())
-	fmt.Println("\nResult Object\n")
-	fmt.Println(result)
-
-	query = bson.M{"_id": bson.ObjectId(findJ.ID)}
-	fmt.Println("\nQuery\n")
-	fmt.Println(query)
-	change = bson.M{"$push": bson.M{"contacts": result}}
-	//change2 := bson.M{"$push": bson.M{"contacts": bson.M{"name": result.Name}}}
-
-	fmt.Println("\nUpdate Params\n")
-	fmt.Println(change)
-	err = c.Update(query, change)
-	ThisPanic(err)
-
-	findJ = User{}
-	err = c.Find(bson.M{"name": "Jrock"}).One(&findJ)
-	ThisPanic(err)
-	fmt.Println(findJ)
-	array := []bson.ObjectId{findJ.ID}
-
-	c = Session.DB("test").C("Group")
-	err = c.Insert(&Group{GroupName: "test", UserIDs: array})
-	ThisPanic(err)
-
 }
