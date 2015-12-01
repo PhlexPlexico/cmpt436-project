@@ -1,15 +1,24 @@
 package main
 
 import (
-	//"fmt"
-	//"../logic"
+	// "../logic"
 	"../server"
+	//"fmt"
+	"gopkg.in/mgo.v2"
+	// "gopkg.in/mgo.v2/bson"
+)
+
+var (
+	IsDrop  = true
+	Session *mgo.Session
+	Col     *mgo.Collection
 )
 
 func main() {
-	server.Init()
+	Session, Col, IsDrop = server.Init()
+	// var err error
+	_ = server.AddUser("jordan", "asdf@mail.com", "123", true)
 
-	// server.AddUser("name" "email" "phone#" T)
 	// user = server.FindUser("email")
 
 	// AddGroup("groupa" GetIDbyEmail("email"))
