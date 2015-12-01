@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"errors"
@@ -311,10 +311,75 @@ func DeletePayment(id bson.ObjectId) error {
 	return err
 }
 
+// ////////////////////////////////////////////////////////
+// //					PURCHASE FUNCTIONS				  //
+// ////////////////////////////////////////////////////////
+
+// func AddPurchase(payer string, payerID bson.ObjectId, amount int) error {
+// 	var err error
+// 	Col = Session.DB("test").C("Payment")
+// 	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), Amount: amount})
+// 	return err
+// }
+
+// //Only can be one payment between two people
+// func FindPaymentById(id bson.ObjectId) (Payment, error) {
+// 	var err error
+// 	Col = Session.DB("test").C("Payment")
+// 	payment := Payment{}
+// 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&payment)
+// 	return payment, err
+// }
+
+// func FindPaymentByPayeeIdAndPayerId(payeeid bson.ObjectId, payerid bson.ObjectId) (Payment, error) {
+// 	var err error
+// 	Col = Session.DB("test").C("Payment")
+// 	payment := Payment{}
+// 	err = Col.Find(bson.M{"payeeid": payeeid.Hex(), "payerid": payerid.Hex()}).One(&payment)
+// 	return payment, err
+// }
+
+// func GetPaymentChanges(p Payment) error {
+// 	var err error
+// 	Col = Session.DB("test").C("Payment")
+// 	query := bson.M{"_id": p.ID}
+// 	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amount": p.Amount}}
+// 	err = Col.Update(query, change)
+// 	return err
+// }
+
+// func DeletePayment(id bson.ObjectId) error {
+// 	var err error
+// 	Col = Session.DB("test").C("Payment")
+// 	err = Col.RemoveId(id)
+// 	return err
+// }
+
 ////////////////////////////////////////////////////////
 //					TEST FUNCTIONS					  //
 ////////////////////////////////////////////////////////
-func main() {
+// func main() {
+// 	var err error
+// 	ConnectToDB(err)
+// 	defer Session.Close()
+// 	ConfigDB(err)
+
+// 	Col = Session.DB("test").C("User")
+
+// 	index := mgo.Index{
+// 		Key:        []string{"name", "phone"},
+// 		Unique:     true,
+// 		DropDups:   true,
+// 		Background: true,
+// 		Sparse:     true,
+// 	}
+
+// 	err = Col.EnsureIndex(index)
+
+// 	ThisPanic(err)
+
+// }
+func Init() (Session *mgo.Session, Col *mgo.Collection, IsDrop bool) {
 	var err error
 	ConnectToDB(err)
 	defer Session.Close()
@@ -333,6 +398,10 @@ func main() {
 	err = Col.EnsureIndex(index)
 
 	ThisPanic(err)
+	return Session, Col, IsDrop
+}
+
+func Test(err error) {
 
 	// test Functions for Users
 
@@ -373,14 +442,13 @@ func main() {
 	err = AddMemberToGroupByID(groupid1, id4)
 	ThisPanic(err)
 
-	group1, err := FindGroup(groupid1)
-	ThisPanic(err)
-	fmt.Printf("Group1: %s\n", group1.UserIDs)
+	// group1, err := FindGroup(groupid1)
+	// ThisPanic(err)
 
-	err = RemoveMemberFromGroup(groupid1, id2)
-	ThisPanic(err)
-	err = DeleteGroup(groupid1)
-	ThisPanic(err)
+	// err = RemoveMemberFromGroup(groupid1, id2)
+	// ThisPanic(err)
+	// err = DeleteGroup(groupid1)
+	// ThisPanic(err)
 
 }
 
