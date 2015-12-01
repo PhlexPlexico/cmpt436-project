@@ -50,15 +50,15 @@ import (
 
 // Adds a purchase for the buyer, increasing the expeced by (cost-average)
 // lowers all other group members Actual by average
-func AddPurchase(group server.Group, buyer string, cost int) server.Group {
-	var length int = len(group.UserIDs)
-	var average int = (cost / length)
+func AddPurchase(group server.Group, buyer string, cost []int) server.Group {
+	//var length int = len(group.UserIDs)
+	//var average int = (cost / length)
 	for ele := range group.UserIDs {
 		if group.UserIDs[ele] == buyer {
-			group.Expected[ele] = group.Expected[ele] + cost
-			group.Actual[ele] = group.Actual[ele] + (cost - average)
+			group.Expected[ele] = group.Expected[ele] + cost[ele]
+			group.Actual[ele] = group.Actual[ele] + cost[ele]
 		} else {
-			group.Actual[ele] = group.Actual[ele] - average
+			group.Actual[ele] = group.Actual[ele] - cost[ele]
 		}
 	}
 	return group
@@ -68,30 +68,18 @@ func AddPurchase(group server.Group, buyer string, cost int) server.Group {
 // payers Actual and Expected increase
 // payees Actual and Expected decrease
 func PayMember(group server.Group, payer string, payee string, amount int) server.Group {
-
-	
-	// for ele := range group.UserIDs {
-	// 	if group.UserIDs[ele] == payer{
-	// 		payerPos = ele
-	// 	}else if group.UserIDs[ele] == payee {
-	// 		payeePos = ele
-	// 	}
-	// }
-	
 	payerPos, payeePos := getPositions(group, payer, payee)
-	
-	
-	
-	fmt.Printf("\n Begin payer: %v %v",group.Expected[payerPos], group.Actual[payerPos] )
-	fmt.Printf("\n Begin payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
-	
-	group.Actual[payerPos] +=  amount
-	group.Expected[payerPos] +=  amount
-	group.Actual[payeePos] -=  amount
+
+	fmt.Printf("\n Begin payer: %v %v", group.Expected[payerPos], group.Actual[payerPos])
+	//fmt.Printf("\n Begin payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
+
+	group.Actual[payerPos] += amount
+	group.Expected[payerPos] += amount
+	group.Actual[payeePos] -= amount
 	group.Expected[payeePos] -= amount
 
-	 fmt.Printf("\n End payer: %v %v",group.Expected[payerPos], group.Actual[payerPos] )
-	 fmt.Printf("\n End payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
+	//fmt.Printf("\n End payer: %v %v",group.Expected[payerPos], group.Actual[payerPos] )
+	//fmt.Printf("\n End payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
 	return group
 }
 
@@ -108,18 +96,14 @@ func getPositions(group server.Group, u1 string, u2 string) (int, int) {
 	return x, y
 }
 
-
 // take on the entirety of someone elses Actual/Expected
 func TakeDebt(group server.Group, taker string, giver string) server.Group {
-	
 	takerPos, giverPos := getPositions(group, taker, giver)
 	group.Actual[takerPos] += group.Actual[giverPos]
 	group.Expected[takerPos] += group.Expected[giverPos]
 	group.Actual[giverPos] = 0
 	group.Expected[giverPos] = 0
-	
 	return group
-	
 }
 
 // this will be automatic with the sliders defualt when take debt uses default
