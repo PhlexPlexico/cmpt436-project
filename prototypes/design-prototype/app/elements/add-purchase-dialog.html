@@ -1,5 +1,4 @@
-<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="cost-splitter.html">
+<link rel="import" href="app-imports.html">
 
 <dom-module id="add-purchase-dialog">
 	<style>
@@ -11,8 +10,9 @@
 		}
 	</style>
 	<template>
+		<api-handler id="api_handler"></api-handler>
 		<paper-dialog id="dialog" with-backdrop>
-			<h2>Add a Payment</h2>
+			<h2>Add a Purchase</h2>
 			<paper-dialog-scrollable>
 				<paper-input id="title" label="title"></paper-input>
 				<cost-splitter id="splitter"

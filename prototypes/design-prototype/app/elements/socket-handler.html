@@ -1,0 +1,71 @@
+<link rel="import" href="app-imports.html">
+
+<dom-module id="socket-handler">
+	<style></style>
+	<template></template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "socket-handler",
+
+		properties: {
+			ws: {
+				type: Object,
+				value: null,
+			},
+		},
+
+		ready: function() {
+		    if (window["WebSocket"]) {
+		        this.ws = new WebSocket("wss://" + window.location.host + "/ws");
+		        this.ws.onclose = function(event) {
+		            console.log("websocket closed");
+		        }.bind(this);
+		        this.ws.onmessage = function(event) {
+		            this.receiveSocketData(event);
+		        }.bind(this);
+		    } else {
+		        console.log("websockets not supported");
+		    }
+		},
+
+		sendMessage: function(message) {
+			console.log("sending message over socket", message);
+			// this.ws.send(JSON.stringify(message));
+		},
+
+		sendPurchase: function(purchase) {
+			console.log("sending purchase over socket", purchase);
+			// this.ws.send(JSON.stringify(purchase));
+		},
+
+		sendPayment: function(payment) {
+			console.log("sending payment over socket", payment);
+			// this.ws.send(JSON.stringify(payment));
+		},
+
+		receiveSocketData: function(event) {
+			console.log("received message over socket", event);
+			var data = JSON.parse(event.data);
+			switch (data.type) {
+				case "feedItem":
+					console.log("received feed item");
+					break;
+				case "groups":
+					console.log("received groups");
+					break;
+				// case "contacts":
+				// 	console.log("received contacts");
+				// 	break;
+				case "users":
+					console.log("received users");
+					break;
+				default: 
+					console.log("could not parse socket data", data);
+					break;
+			}
+		},
+
+	});
+</script>
