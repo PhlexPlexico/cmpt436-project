@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2"
@@ -9,7 +10,7 @@ import (
 )
 
 ////////////////////////////////////////////////////////
-//					DATABASE SCHEMA					  //
+//          DATABASE SCHEMA           //
 ////////////////////////////////////////////////////////
 type User struct {
 	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
@@ -17,6 +18,7 @@ type User struct {
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
 	IsRealUser bool          `json:"isRealUser"`
+	AvatarURL  string        `json:"avatarurl"`
 	Groups     []string      `json:"groups"`
 	Contacts   []string      `json:"contacts"`
 	Timestamp  time.Time     `json:"time"`
@@ -28,6 +30,7 @@ type Group struct {
 	UserIDs   []string      `json:"userids"`
 	Expected  []int         `json:"expected"`
 	Actual    []int         `json:"actual"`
+	Feed      []FeedItem    `json:"feedItem"`
 }
 
 type Contact struct {
@@ -35,7 +38,7 @@ type Contact struct {
 	Name       string        `json:"name"`
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
-	IsRealUser bool          `json:"isRealUser"`
+	IsRealUser bool          `json:"isRealUser`
 	Timestamp  time.Time     `json:"time"`
 }
 
@@ -48,13 +51,39 @@ type Comment struct {
 	Timestamp time.Time     `json:"time"`
 }
 
-
 type Notification struct {
 	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	userid    string        `json:"userid"`
+	UserID    string        `json:"userid"`
 	Subject   string        `json:"subject"`
 	Content   string        `json:"content"`
 	Timestamp time.Time     `json:"time"`
+}
+
+type Payment struct {
+	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	Payer         string        `json:"payer"`
+	PayerID       string        `json:"payerid"`
+	Payee         string        `json:"payee"`
+	PayeeID       string        `json:"payeeid"`
+	AmountInCents int           `json:"amountInCents"`
+	Timestamp     time.Time     `json:"time"`
+}
+
+type Purchase struct {
+	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	Payer         string        `json:"payer"`
+	UserIDs       []string      `json:"userids"`
+	Expected      []int         `json:"expected"`
+	AmountInCents int           `json:"amountInCents"`
+	Timestamp     time.Time     `json:"time"`
+}
+
+type FeedItem struct {
+	ID        bson.ObjectId   `json:"id" bson:"_id, omitempty"`
+	Content   json.RawMessage `json:"content"`
+	GroupID   string          `json:"groupid"`
+	Type      string          `json:"type"`
+	Timestamp time.Time       `json:"time"`
 }
 
 var (
@@ -64,12 +93,13 @@ var (
 )
 
 ////////////////////////////////////////////////////////
-//					USER FUNCTIONS					  //
+//          USER FUNCTIONS            //
 ////////////////////////////////////////////////////////
-func AddUser(name string, email string, phone string, isRealUser bool) error {
+func AddUser(name string, email string, phone string, avatarURL string, isRealUser bool) error {
 	var err error
 	Col = Session.DB("test").C("User")
-	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
+	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, AvatarURL: avatarURL, Timestamp: time.Now()})
+	ThisPanic(err)
 	return err
 }
 
@@ -108,13 +138,13 @@ func AddContactToUser(userId bson.ObjectId, contactId bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
-//					GROUP FUNCTIONS					  //
+//          GROUP FUNCTIONS           //
 ////////////////////////////////////////////////////////
 func AddGroup(groupName string, uid bson.ObjectId) error {
 	var err error
 	Col = Session.DB("test").C("Group")
 	id := bson.NewObjectId()
-	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}})
+	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}, Feed: []FeedItem{}})
 	AddGroupToUser(uid, id)
 	return err
 }
@@ -150,7 +180,6 @@ func GetGroupChanges(g Group) error {
 func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId) error {
 	var err error
 	g, err := FindGroup(groupId)
-	fmt.Println("\n%s\n", userId)
 	for i, oldUser := range g.UserIDs {
 		if userId.Hex() == oldUser {
 			g.UserIDs = append(g.UserIDs[:i], g.UserIDs[i+1:]...)
@@ -172,9 +201,9 @@ func DeleteGroup(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
-//					CONTACT FUNCTIONS				  //
+//          CONTACT FUNCTIONS         //
 ////////////////////////////////////////////////////////
-func AddContact(contactName string, email string, phone string, isRealUser bool, uid bson.ObjectId) error {
+func AddContact_other(contactName string, email string, phone string, isRealUser bool, uid bson.ObjectId) error {
 	var err error
 	Col = Session.DB("test").C("Contact")
 	id := bson.NewObjectId()
@@ -208,7 +237,7 @@ func DeleteContact(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
-//					COMMENT FUNCTIONS				  //
+//          COMMENT FUNCTIONS         //
 ////////////////////////////////////////////////////////
 
 func AddComment(userName string, subject string, content string, uid bson.ObjectId) error {
@@ -251,12 +280,163 @@ func DeleteComment(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
+//					NOTIFICATION FUNCTIONS			  //
+////////////////////////////////////////////////////////
+
+func AddNotification(userID bson.ObjectId, subject string, content string) error {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	err = Col.Insert(&Notification{UserID: userID.Hex(), Subject: subject, Content: content, Timestamp: time.Now()})
+	return err
+}
+
+func FindNotificationById(id bson.ObjectId) (Notification, error) {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	notification := Notification{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&notification)
+	return notification, err
+}
+
+func GetNotificationChanges(n Notification) error {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	query := bson.M{"_id": n.ID}
+	change := bson.M{"$set": bson.M{"userid": n.UserID, "subject": n.Subject, "content": n.Content}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeleteNotification(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					PAYMENT FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount int) error {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), AmountInCents: amount})
+	return err
+}
+
+//Only can be one payment between two people
+func FindPaymentById(id bson.ObjectId) (Payment, error) {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	payment := Payment{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&payment)
+	return payment, err
+}
+
+func FindPaymentByPayeeIdAndPayerId(payeeid bson.ObjectId, payerid bson.ObjectId) (Payment, error) {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	payment := Payment{}
+	err = Col.Find(bson.M{"payeeid": payeeid.Hex(), "payerid": payerid.Hex()}).One(&payment)
+	return payment, err
+}
+
+func GetPaymentChanges(p Payment) error {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	query := bson.M{"_id": p.ID}
+	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amountInCents": p.AmountInCents}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeletePayment(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					PURCHASE FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddPurchase(payer string, userIDs []string, expected []int, amount int) error {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	err = Col.Insert(&Purchase{Payer: payer, UserIDs: userIDs, Expected: expected, AmountInCents: amount, Timestamp: time.Now()})
+	return err
+}
+
+func FindPurchaseById(id bson.ObjectId) (Purchase, error) {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	purchase := Purchase{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&purchase)
+	return purchase, err
+}
+
+func GetPurchaseChanges(p Purchase) error {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	query := bson.M{"_id": p.ID}
+	change := bson.M{"$set": bson.M{"payer": p.Payer, "userids": p.UserIDs, "expected": p.Expected, "amountInCents": p.AmountInCents}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeletePurchase(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					FEEDITEM FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddFeedItem(content json.RawMessage, groupID string, typee string) error {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	err = Col.Insert(&FeedItem{Content: content, GroupID: groupID, Type: typee, Timestamp: time.Now()})
+	return err
+}
+
+func FindFeedItemById(id bson.ObjectId) (FeedItem, error) {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	feedItem := FeedItem{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&feedItem)
+	return feedItem, err
+}
+
+func GetFeedItemChanges(f FeedItem) error {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	query := bson.M{"_id": f.ID}
+	change := bson.M{"$set": bson.M{"content": f.Content, "groupid": f.GroupID, "type": f.Type}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeleteFeedItem(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
 //					TEST FUNCTIONS					  //
 ////////////////////////////////////////////////////////
+
 func main() {
 	var err error
-	ConnectToDB(err)
-	ConfigDB(err)
+	ConnectToDB()
+
+	ConfigDB()
 
 	Col = Session.DB("test").C("User")
 
@@ -272,36 +452,16 @@ func main() {
 
 	ThisPanic(err)
 
-}
-func Init() {
-	var err error
-	ConnectToDB(err)
-	ConfigDB(err)
-
-	Col = Session.DB("test").C("User")
-
-	index := mgo.Index{
-		Key:        []string{"name", "phone"},
-		Unique:     true,
-		DropDups:   true,
-		Background: true,
-		Sparse:     true,
-	}
-
-	err = Col.EnsureIndex(index)
-
-	ThisPanic(err)
-	
 	// test Functions for Users
 
 	// add Users to DB
-	err = AddUser("blah", "abc@mail.com", "12334", true)
+	err = AddUser("blah", "abc@mail.com", "12334", "", true)
 	ThisPanic(err)
-	err = AddUser("jrock", "asdf@mail.com", "12345", true)
+	err = AddUser("jrock", "asdf@mail.com", "12345", "", true)
 	ThisPanic(err)
-	err = AddUser("plexico", "bvcx@mail.com", "12321", true)
+	err = AddUser("plexico", "bvcx@mail.com", "12321", "", true)
 	ThisPanic(err)
-	err = AddUser("garmu", "zcxv@mail.com", "12314", true)
+	err = AddUser("garmu", "zcxv@mail.com", "12314", "", true)
 	ThisPanic(err)
 	id1, err := FindUserIdByEmail("abc@mail.com")
 	ThisPanic(err)
@@ -312,7 +472,7 @@ func Init() {
 	id4, err := FindUserIdByEmail("zcxv@mail.com")
 	ThisPanic(err)
 
-	fmt.Printf("\nUserId1: %s\n", id1)
+	fmt.Printf("\nUserId1: %v\n", id1)
 
 	//Add Users to Groups
 	err = AddGroup("group1", id1)
@@ -322,7 +482,7 @@ func Init() {
 	ThisPanic(err)
 
 	groupid1 := bson.ObjectIdHex(user1.Groups[0])
-	fmt.Printf("Group1: %s\n", groupid1)
+	fmt.Printf("GroupID1: %v\n", groupid1)
 
 	err = AddMemberToGroupByID(groupid1, id2)
 	ThisPanic(err)
@@ -331,17 +491,16 @@ func Init() {
 	err = AddMemberToGroupByID(groupid1, id4)
 	ThisPanic(err)
 
-	// group1, err := FindGroup(groupid1)
-	// ThisPanic(err)
+	group1, err := FindGroup(groupid1)
+	fmt.Printf("Group1: %v\n", group1)
+	ThisPanic(err)
 
-	// err = RemoveMemberFromGroup(groupid1, id2)
-	// ThisPanic(err)
-	// err = DeleteGroup(groupid1)
-	// ThisPanic(err)
+	err = RemoveMemberFromGroup(groupid1, id2)
+	ThisPanic(err)
+	err = DeleteGroup(groupid1)
+	ThisPanic(err)
 
 }
-
-
 
 ////////////////////////////////////////////////////////
 //					DATABASE FUNCTIONS				  //
@@ -359,7 +518,7 @@ func ConfigDB() {
 
 func ThisPanic(err error) {
 	if err != nil {
-		fmt.Printf("Panic: %s\n", err.Error())
+		fmt.Printf("Panic: %v\n", err.Error())
 	}
 }
 
