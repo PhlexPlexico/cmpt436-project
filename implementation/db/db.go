@@ -28,6 +28,7 @@ type Group struct {
 	UserIDs   []string      `json:"userids"`
 	Expected  []int         `json:"expected"`
 	Actual    []int         `json:"actual"`
+	Feed      []FeedItem    `json:"feedItem"`
 }
 
 type Contact struct {
@@ -67,6 +68,8 @@ type Payment struct {
 type Purchase struct {
 	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
 	Payer         string        `json:"payer"`
+	UserIDs       []string      `json:"userids"`
+	Expected      []int         `json:"expected"`
 	AmountInCents int           `json:"amountInCents"`
 	Timestamp     time.Time     `json:"time"`
 }
