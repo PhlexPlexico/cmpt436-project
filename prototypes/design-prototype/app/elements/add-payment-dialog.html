@@ -24,7 +24,7 @@
 						</template>
 					</paper-menu>
 				</paper-dropdown-menu>
-				<paper-input id="amount" label="Amount" value="{{cost}}" type="number">
+				<paper-input id="input" label="Amount" value="{{cost}}" type="number">
 					<div prefix>$</div>
 				</paper-input>
 			</paper-dialog-scrollable>
@@ -59,21 +59,26 @@
 		clear: function() {
 			this.$.from.selected = -1;
 			this.$.to.selected = -1;
-			this.$.amount.value = "";
+			this.$.input.value = "";
 		},
 
 		submit: function() {
 			console.log("submitted payment");
-
-			this.push('contact.messages', {
-				user: this.user,
-				time: "1:27 PM",
-				payment: {
-					from: this.contact.members[this.$.from.selected].user.name,
-					to: this.contact.members[this.$.to.selected].user.name,
-					cost: this.$.amount.value
-				}
-			});
+			// this.push('contact.messages', {
+			// 	user: this.user,
+			// 	time: "1:27 PM",
+			// 	payment: {
+			// 		from: this.contact.members[this.$.from.selected].user.name,
+			// 		to: this.contact.members[this.$.to.selected].user.name,
+			// 		cost: this.$.input.value
+			// 	}
+			// });
+			this.fire('add-payment', {payment: {
+				from: this.contact.members[this.$.from.selected].user.id,
+				to: this.contact.members[this.$.to.selected].user.id,
+				cost: this.$.input.value,
+				group_id: this.contact.id, //TODO: verify
+			}});
 		}
 	});
 </script>

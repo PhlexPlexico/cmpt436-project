@@ -90,9 +90,13 @@
 			console.log("send");
 			var str = this.$.input.value.trim();
 			if (str) {
-				this.push('contact.messages', {user: this.user, time: '1:26 PM', message: str})
+				// this.push('contact.messages', {user: this.user, time: '1:26 PM', message: str})
+				this.fire('add-message', {message: {
+					message: str,
+					group: this.contact.id,
+				}});
 				this.$.input.value = "";
-				this.scrollToBottom();
+				// this.scrollToBottom(); TODO: listen to change in messages to scroll to bottom
 			}
 		},
 

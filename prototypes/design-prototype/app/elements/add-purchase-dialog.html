@@ -47,20 +47,28 @@
 		},
 
 		clear: function() {
+			this.$.title.value = "";
+			this.$.splitter.clear();
 		},
 
 		submit: function() {
-			this.push('contact.messages', {
-				user: this.user,
-				time: "1:27 PM",
-				purchase: {
-					title: this.$.title.value,
-					cost: this.$.splitter.cost,
-					split: this.$.splitter.getSplit()
-				}
-			});
-			console.log(this.contact.balance);
-			this.set('contact.balance', this.contact.balance - this.$.splitter.cost);			
+			// this.push('contact.messages', {
+			// 	user: this.user,
+			// 	time: "1:27 PM",
+			// 	purchase: {
+			// 		title: this.$.title.value,
+			// 		cost: this.$.splitter.cost,
+			// 		split: this.$.splitter.getSplit()
+			// 	}
+			// });
+			// console.log(this.contact.balance);
+			// this.set('contact.balance', this.contact.balance - this.$.splitter.cost);
+			this.fire('add-purchase', {purchase: {
+				title: this.$.title.value,
+				cost: this.$.splitter.cost,
+				split: this.$.splitter.getSplit(),
+				group_id: this.contact.id,
+			}});	
 		}
 	});
 </script>

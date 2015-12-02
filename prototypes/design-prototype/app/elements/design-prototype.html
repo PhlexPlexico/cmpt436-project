@@ -120,15 +120,13 @@
 
 		<add-contact-dialog 
 			id="add_contact_dialog"
-			user="[[user]]"
-			on-add-contact="addContact">
+			user="[[user]]">
 		</add-contact-dialog>
 
 		<add-group-dialog
 			id="add_group_dialog"
 			user="[[user]]"
-			contacts="[[contacts]]"
-			on-add-group="addGroup">
+			contacts="[[contacts]]">
 		</add-group-dialog>
 
 		<add-payment-dialog
@@ -159,7 +157,6 @@
 			    			<iron-icon icon="icons:expand-more"></iron-icon>
 			    		</paper-button>
 			    		<paper-menu class="dropdown-content" selected="-1">
-			    			<paper-item>Preferences</paper-item>
 			    			<paper-item>Log out</paper-item>
 			    		</paper-menu>
 			    	</paper-menu-button>
@@ -188,9 +185,7 @@
 						    			<iron-icon icon="icons:expand-more"></iron-icon>
 						    		</paper-button>
 						    		<paper-menu class="dropdown-content" on-iron-select="deselect">
-						    			<paper-item>Preferences</paper-item>
 						    			<paper-item>Add User</paper-item>
-						    			<paper-item>Leave Group</paper-item>
 						    		</paper-menu>
 					    		</paper-menu-button>
 					    		<div class="flex"></div>
@@ -205,6 +200,7 @@
 				    <group-feed 
 				    	user="{{user}}"
 				    	contact="{{contact}}"
+				    	on-add-message="addMessage"
 				    	on-open-add-purchase-dialog="openAddPurchaseDialog"
 				    	on-open-add-payment-dialog="openAddPaymentDialog">
 				    </group-feed>
@@ -421,12 +417,18 @@
 			this.contact = event.detail.group;
 		},
 
+		addMessage: function(event) {
+			console.log(event.detail.message);
+			this.$.socket_handler.sendMessage(event.detail.message);
+		},
+
 		openAddPaymentDialog: function() {
 			this.$.add_payment_dialog.open();
 		},
 
 		addPayment: function(event) {
-			console.log("TODO");
+			console.log(event.detail.payment);
+			this.$.socket_handler.sendPayment(event.detail.payment);
 		},
 
 		openAddPurchaseDialog: function() {
@@ -434,7 +436,8 @@
 		},
 
 		addPurchase: function(event) {
-			console.log("TODO");
+			console.log(event.detail.purchase);
+			this.$.socket_handler.sendPurchase(event.detail.purchase);
 		},
 
 		isTransaction: function(message) {
