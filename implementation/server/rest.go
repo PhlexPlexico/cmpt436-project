@@ -11,8 +11,9 @@ type addContactBody struct {
 	Email string `json:"email"`
 }
 
-type addGroupBody struct {
-	groupId string `json:"group_id"`
+type addContactsToGroupBody struct {
+	ContactUserIds []string `json:"contact_user_id"`
+	GroupId        string   `json:"group_id"`
 }
 
 type createGroupBody struct {
@@ -25,7 +26,7 @@ func castedValidateUserAndLogInIfNecessary(
 	return validateUserAndLogInIfNecessary(
 		w.(http.ResponseWriter), r.Request)
 }
-func addGroupHandler(w rest.ResponseWriter, r *rest.Request) {
+func addContactsToGroupHandler(w rest.ResponseWriter, r *rest.Request) {
 	user := castedValidateUserAndLogInIfNecessary(w, r)
 	if user == nil {
 		return
@@ -39,10 +40,11 @@ func addGroupHandler(w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	if err := db.AddUserToGroup(user.Id, body.groupId); err == nil {
+	if err := db.AddUsersToGroup(
+		body.ContactUserIds, body.GroupId, user.Id); err == nil {
 		w.WriteHeader(http.StatusOK)
 		fm.addToGroup <- &userIdsGroupId{
-			userIds: []string{user.Id},
+			userIds: []string{body.ContactUserIds},
 			groupId: body.groupId,
 		}
 	} else {
@@ -141,7 +143,7 @@ func serveRestApi(conf *config) {
 	router, err := rest.MakeRouter(
 		// rest.Get("/groups", getGroupsHandler),
 		// rest.Get("/contacts", getContactsHandler),
-		rest.Post("/addgroup", addGroupHandler),
+		rest.Post("/addcontactstogroup", addContactsToGroupHandler),
 		rest.Post("/creategroup", createGroupHandler),
 		rest.Post("/addcontact", addContactHandler),
 		// rest.Delete("/removegroup"),
