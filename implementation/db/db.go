@@ -74,6 +74,14 @@ type Purchase struct {
 	Timestamp     time.Time     `json:"time"`
 }
 
+type Feed struct {
+	ID        bson.ObjectId   `json:"id" bson:"_id, omitempty"`
+	Content   json.RawMessage `json:"content"`
+	GroupID   string          `json:"groupid"`
+	Type      string          `json:"type"`
+	Timestamp time.Time       `json:"time"`
+}
+
 var (
 	IsDrop  = true
 	Session *mgo.Session
