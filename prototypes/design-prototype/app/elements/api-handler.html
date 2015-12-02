@@ -3,27 +3,21 @@
 <dom-module id="api-handler">
 	<style></style>
 	<template>
-		<iron-ajax id="add_contact_to_group"
-		    url="/addgroup"
+		<iron-ajax id="add_contacts_to_group"
 		    method="POST"
-		    handle-as="json"
-		    content-type="json"
+		    content-type="application/json"
 		    on-response="addContactToGroupResponse"
 		    on-error="addContactToGroupError">
     	</iron-ajax>
     	<iron-ajax id="add_group"
-		    url="/creategroup"
 		    method="POST"
-		    handle-as="json"
-		    content-type="json"
+		    content-type="application/json"
 		    on-response="addGroupResponse"
 		    on-error="addGroupError">
     	</iron-ajax>
 		<iron-ajax id="add_contact"
-		    url="/addcontact"
 		    method="POST"
-		    handle-as="json"
-		    content-type="json"
+		    content-type="application/json"
 		    on-response="addContactResponse"
 		    on-error="addContactError">
     	</iron-ajax>
@@ -35,51 +29,65 @@
 		is: "api-handler",
 
 		ready: function() {
-			this.$.add_contact_to_group.url = "https://" + window.location.host + "/addgroup"
-			this.$.add_group.url = "https://" + window.location.host + "/creategroup"
-			this.$.add_contact.url = "https://" + window.location.host + "/addcontact"
+			this.$.add_contacts_to_group.url = "http://" + window.location.host + "/addcontactstogroup"
+			this.$.add_group.url = "http://" + window.location.host + "/creategroup"
+			this.$.add_contact.url = "http://" + window.location.host + "/addcontact"
 		},
 
-		addContact: function(contact) {
-			console.log("adding contact", contact);
+		addContact: function(email) {
+			console.log("adding contact", email);
+			this.$.add_contact.body = {
+				email: email
+			};
+			this.$.add_contact.generateRequest();
 		},
 
 		addContactResponse: function(event) {
 			console.log("adding contact response", event);
+			this.fire('add-contact-success');
 		},
 
 		addContactError: function(event) {
 			console.log("error adding contact", event);
+			this.fire('add-contact-error');
 		},
 
-		addGroup: function(group) {
-			console.log("adding group", group);
+		addGroup: function(name, memberIds) {
+			console.log("adding group", name, memberIds);
+			this.$.add_group.body = {
+				name: name,
+				member_ids: memberIds
+			};
+			this.$.add_group.generateRequest();
 		},
 
 		addGroupResponse: function(event) {
 			console.log("adding group response", event);
-			if (event.detail.xhr.status != 200) {
-				console.log("error adding group");
-			}
+			this.fire('add-group-success');
 		},
 
 		addGroupError: function(event) {
 			console.log("error adding group", event);
+			this.fire('add-group-error');
 		},
 
-		addContactToGroup: function(group) {
-			console.log("adding member to group", group);
+		addContactsToGroup: function(contactIds, groupId) {
+			console.log("adding member to group", contactIds, groupId);
+			this.$.add_contacts_to_group.body = {
+				contact_user_id: contactIds,
+				group_id: groupId
+			};
+			this.$.add_contacts_to_group.generateRequest();
 		},
 
-		addContactToGroupResponse: function(event) {
+		addContactsToGroupResponse: function(event) {
 			console.log("adding member to group response", event);
-			if (event.detail.xhr.status != 200) {
-				console.log("error adding contact to group");
-			}
+			this.fire('add-contact-to-group-success');
 		},
 
-		addContactToGroupError: function(event) {
+		addContactsToGroupError: function(event) {
 			console.log("error adding contact to group", event);
+			this.fire('add-contact-to-group-error');
 		},
 
 	});

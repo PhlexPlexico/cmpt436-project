@@ -2,7 +2,7 @@
 
 <dom-module id="add-group-dialog">
 	<style>
-		paper-input {
+		paper-input-container {
 			margin: 0 25px;
 		}
 		paper-dialog {
@@ -21,11 +21,18 @@
 		}
 	</style>
 	<template>
-		<api-handler id="api_handler"></api-handler>
+		<api-handler id="api_handler"
+			on-add-group-success="close"
+			on-add-group-error="error">
+		</api-handler>
 		<paper-dialog id="dialog" with-backdrop>
 		  <h2>Add a Group</h2>
 		  <paper-dialog-scrollable>
-		    <paper-input id="input" label="Enter a group name..."></paper-input>
+		    <paper-input-container id="input_container">
+		    	<label>Enter a group name...</label>
+				<input is="iron-input" id="input" value="{{name::input}}">
+				<paper-input-error>Error occurred</paper-input-error>
+			</paper-input-container>
 		    <div class="members">
 		    	<div><b>Members:</b></div>
 			    <template is="dom-repeat" items="[[members]]">
@@ -43,7 +50,7 @@
 		  </paper-dialog-scrollable>
 		  <div class="buttons">
 		    <paper-button dialog-dismiss>Cancel</paper-button>
-		    <paper-button dialog-confirm on-tap="submit">Submit</paper-button>
+		    <paper-button on-tap="submit">Submit</paper-button>
 		  </div>
 		</paper-dialog>
 	</template>
@@ -65,7 +72,12 @@
 			contacts: {
 				type: Object,
 				value: null
-			}
+			},
+			name: {
+				type: String,
+				value: "",
+				observer: "nameChange",
+			},
 		},
 
 		open: function() {
@@ -74,20 +86,39 @@
 			this.$.dialog.open();
 		},
 
-		clear: function() {
-			this.members = [];
+		close: function() {
+			this.$.dialog.close();
 		},
 
 		submit: function() {
 			console.log("submitted group");
-			this.fire('add-group', {group: {
-				group: {name: this.$.input.value, id: 3}, //TODO
-				balance: 0,
-				unread: 0,
-				members: this.members,
-				messages: [],
-			}});
-			this.$.input.value = "";
+			// var group = {
+			// 	group: {name: this.$.input.value, id: 3}, //TODO
+			// 	balance: 0,
+			// 	unread: 0,
+			// 	members: this.members,
+			// 	messages: [],
+			// };
+			// this.fire('add-group', {group: group});
+			var memberIds = [];
+			for (var i=0; i<this.members.length; i++) {
+				memberIds.push(this.members[i].user.id);
+			}
+			this.$.api_handler.addGroup(this.name, memberIds);
+		},
+
+		clear: function() {
+			this.members = [];
+			this.name = "";
+		},
+
+		error: function() {
+			console.log("error occurred adding group");
+			this.$.input_container.invalid = true;
+		},
+
+		nameChange: function() {
+			this.$.input_container.invalid = false;
 		},
 
 		addMember: function() {
