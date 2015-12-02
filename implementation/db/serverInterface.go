@@ -16,7 +16,7 @@ const (
 
 /* For debug purposes. */
 func (fi *FeedItem) String() string {
-	return fmt.Sprint(fi.GroupId, ":", fi.Type, ":", string(fi.Content))
+	return fmt.Sprint(fi.GroupID, ":", fi.Type, ":", string(fi.Content))
 }
 
 /*

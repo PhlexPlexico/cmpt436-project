@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2"
@@ -74,7 +75,7 @@ type Purchase struct {
 	Timestamp     time.Time     `json:"time"`
 }
 
-type Feed struct {
+type FeedItem struct {
 	ID        bson.ObjectId   `json:"id" bson:"_id, omitempty"`
 	Content   json.RawMessage `json:"content"`
 	GroupID   string          `json:"groupid"`
