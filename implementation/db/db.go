@@ -1,4 +1,5 @@
 package db
+package main
 
 import (
 	"encoding/json"
@@ -18,6 +19,7 @@ type User struct {
 	Phone      string        `json:"phone"`
 	Email      string        `json:"email"`
 	IsRealUser bool          `json:"isRealUser"`
+	AvatarURL  string        `json:"avatarurl"`
 	Groups     []string      `json:"groups"`
 	Contacts   []string      `json:"contacts"`
 	Timestamp  time.Time     `json:"time"`
@@ -94,10 +96,10 @@ var (
 ////////////////////////////////////////////////////////
 //          USER FUNCTIONS            //
 ////////////////////////////////////////////////////////
-func AddUser(name string, email string, phone string, isRealUser bool) error {
+func AddUser(name string, email string, phone string, avatarURL string, isRealUser bool) error {
 	var err error
 	Col = Session.DB("test").C("User")
-	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, Timestamp: time.Now()})
+	err = Col.Insert(&User{Name: name, Phone: phone, IsRealUser: isRealUser, Email: email, AvatarURL: avatarURL, Timestamp: time.Now()})
 	ThisPanic(err)
 	return err
 }
@@ -143,7 +145,7 @@ func AddGroup(groupName string, uid bson.ObjectId) error {
 	var err error
 	Col = Session.DB("test").C("Group")
 	id := bson.NewObjectId()
-	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}})
+	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}, Feed: []FeedItem{}})
 	AddGroupToUser(uid, id)
 	return err
 }
@@ -179,7 +181,6 @@ func GetGroupChanges(g Group) error {
 func RemoveMemberFromGroup(groupId bson.ObjectId, userId bson.ObjectId) error {
 	var err error
 	g, err := FindGroup(groupId)
-	fmt.Println("\n%s\n", userId)
 	for i, oldUser := range g.UserIDs {
 		if userId.Hex() == oldUser {
 			g.UserIDs = append(g.UserIDs[:i], g.UserIDs[i+1:]...)
@@ -280,13 +281,48 @@ func DeleteComment(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
+//					NOTIFICATION FUNCTIONS			  //
+////////////////////////////////////////////////////////
+
+func AddNotification(userID bson.ObjectId, subject string, content string) error {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	err = Col.Insert(&Notification{UserID: userID.Hex(), Subject: subject, Content: content, Timestamp: time.Now()})
+	return err
+}
+
+func FindNotificationById(id bson.ObjectId) (Notification, error) {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	notification := Notification{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&notification)
+	return notification, err
+}
+
+func GetNotificationChanges(n Notification) error {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	query := bson.M{"_id": n.ID}
+	change := bson.M{"$set": bson.M{"userid": n.UserID, "subject": n.Subject, "content": n.Content}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeleteNotification(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Notification")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
 //					PAYMENT FUNCTIONS				  //
 ////////////////////////////////////////////////////////
 
-func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount float32) error {
+func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount int) error {
 	var err error
 	Col = Session.DB("test").C("Payment")
-	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), Amount: amount})
+	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), AmountInCents: amount})
 	return err
 }
 
@@ -311,7 +347,7 @@ func GetPaymentChanges(p Payment) error {
 	var err error
 	Col = Session.DB("test").C("Payment")
 	query := bson.M{"_id": p.ID}
-	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amount": p.Amount}}
+	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amountInCents": p.AmountInCents}}
 	err = Col.Update(query, change)
 	return err
 }
@@ -324,7 +360,77 @@ func DeletePayment(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
-//          TEST FUNCTIONS            //
+//					PURCHASE FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddPurchase(payer string, userIDs []string, expected []int, amount int) error {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	err = Col.Insert(&Purchase{Payer: payer, UserIDs: userIDs, Expected: expected, AmountInCents: amount, Timestamp: time.Now()})
+	return err
+}
+
+func FindPurchaseById(id bson.ObjectId) (Purchase, error) {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	purchase := Purchase{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&purchase)
+	return purchase, err
+}
+
+func GetPurchaseChanges(p Purchase) error {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	query := bson.M{"_id": p.ID}
+	change := bson.M{"$set": bson.M{"payer": p.Payer, "userids": p.UserIDs, "expected": p.Expected, "amountInCents": p.AmountInCents}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeletePurchase(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Purchase")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					FEEDITEM FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddFeedItem(content json.RawMessage, groupID string, typee string) error {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	err = Col.Insert(&FeedItem{Content: content, GroupID: groupID, Type: typee, Timestamp: time.Now()})
+	return err
+}
+
+func FindFeedItemById(id bson.ObjectId) (FeedItem, error) {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	feedItem := FeedItem{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&feedItem)
+	return feedItem, err
+}
+
+func GetFeedItemChanges(f FeedItem) error {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	query := bson.M{"_id": f.ID}
+	change := bson.M{"$set": bson.M{"content": f.Content, "groupid": f.GroupID, "type": f.Type}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeleteFeedItem(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//          MAIN FUNCTIONS            //
 ////////////////////////////////////////////////////////
 
 func Init() {
