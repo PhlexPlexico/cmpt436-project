@@ -14,18 +14,6 @@ const (
 	FeedItemTypePayment      string = "payment"
 )
 
-/*
- * All inbound websocket messages take this form.
- */
-type FeedItem struct {
-	// The actual feed item to be unmarshaled, based upon the type.
-	Content json.RawMessage `json:"content"`
-	// This is just a string representation of a bson.ObjectId.
-	GroupId string `json:"group_id"`
-	// ContactsId string `json:"contact_id"`
-	Type string `json:"type"`
-}
-
 /* For debug purposes. */
 func (fi *FeedItem) String() string {
 	return fmt.Sprint(fi.GroupId, ":", fi.Type, ":", string(fi.Content))
