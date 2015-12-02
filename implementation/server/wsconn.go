@@ -51,7 +51,7 @@ const (
 	// 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed.
-	maxMessageSize = 512
+	maxMessageSize = 4096
 
 	messageTypeFeedItem = "feedItem"
 	messageTypeGroups   = "groups"

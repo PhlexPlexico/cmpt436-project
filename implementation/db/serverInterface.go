@@ -14,21 +14,9 @@ const (
 	FeedItemTypePayment      string = "payment"
 )
 
-/*
- * All inbound websocket messages take this form.
- */
-type FeedItem struct {
-	// The actual feed item to be unmarshaled, based upon the type.
-	Content json.RawMessage `json:"content"`
-	// This is just a string representation of a bson.ObjectId.
-	GroupId string `json:"group_id"`
-	// ContactsId string `json:"contact_id"`
-	Type string `json:"type"`
-}
-
 /* For debug purposes. */
 func (fi *FeedItem) String() string {
-	return fmt.Sprint(fi.GroupId, ":", fi.Type, ":", string(fi.Content))
+	return fmt.Sprint(fi.GroupID, ":", fi.Type, ":", string(fi.Content))
 }
 
 /*
@@ -130,7 +118,7 @@ func CreateUserIfNecessary(
 }
 
 func CreateNotification(subject, content, groupId string) (Notification, error) {
-	return nil, nil
+	return Notification{}, nil
 }
 
 /*
@@ -161,7 +149,7 @@ func GetGroupIdStrings(userId string) ([]string, error) {
  * Add the user with the given userId to the group with the given groupId.
  * If the error is not nil, the returned value must be ignored.
  */
-func AddUserToGroup(userId, groupId string) error {
+func AddUsersToGroup(userIds []string, groupId string, adderId string) error {
 	return nil
 }
 

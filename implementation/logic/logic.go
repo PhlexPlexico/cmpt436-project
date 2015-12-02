@@ -5,7 +5,7 @@ import (
 	"fmt"
 	//"gopkg.in/mgo.v2/bson"
 	//"strings"
-	"../server"
+	"../db"
 	//"sort"
 )
 
@@ -50,7 +50,7 @@ import (
 
 // Adds a purchase for the buyer, increasing the expeced by (cost-average)
 // lowers all other group members Actual by average
-func AddPurchase(group server.Group, buyer string, cost int, expected []int) server.Group {
+func AddPurchase(group db.Group, buyer string, cost int, expected []int) db.Group {
 	//var length int = len(group.UserIDs)
 	//var average int = (expected / length)
 	for ele := range group.UserIDs {
@@ -67,7 +67,7 @@ func AddPurchase(group server.Group, buyer string, cost int, expected []int) ser
 // payer pays payee
 // payers Actual and Expected increase
 // payees Actual and Expected decrease
-func PayMember(group server.Group, payer string, payee string, amount int) server.Group {
+func PayMember(group db.Group, payer string, payee string, amount int) db.Group {
 	payerPos, payeePos := getPositions(group, payer, payee)
 
 	fmt.Printf("\n Begin payer: %v %v", group.Expected[payerPos], group.Actual[payerPos])
@@ -83,7 +83,7 @@ func PayMember(group server.Group, payer string, payee string, amount int) serve
 	return group
 }
 
-func getPositions(group server.Group, u1 string, u2 string) (int, int) {
+func getPositions(group db.Group, u1 string, u2 string) (int, int) {
 	x := -1
 	y := -1
 	for ele := range group.UserIDs {
@@ -97,7 +97,7 @@ func getPositions(group server.Group, u1 string, u2 string) (int, int) {
 }
 
 // take on the entirety of someone elses Actual/Expected
-func TakeDebt(group server.Group, taker string, giver string) server.Group {
+func TakeDebt(group db.Group, taker string, giver string) db.Group {
 	takerPos, giverPos := getPositions(group, taker, giver)
 	group.Actual[takerPos] += group.Actual[giverPos]
 	group.Expected[takerPos] += group.Expected[giverPos]
