@@ -26,11 +26,11 @@ func main() {
 
 	db.Init()
 
-	_ = db.AddUser("jordan", "lys.jordan@gmail.com", "3066305775", true)
-	_ = db.AddUser("ken", "okenso@gmail.com", "3067179886", true)
-	_ = db.AddUser("evan", "evanclosson@gmail.com", "3067170984", true)
-	_ = db.AddUser("Josh", "josh@usask.ca", "3067173421", true)
-	_ = db.AddUser("William", "will@usask.ca", "3067123645", true)
+	_ = db.AddUser("jordan", "lys.jordan@gmail.com", "3066305775", "", true)
+	_ = db.AddUser("ken", "okenso@gmail.com", "3067179886", "", true)
+	_ = db.AddUser("evan", "evanclosson@gmail.com", "3067170984", "", true)
+	_ = db.AddUser("Josh", "josh@usask.ca", "3067173421", "", true)
+	_ = db.AddUser("William", "will@usask.ca", "3067123645", "", true)
 
 	userid1, _ := db.FindUserIdByEmail("lys.jordan@gmail.com")
 	userid2, _ := db.FindUserIdByEmail("okenso@gmail.com")
