@@ -51,7 +51,7 @@ type Comment struct {
 
 type Notification struct {
 	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	userid    string        `json:"userid"`
+	UserID    string        `json:"userid"`
 	Subject   string        `json:"subject"`
 	Content   string        `json:"content"`
 	Timestamp time.Time     `json:"time"`
@@ -60,7 +60,9 @@ type Notification struct {
 type Payment struct {
 	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
 	Payer         string        `json:"payer"`
+	PayerID       string        `json:"payerid"`
 	Payee         string        `json:"payee"`
+	PayeeID       string        `json:"payeeid"`
 	AmountInCents int           `json:"amountInCents"`
 	Timestamp     time.Time     `json:"time"`
 }
@@ -272,6 +274,50 @@ func GetCommentChanges(c Comment) error {
 func DeleteComment(id bson.ObjectId) error {
 	var err error
 	Col = Session.DB("test").C("Comment")
+	err = Col.RemoveId(id)
+	return err
+}
+
+////////////////////////////////////////////////////////
+//					PAYMENT FUNCTIONS				  //
+////////////////////////////////////////////////////////
+
+func AddPayment(payer string, payerID bson.ObjectId, payee string, payeeID bson.ObjectId, amount float32) error {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	err = Col.Insert(&Payment{Payer: payer, PayerID: payerID.Hex(), Payee: payee, PayeeID: payeeID.Hex(), Amount: amount})
+	return err
+}
+
+//Only can be one payment between two people
+func FindPaymentById(id bson.ObjectId) (Payment, error) {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	payment := Payment{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&payment)
+	return payment, err
+}
+
+func FindPaymentByPayeeIdAndPayerId(payeeid bson.ObjectId, payerid bson.ObjectId) (Payment, error) {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	payment := Payment{}
+	err = Col.Find(bson.M{"payeeid": payeeid.Hex(), "payerid": payerid.Hex()}).One(&payment)
+	return payment, err
+}
+
+func GetPaymentChanges(p Payment) error {
+	var err error
+	Col = Session.DB("test").C("Payment")
+	query := bson.M{"_id": p.ID}
+	change := bson.M{"$set": bson.M{"payer": p.Payer, "payerid": p.PayerID, "payee": p.Payee, "payeeid": p.PayeeID, "amount": p.Amount}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func DeletePayment(id bson.ObjectId) error {
+	var err error
+	Col = Session.DB("test").C("Payment")
 	err = Col.RemoveId(id)
 	return err
 }
