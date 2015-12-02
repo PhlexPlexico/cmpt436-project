@@ -149,7 +149,7 @@ func GetGroupIdStrings(userId string) ([]string, error) {
  * Add the user with the given userId to the group with the given groupId.
  * If the error is not nil, the returned value must be ignored.
  */
-func AddUserToGroup(userId, groupId string) error {
+func AddUsersToGroup(userIds []string, groupId string, adderId string) error {
 	return nil
 }
 

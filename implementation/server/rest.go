@@ -32,7 +32,7 @@ func addContactsToGroupHandler(w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	body := addGroupBody{}
+	body := addContactsToGroupBody{}
 	err := r.DecodeJsonPayload(&body)
 	if err != nil {
 		rest.Error(w, err.Error(), http.StatusBadRequest)
@@ -44,8 +44,8 @@ func addContactsToGroupHandler(w rest.ResponseWriter, r *rest.Request) {
 		body.ContactUserIds, body.GroupId, user.Id); err == nil {
 		w.WriteHeader(http.StatusOK)
 		fm.addToGroup <- &userIdsGroupId{
-			userIds: []string{body.ContactUserIds},
-			groupId: body.groupId,
+			userIds: body.ContactUserIds,
+			groupId: body.GroupId,
 		}
 	} else {
 		rest.Error(w, err.Error(), http.StatusInternalServerError)

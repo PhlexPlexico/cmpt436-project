@@ -3,6 +3,7 @@ package server
 import (
 	"../db"
 	"encoding/json"
+	"gopkg.in/mgo.v2/bson"
 	"log"
 )
 
@@ -162,11 +163,11 @@ func (fm *feedsManager) broadcastFeedItem(message *db.FeedItem) {
 	}
 	wsMessage := &websocketOutMessage{
 		Content: messageBytes,
-		GroupId: message.GroupId,
+		GroupId: message.GroupID,
 		Type:    messageTypeFeedItem,
 	}
 
-	broadcast(wsMessage)
+	fm.broadcast(wsMessage)
 	// if message.Gid != "" {
 
 	// } else {
@@ -174,13 +175,13 @@ func (fm *feedsManager) broadcastFeedItem(message *db.FeedItem) {
 	// 		client.outgoing <- wsMessage
 	// 	}
 	// }
-	log.Println("broadcasted message to group " + message.GroupId)
+	log.Println("broadcasted message to group " + message.GroupID)
 }
 
 func (fm *feedsManager) broadcast(message *websocketOutMessage) {
 	for _, client := range fm.clientsPerGroup[message.GroupId] {
 		log.Println()
-		client.outgoing <- wsMessage
+		client.outgoing <- message
 	}
 }
 
@@ -193,8 +194,12 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 
 	uiUsers := make([]uiUser, len(userIds))
 	for i, userId := range userIds {
-		user := db.FindUserById(userId)
-		uiUsers[i] = *createUiUser(user)
+		user, err := db.FindUserByID(bson.ObjectId(userId))
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+		uiUsers[i] = *createUiUser(&user)
 	}
 
 	uiUsersBytes, err := json.Marshal(uiUsers)
@@ -224,7 +229,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 					return
 				}
 
-				uiGroupsBytes, err := json.Marshal([]uiGroup{newUiGroup})
+				uiGroupsBytes, err := json.Marshal([]*uiGroup{newUiGroup})
 				if err != nil {
 					log.Println(err)
 					return
@@ -258,7 +263,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 
 		fm.broadcastFeedItem(&db.FeedItem{
 			Content: notifBytes,
-			GroupId: feedId,
+			GroupID: feedId,
 			Type:    db.FeedItemTypeNotification,
 		})
 	}
@@ -295,7 +300,7 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 	}
 	uiUsers := make([]uiUser, len(users))
 	for j, user := range users {
-		uiUsers[j] = *createUiUser(user)
+		uiUsers[j] = *createUiUser(&user)
 	}
 	feedItems, err := db.GetAllFeedItems(group.ID)
 	if err != nil {
