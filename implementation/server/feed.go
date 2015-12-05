@@ -319,6 +319,6 @@ func createUiUser(user *db.User) *uiUser {
 	return &uiUser{
 		Name:      user.Name,
 		Id:        string(user.ID),
-		AvatarUrl: user.AvatarUrl,
+		AvatarUrl: user.AvatarURL,
 	}
 }

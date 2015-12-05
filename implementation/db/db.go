@@ -1,5 +1,6 @@
 package db
-package main
+
+//package main
 
 import (
 	"encoding/json"

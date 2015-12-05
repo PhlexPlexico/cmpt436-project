@@ -1,9 +1,9 @@
 package main
 
 import (
-	"log"
-	// "../db"
+	"../db"
 	"../server"
+	"log"
 )
 
 func main() {
@@ -11,7 +11,7 @@ func main() {
 	//Start the backend before starting the server that relies upon it.
 	//(William doesn't know how to get the back-end to work, so he's commented
 	// it out.)
-	// db.Init()
+	db.Init()
 	//This is a blocking call. It just serves forever.
 	server.Serve()
 }
