@@ -10,7 +10,7 @@ Setup is a bit more involved for this prototype. Make sure you have [Bower](http
 2. `bower install`
 	* Installs required web components
 3. `cd ../server`
-4. `sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /key.key -out cert.crt`
+4. `sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.key -out cert.crt`
  * Generates a self-signed certificate for https and wss
 5. `redis-server`
  * Starts a redis server, **do this in a seperate window**
