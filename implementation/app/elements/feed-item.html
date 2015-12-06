@@ -64,7 +64,7 @@
 			<div class="horizontal layout">
 				<template is="dom-if" if="[[!noAvatar]]">
 					<template is="dom-if" if="[[!noHeader]]">
-						<img src="../images/profile-picture.svg">
+						<img src="[[getAvatar(feedItem.content.userid)]]">
 					</template>
 					<template is="dom-if" if="[[noHeader]]">
 						<div class="img_spacer"></div>
@@ -188,6 +188,10 @@
 
 		getName: function(id) {
 			return this.group.members[this.group.memberIndexMap[id]].name;
+		},
+
+		getAvatar: function(id) {
+			return this.group.members[this.group.memberIndexMap[id]].avatar_url;
 		},
 
 		isNotification: function(feedItem) {
