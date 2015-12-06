@@ -35,12 +35,12 @@
 				<template is="dom-if" if="[[empty]]">
 					<div>No messages yet, send something to start chatting!</div>
 				</template>
-				<template is="dom-repeat" items="[[contact.messages]]">
-					<chat-message 
+				<template is="dom-repeat" items="[[group.messages]]">
+					<feed-item 
 						user="[[user]]"
 						message="[[item]]"
 						no-header="[[sameAsPrevious(index)]]">
-					</chat-message>
+					</feed-item>
 				</template>
 			</div>
 			<div class="horizontal layout end">
@@ -67,10 +67,10 @@
 
 		properties: {
 			user: Object,
-			contact: {
+			group: {
 				type: Object,
 				value: null,
-				observe: 'contactChanged'
+				observe: 'groupChanged'
 			},
 			empty: {
 				type: Boolean,
@@ -79,7 +79,7 @@
 		},
 
 		observers: [
-			'isEmpty(contact.messages.splices)'
+			'isEmpty(group.messages.splices)'
 		],
 
 		ready: function() {
@@ -90,10 +90,10 @@
 			console.log("send");
 			var str = this.$.input.value.trim();
 			if (str) {
-				// this.push('contact.messages', {user: this.user, time: '1:26 PM', message: str})
+				// this.push('group.messages', {user: this.user, time: '1:26 PM', message: str})
 				this.fire('add-message', {message: {
 					message: str,
-					group: this.contact.id,
+					group: this.group.id,
 				}});
 				this.$.input.value = "";
 				// this.scrollToBottom(); TODO: listen to change in messages to scroll to bottom
@@ -101,12 +101,12 @@
 		},
 
 		sameAsPrevious: function(index) {
-			return index > 0 && this.contact.messages[index].user.id == this.contact.messages[index - 1].user.id;
+			return index > 0 && this.group.messages[index].user.id == this.group.messages[index - 1].user.id;
 		},
 
 		isEmpty: function(changeRecord) {
 			this.scrollToBottom();
-			this.empty = this.contact && this.contact.messages.length == 0;
+			this.empty = this.group && this.group.messages.length == 0;
 		},
 
 		scrollToBottom: function() {

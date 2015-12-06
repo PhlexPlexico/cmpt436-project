@@ -217,7 +217,7 @@
 				    			<div class="transactions">
 					    			<template is="dom-repeat" items="[[contact.messages]]">
 					    				<template is="dom-if" if="[[isTransaction(item)]]">
-					    					<chat-message no-avatar message="[[item]]"></chat-message>
+					    					<feed-item no-avatar message="[[item]]"></feed-item>
 					    				</template>
 					    			</template>
 					    			<div class="vertical layout flex">
@@ -344,6 +344,7 @@
 
 		ready: function() {
 			this.$.contact_drawer_panel.openDrawer();
+			console.log(this.user);
 		},
 
 		peopleOpen: function() {

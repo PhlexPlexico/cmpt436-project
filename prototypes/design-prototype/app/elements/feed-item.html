@@ -1,6 +1,6 @@
 <link rel="import" href="app-imports.html">
 
-<dom-module id="chat-message">
+<dom-module id="feed-item">
 	<style>
 		:host {
 			display: block;
@@ -69,14 +69,15 @@
 			<div class="message vertical layout flex">
 				<template is="dom-if" if="[[!noHeader]]">
 					<div class="no_overflow header horizontal layout">
+						<!-- TODO -->
 						<div class="no_overflow username">[[message.user.name]]</div>
 						<div class="time">[[message.time]]</div><br>
 					</div>
 				</template>
-				<template is="dom-if" if="[[message.message]]">
+				<template is="dom-if" if="[[isMessage(message)]]">
 					<div>[[message.message]]</div>
 				</template>
-				<template is="dom-if" if="[[message.purchase]]">
+				<template is="dom-if" if="[[isPurchase(message)]]">
 					<div>Added a purchase.</div>
 					<div class="flex transaction">
 						<div class="horizontal layout flex">
@@ -107,13 +108,16 @@
 						</div>
 					</div>
 				</template>
-				<template is="dom-if" if="[[message.payment]]">
+				<template is="dom-if" if="[[isPayment(message)]]">
 					<div>Added a payment.</div>
 					<div class="flex transaction">
 						<b>From: </b><span>[[message.payment.from]]</span><br>
 						<b>To: </b><span>[[message.payment.to]]</span><br>
 						<b>Amount: </b><span>[[formatCost(message.payment.cost)]]</span>
 					</div>
+				</template>
+				<template is="dom-if" if="[[isNotification(message)]]">
+					<div>Notice</div>
 				</template>
 			</div>
 		</div>
@@ -122,7 +126,7 @@
 
 <script>
 	Polymer({
-		is: "chat-message",
+		is: "feed-item",
 
 		properties: {
 			user: {
@@ -160,7 +164,24 @@
 
 		toggle: function(selector) {
 			this.$$('#collapse').toggle();
-		}
+		},
+
+		isNotification: function(feedItem) {
+			return feedItem.type == "notification";
+		},
+
+		isPurchase: function(feedItem) {
+			return feedItem.type == "purchase";
+		},
+
+		isPayment: function(feedItem) {
+			return feedItem.type == "payment";
+		},
+
+		isMessage: function(feedItem) {
+			return feedItem.type == "message";
+		},
+
 
 
 	});
