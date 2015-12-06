@@ -1,0 +1,186 @@
+<link rel="import" href="app-imports.html">
+
+<dom-module id="socket-handler">
+	<style></style>
+	<template></template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "socket-handler",
+
+		properties: {
+			user: {
+				type: Object,
+				value: null,
+			},
+			ws: {
+				type: Object,
+				value: null,
+			},
+			groups: {
+				type: Array,
+				value: [],
+			},
+			groupIndexMap: {
+				type: Object,
+				value: {},
+			},
+			contacts: {
+				type: Array,
+				value: [],
+			},
+		},
+
+		ready: function() {
+		    if (window["WebSocket"]) {
+		        this.ws = new WebSocket("wss://" + window.location.host + "/ws");
+		        this.ws.onclose = function(event) {
+		            console.log("websocket closed");
+		        }.bind(this);
+		        this.ws.onmessage = function(event) {
+		            this.receiveSocketData(event);
+		        }.bind(this);
+		    } else {
+		        console.log("websockets not supported");
+		    }
+		},
+
+		sendMessage: function(message) {
+			console.log("sending message over socket", message);
+			// var feedItem = {
+			// 	type: "comment", 
+			// 	groupid: _,  
+			// 	content: {
+			// 		id: _,
+			// 		userName: _,
+			// 		userid: _,
+			// 		subject: _,
+			// 		content: _,
+			// 		time: _,
+			// 	}
+			// };
+			// this.ws.send(JSON.stringify(feedItem));
+		},
+
+		sendPurchase: function(purchase) {
+			console.log("sending purchase over socket", purchase);
+			// var feedItem = {
+			// 	type: "purchase", 
+			// 	groupid: _,
+			// 	content: {
+			// 		id: _,
+			// 		payer: _,
+			// 		userids: _,
+			// 		expected: _,
+			// 		amountInCents: _,
+			// 		time: _,
+			// 	}
+			// };
+			// this.ws.send(JSON.stringify(feedItem));
+		},
+
+		sendPayment: function(payment) {
+			console.log("sending payment over socket", payment);
+			// var feedItem = {
+			// 	type: "payment", 
+			// 	groupid: _,
+			// 	content: {
+			// 		id: _,
+			// 		payer: _,
+			// 		payerid: _,
+			// 		payee: _,
+			// 		payeeid: _,
+			// 		amountInCents: _,
+			// 		time: _,
+			// 	}
+			// };
+			// this.ws.send(JSON.stringify(feedItem));
+		},
+
+		receiveSocketData: function(event) {
+			console.log("received message over socket", event);
+			var data = JSON.parse(event.data);
+			switch (data.type) {
+				case "feedItem":
+					console.log("received feed item");
+					this.addFeedItem(data);
+					break;
+				case "groups":
+					console.log("received groups");
+					this.addGroups(data);
+					break;
+				// case "contacts":
+				// 	console.log("received contacts");
+				// 	break;
+				case "users":
+					console.log("received users");
+					this.addUsers(data);
+					break;
+				default: 
+					console.log("could not parse socket data", data);
+					break;
+			}
+		},
+
+		addFeedItem: function(data) {
+			//data has group_id, content, and type
+			//content is a feedItem
+			//need to find group by group_id and append feedItem to group's feed_items field
+			var index = this.groupIndexMap[data.group_id];
+			if (index) {
+				this.push('groups.'+index+'.feed_items', data.content);
+				console.log('added feed item to group', data);
+				return;
+			}
+			index = this.contactIndexMap[data.group_id];
+			if (index) {
+				this.push('contacts.'+index+'.feed_items', data.content);
+				console.log('added feed item to contact', data);
+				return;
+			}
+			console.log("the given group_id does not exist", data);
+		},
+
+		addGroups: function(data) {
+			//data has content, and type
+			//content is array of groups
+			//groups have name, id, balances, users, feed_items
+			for (var i=0; i<data.content.length; i++) {
+				if (data.content[i].name == "") {
+					data.content[i].type = "contact"
+					if (data.content[i].users[0].id == this.user.id) {
+						data.content[i].name = data.content[i].users[1].name;
+						this.push('contacts', data.content[i].users[1]);
+					} else {
+						data.content[i].name = data.content[i].users[0].name;
+						this.push('contacts', data.content[i].users[0]);
+					}
+					console.log('added contact', data.content[i]);
+				} else {
+					data.content[i].type = "group";
+				}
+				this.groupIndexMap[data.content[i].id] = this.groups.length;
+				this.push('groups', data.content[i]);
+				console.log('added group', data.content[i]);
+			}
+		},
+
+		addUsers: function(data) {
+			//data has group_id, content, and type
+			//content is array of users
+			//users have name, id, and avatar_url
+			//need to find group by group_id and append users to group's users field
+			var index = this.groupIndexMap[data.group_id];
+			if (index) {
+				for (var i=0; i<data.content.length; i++) {
+					this.push('groups.'+index+'.users', data.content[i]);
+				}
+				console.log('added users', data);
+				return;
+			}
+			console.log("the given group_id does not exist", data);
+		},
+
+	});
+</script>

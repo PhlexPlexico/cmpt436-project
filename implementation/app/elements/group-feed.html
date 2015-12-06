@@ -1,0 +1,130 @@
+<link rel="import" href="app-imports.html">
+
+<dom-module id="group-feed">
+	<style>
+		:host {
+			display: block;
+		}
+		paper-menu-button {
+			padding: 0;
+			color: #333;
+		}
+		#chat {
+			width: auto;
+			overflow-y: scroll;
+			overflow-wrap: break-word;
+		}
+		.fill {
+			height: 100%;
+		}
+		.content {
+			padding: 20px;
+			padding-bottom: 0;
+		}
+		paper-button {
+			text-transform: none;
+		    background-color: #009688;
+		    color: #FFFFFF;
+		    margin: 5px;
+		    padding: 8px 10px;
+		}
+	</style>
+	<template>
+		<div class="fill vertical layout flex">
+			<div id="chat" class="content fill vertical layout flex">
+				<template is="dom-if" if="[[empty]]">
+					<div>No messages yet, send something to start chatting!</div>
+				</template>
+				<template is="dom-repeat" items="[[group.messages]]">
+					<feed-item 
+						user="[[user]]"
+						message="[[item]]"
+						no-header="[[sameAsPrevious(index)]]">
+					</feed-item>
+				</template>
+			</div>
+			<div class="horizontal layout end">
+				<paper-menu-button id="accountMenu"
+					vertical-offset="40"
+					vertical-align="bottom">
+					<paper-icon-button icon="add" class="dropdown-trigger"></paper-icon-button>
+					<paper-menu class="dropdown-content" selected="-1" on-iron-select="deselect">
+						<paper-item on-tap="openAddPurchaseDialog">Add Purchase</paper-item>
+						<paper-item on-tap="openAddPaymentDialog">Add Payment</paper-item>
+					</paper-menu>
+				</paper-menu-button>
+				<paper-input id="input" class="flex" no-label-float label="Enter a message..."></paper-input>
+				<paper-button on-tap="send">Send</paper-button>
+				<iron-a11y-keys target="{{}}" keys="enter" on-keys-pressed="send"></iron-a11y-keys>
+			</div>
+		</div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "group-feed",
+
+		properties: {
+			user: Object,
+			group: {
+				type: Object,
+				value: null,
+				observe: 'groupChanged'
+			},
+			empty: {
+				type: Boolean,
+				value: true,
+			}
+		},
+
+		observers: [
+			'isEmpty(group.messages.splices)'
+		],
+
+		ready: function() {
+			console.log("group-feed user", this.user);
+		},
+
+		send: function() {
+			console.log("send");
+			var str = this.$.input.value.trim();
+			if (str) {
+				// this.push('group.messages', {user: this.user, time: '1:26 PM', message: str})
+				this.fire('add-message', {message: {
+					message: str,
+					group: this.group.id,
+				}});
+				this.$.input.value = "";
+				// this.scrollToBottom(); TODO: listen to change in messages to scroll to bottom
+			}
+		},
+
+		sameAsPrevious: function(index) {
+			return index > 0 && this.group.messages[index].user.id == this.group.messages[index - 1].user.id;
+		},
+
+		isEmpty: function(changeRecord) {
+			this.scrollToBottom();
+			this.empty = this.group && this.group.messages.length == 0;
+		},
+
+		scrollToBottom: function() {
+			this.async(function() {
+				this.$.chat.scrollTop = this.$.chat.scrollHeight;
+			}, 1);
+		},
+
+		deselect: function(event) {
+			event.target.selected = -1;
+		},
+
+		openAddPurchaseDialog: function() {
+			this.fire('open-add-purchase-dialog');
+		},
+
+		openAddPaymentDialog: function() {
+			this.fire('open-add-payment-dialog');
+		},
+	});
+</script>

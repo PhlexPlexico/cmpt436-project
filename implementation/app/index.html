@@ -4,17 +4,20 @@
 	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 	<meta content="utf-8" http-equiv="encoding">
 
-	<title>redigo-chat</title>
+	<title>design-prototype</title>
 
-	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=0">
 
 	<script src="bower_components/webcomponentsjs/webcomponents.js"></script>
 	<link rel="import" href="bower_components/polymer/polymer.html">
-	<link rel="import" href="components/redigo-chat/redigo-chat.html">
+	<link rel="import" href="elements/design-prototype.html">
 
 	<style>
 		html,body {
-			margin: 10px;
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			height: 100%;
 			background-color: #fff;
 			font-family: 'RobotoDraft', sans-serif;
 		}
@@ -22,6 +25,17 @@
 
 </head>
 <body>
-	<redigo-chat></redigo-chat>
+	<design-prototype id="app"></design-prototype>
 </body>
+
+<script type="text/javascript">
+	var user = {
+		name: "",
+		email: "",
+		id: "",
+		avatar_url: "",
+	};
+	document.getElementById("app").user = user;
+</script>
 </html>
+

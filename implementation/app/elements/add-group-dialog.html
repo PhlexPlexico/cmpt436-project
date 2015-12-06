@@ -1,0 +1,128 @@
+<link rel="import" href="app-imports.html">
+
+<dom-module id="add-group-dialog">
+	<style>
+		paper-input-container {
+			margin: 0 25px;
+		}
+		paper-dialog {
+			width: 400px;
+			font-size: 16px;
+		}
+		paper-dropdown-menu {
+			margin: 0 25px;
+		}
+		.members {
+			margin: 0 25px;
+			margin-top: 25px;
+		}
+		paper-button {
+			font-size: 14px;
+		}
+	</style>
+	<template>
+		<api-handler id="api_handler"
+			on-add-group-success="close"
+			on-add-group-error="error">
+		</api-handler>
+		<paper-dialog id="dialog" with-backdrop>
+		  <h2>Add a Group</h2>
+		  <paper-dialog-scrollable>
+		    <paper-input-container id="input_container">
+		    	<label>Enter a group name...</label>
+				<input is="iron-input" id="input" value="{{name::input}}">
+				<paper-input-error>Error occurred</paper-input-error>
+			</paper-input-container>
+		    <div class="members">
+		    	<div><b>Members:</b></div>
+			    <template is="dom-repeat" items="[[members]]">
+			    	<div>[[item.user.name]]</div>
+			    </template>
+		    </div>
+		    <paper-dropdown-menu label="Add a member...">
+				<paper-menu class="dropdown-content" id="contacts" on-iron-select="addMember">
+					<template is="dom-repeat" items="[[contacts]]">
+						<paper-item>[[item.user.name]]</paper-item>
+					</template>
+				</paper-menu>
+			</paper-dropdown-menu>
+
+		  </paper-dialog-scrollable>
+		  <div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+		    <paper-button on-tap="submit">Submit</paper-button>
+		  </div>
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "add-group-dialog",
+
+		properties: {
+			user: {
+				type: Object,
+				value: null,
+			},
+			members: {
+				type: Array,
+				value: [],
+			},
+			contacts: {
+				type: Object,
+				value: null
+			},
+			name: {
+				type: String,
+				value: "",
+				observer: "nameChange",
+			},
+		},
+
+		open: function() {
+			this.clear();
+			this.push('members', {user: this.user, balance: 0});
+			this.$.dialog.open();
+		},
+
+		close: function() {
+			this.$.dialog.close();
+		},
+
+		submit: function() {
+			console.log("submitted group");
+			// var group = {
+			// 	group: {name: this.$.input.value, id: 3}, //TODO
+			// 	balance: 0,
+			// 	unread: 0,
+			// 	members: this.members,
+			// 	messages: [],
+			// };
+			// this.fire('add-group', {group: group});
+			var memberIds = [];
+			for (var i=0; i<this.members.length; i++) {
+				memberIds.push(this.members[i].user.id);
+			}
+			this.$.api_handler.addGroup(this.name, memberIds);
+		},
+
+		clear: function() {
+			this.members = [];
+			this.name = "";
+		},
+
+		error: function() {
+			console.log("error occurred adding group");
+			this.$.input_container.invalid = true;
+		},
+
+		nameChange: function() {
+			this.$.input_container.invalid = false;
+		},
+
+		addMember: function() {
+			this.push('members', {user: this.contacts[this.$.contacts.selected].user, balance: 0});
+		}
+	});
+</script>

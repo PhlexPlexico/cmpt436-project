@@ -1,0 +1,83 @@
+<link rel="import" href="app-imports.html">
+
+<dom-module id="add-contact-dialog">
+	<style>
+		paper-input-container {
+			margin: 0 25px;
+		}
+		paper-dialog {
+			width: 400px;
+		}
+	</style>
+	<template>
+		<api-handler id="api_handler"
+			on-add-contact-success="close"
+			on-add-contact-error="error">
+		</api-handler>
+		<paper-dialog id="dialog" with-backdrop>
+		  <h2>Add a Contact</h2>
+		  <paper-dialog-scrollable>
+		    <paper-input-container id="input_container">
+		    	<label>Enter an email...</label>
+				<input is="iron-input" id="input" value="{{email::input}}">
+				<paper-input-error>Error occurred</paper-input-error>
+			</paper-input-container>
+		  </paper-dialog-scrollable>
+		  <div class="buttons">
+		    <paper-button dialog-dismiss>Cancel</paper-button>
+		    <paper-button on-tap="submit">Submit</paper-button>
+		  </div>
+		</paper-dialog>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "add-contact-dialog",
+
+		properties: {
+			user: Object,
+			email: {
+				type: String,
+				value: "",
+				observer: "emailChange",
+			}
+		},
+
+		open: function() {
+			this.clear();
+			this.$.dialog.open();
+		},
+
+		close: function() {
+			this.$.dialog.close();
+		},
+
+		submit: function() {
+			// var contact = {
+			// 	user: {name: this.email, id: 5}, //TODO
+			// 	balance: 0,
+			// 	unread: 0,
+			// 	members: [
+			// 		{user: this.user, balance: 0},
+			// 		{user: {name: this.email, id: 5}, balance: 0}], //TODO
+			// 	messages: [],
+			// };
+			// this.fire('add-contact', {contact: contact});
+			this.$.api_handler.addContact(this.email);
+		},
+
+		clear: function() {
+			this.email = "";
+		},
+
+		error: function() {
+			console.log("error occurred adding contact");
+			this.$.input_container.invalid = true;
+		},
+
+		emailChange: function() {
+			this.$.input_container.invalid = false;
+		}
+	});
+</script>

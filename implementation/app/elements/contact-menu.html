@@ -1,0 +1,94 @@
+<link rel="import" href="app-imports.html">
+
+<dom-module id="contact-menu">
+	<style>
+		.contacts ::template > .iron-selected {
+	      color: white;
+	      background-color: #FFA726;
+	    }
+	    a > .iron-selected {
+	      color: white;
+	      background-color: #FFA726;
+	    }
+		a {
+			display: block;
+			padding: 15px 20px;
+			padding-top: 0;
+			color: #fff;
+			text-decoration: none;
+		}
+		a:first-child {
+			padding: 15px 20px;
+		}
+		.horizontal-section {
+			padding: 0;
+			margin-bottom: 20px;
+		}
+		.row {
+			height: 120px;
+		}
+		.header {
+			font-size: 18px;
+			margin: 0 17px 0 25px;
+			margin-top: 10px;
+		}
+		.no_overflow {
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+		.item {
+			margin-bottom: 5px;
+			margin-left: 5px;
+		}
+		paper-dialog-scrollable {
+			margin: 20px;
+		}
+	</style>
+	<template>
+		<div class="header horizontal layout center flex">
+			<div class="flex">Contacts</div>
+			<paper-icon-button icon="add" on-tap="openAddContactDialog"></paper-icon-button>
+		</div>
+		<div class="contacts">
+			<template is="dom-repeat" items="[[contacts]]">
+				<contact-item contact="[[item]]"></contact-item>
+			</template>
+	    </div>
+		<div class="header horizontal layout center flex">
+			<div class="flex">Groups</div>
+			<paper-icon-button icon="add" on-tap="openAddGroupDialog"></paper-icon-button>
+		</div>
+	    <div class="groups">
+			<template is="dom-repeat" items="[[groups]]">
+				<contact-item contact="[[item]]"></contact-item>
+			</template>
+	    </div>
+	</template>
+</dom-module>
+
+<script>
+	Polymer({
+		is: "contact-menu",
+
+		properties: {
+			contacts: {
+				type: Array,
+				value: [],
+			},
+			groups: {
+				type: Array,
+				value: [],
+			},
+		},
+
+		openAddContactDialog: function() {
+			this.fire('open-add-contact-dialog');
+		},
+
+		openAddGroupDialog: function() {
+			this.fire('open-add-group-dialog');
+		},
+
+	});
+</script>
