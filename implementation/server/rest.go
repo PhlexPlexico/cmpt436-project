@@ -155,5 +155,5 @@ func serveRestApi(conf *config) {
 		log.Fatal(err)
 	}
 	api.SetApp(router)
-	log.Fatal(http.ListenAndServe(conf.RestPortNum, api.MakeHandler()))
+	log.Fatal(http.ListenAndServeTLS(conf.RestPortNum, "cert.crt", "key.key", api.MakeHandler()))
 }
