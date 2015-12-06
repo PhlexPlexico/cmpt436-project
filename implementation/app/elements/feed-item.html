@@ -92,7 +92,7 @@
 							</div>
 							<div class="horizontal layout flex">
 								<div class="flex">You pay</div>
-								<div>[[costById(user.id)]]</div>
+								<div>[[costById(user)]]</div>
 							</div>
 							<div class="flex transaction">
 							<div on-tap="toggle" class="horizontal layout flex center">
@@ -134,7 +134,7 @@
 
 		properties: {
 			user: {
-				type: Object,
+				type: String,
 				value: null,
 			},
 			group: {

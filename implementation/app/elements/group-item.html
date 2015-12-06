@@ -59,7 +59,7 @@
 		is: "group-item",
 		properties: {
 			user: {
-				type: Object,
+				type: String,
 				value: null,
 			},
 			group: {
@@ -69,7 +69,7 @@
 		},
 
 		displayBalance: function(group) {
-			var balance = group.members[group.memberIndexMap[this.user.id]].balance/100;
+			var balance = group.members[group.memberIndexMap[this.user]].balance/100;
 			if (balance.toFixed(2) > 0) {
 				return "You owe $" + balance.toFixed(2);
 			} else if (balance.toFixed(2) < 0) {

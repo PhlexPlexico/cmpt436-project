@@ -36,13 +36,13 @@
 		    <div class="members">
 		    	<div><b>Members:</b></div>
 			    <template is="dom-repeat" items="[[members]]">
-			    	<div>[[item.user.name]]</div>
+			    	<div>[[item.name]]</div>
 			    </template>
 		    </div>
 		    <paper-dropdown-menu label="Add a member...">
 				<paper-menu class="dropdown-content" id="contacts" on-iron-select="addMember">
 					<template is="dom-repeat" items="[[contacts]]">
-						<paper-item>[[item.user.name]]</paper-item>
+						<paper-item>[[item.name]]</paper-item>
 					</template>
 				</paper-menu>
 			</paper-dropdown-menu>
@@ -62,7 +62,7 @@
 
 		properties: {
 			user: {
-				type: Object,
+				type: String,
 				value: null,
 			},
 			members: {
@@ -82,7 +82,7 @@
 
 		open: function() {
 			this.clear();
-			this.push('members', {user: this.user, balance: 0});
+			this.push('members', {name: "You", id: this.user});
 			this.$.dialog.open();
 		},
 
@@ -102,7 +102,7 @@
 			// this.fire('add-group', {group: group});
 			var memberIds = [];
 			for (var i=0; i<this.members.length; i++) {
-				memberIds.push(this.members[i].user.id);
+				memberIds.push(this.members[i].id);
 			}
 			this.$.api_handler.addGroup(this.name, memberIds);
 		},
@@ -122,7 +122,7 @@
 		},
 
 		addMember: function() {
-			this.push('members', {user: this.contacts[this.$.contacts.selected].user, balance: 0});
+			this.push('members', this.contacts[this.$.contacts.selected]);
 		}
 	});
 </script>
