@@ -77,7 +77,7 @@ func Serve() {
 	router.Get("/ws", wsHandler)
 
 	//Serve all the rest api calls.
-	go serveRestApi(conf)
+	serveRestApi(conf)
 
 	//This has to be the last thing called with the router, because it sets
 	//the handler for the website root.
