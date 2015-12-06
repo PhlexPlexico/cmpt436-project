@@ -115,8 +115,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 
 	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
 		// TODO change this
-		// serveIndexTemplate(w, user)
-		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+		serveIndexTemplate(w, user)
+		// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 	}
 }
 
@@ -181,8 +181,8 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	session.Save(r, w)
 	//TODO change this
-	// serveIndexTemplate(w, newAuthUser)
-	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+	serveIndexTemplate(w, newAuthUser)
+	// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {

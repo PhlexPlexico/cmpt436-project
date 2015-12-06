@@ -140,6 +140,7 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 func serveRestApi(conf *config) {
 	api := rest.NewApi()
 	api.Use(rest.DefaultDevStack...)
+
 	router, err := rest.MakeRouter(
 		// rest.Get("/groups", getGroupsHandler),
 		// rest.Get("/contacts", getContactsHandler),
