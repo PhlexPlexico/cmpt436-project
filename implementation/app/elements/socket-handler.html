@@ -142,7 +142,7 @@
 			//groups have name, id, balances, users, feed_items
 			for (var i=0; i<data.content.length; i++) {
 				if (data.content[i].name == "") {
-					data.content[i].type = "contact"
+					data.content[i].type = "contact";
 					if (data.content[i].users[0].id == this.user) {
 						data.content[i].name = data.content[i].users[1].name;
 						this.push('contacts', data.content[i].users[1]);
@@ -153,6 +153,10 @@
 					console.log('added contact', data.content[i]);
 				} else {
 					data.content[i].type = "group";
+				}
+				data.content[i].userIndexMap = {};
+				for (var j=0; j<data.content[i].users.length; j++) {
+					data.content[i].userIndexMap[data.content[i].users[j].id] = data.content[i].users[j].name;
 				}
 				this.groupIndexMap[data.content[i].id] = this.groups.length;
 				this.push('groups', data.content[i]);

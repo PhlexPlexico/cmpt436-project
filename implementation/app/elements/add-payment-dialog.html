@@ -12,14 +12,14 @@
 			<paper-dialog-scrollable>
 				<paper-dropdown-menu label="From">
 					<paper-menu class="dropdown-content" id="from">
-						<template is="dom-repeat" items="[[contact.members]]">
+						<template is="dom-repeat" items="[[contact.users]]">
 							<paper-item>[[item.name]]</paper-item>
 						</template>
 					</paper-menu>
 				</paper-dropdown-menu>
 				<paper-dropdown-menu label="To">
 					<paper-menu class="dropdown-content" id="to">
-						<template is="dom-repeat" items="[[contact.members]]">
+						<template is="dom-repeat" items="[[contact.users]]">
 							<paper-item>[[item.name]]</paper-item>
 						</template>
 					</paper-menu>
@@ -68,14 +68,14 @@
 			// 	user: this.user,
 			// 	time: "1:27 PM",
 			// 	payment: {
-			// 		from: this.contact.members[this.$.from.selected].user.name,
-			// 		to: this.contact.members[this.$.to.selected].user.name,
+			// 		from: this.contact.users[this.$.from.selected].user.name,
+			// 		to: this.contact.users[this.$.to.selected].user.name,
 			// 		cost: this.$.input.value
 			// 	}
 			// });
 			this.fire('add-payment', {payment: {
-				from: this.contact.members[this.$.from.selected].id,
-				to: this.contact.members[this.$.to.selected].id,
+				from: this.contact.users[this.$.from.selected].id,
+				to: this.contact.users[this.$.to.selected].id,
 				cost: this.$.input.value,
 				group_id: this.contact.id, //TODO: verify
 			}});

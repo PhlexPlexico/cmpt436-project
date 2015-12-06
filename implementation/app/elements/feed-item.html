@@ -187,11 +187,11 @@
 		},
 
 		getName: function(id) {
-			return this.group.members[this.group.memberIndexMap[id]].name;
+			return this.group.users[this.group.userIndexMap[id]].name;
 		},
 
 		getAvatar: function(id) {
-			return this.group.members[this.group.memberIndexMap[id]].avatar_url;
+			return this.group.users[this.group.userIndexMap[id]].avatar_url;
 		},
 
 		isNotification: function(feedItem) {

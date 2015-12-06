@@ -12,7 +12,7 @@
 		paper-dropdown-menu {
 			margin: 0 25px;
 		}
-		.members {
+		.users {
 			margin: 0 25px;
 			margin-top: 25px;
 		}
@@ -33,9 +33,9 @@
 				<input is="iron-input" id="input" value="{{name::input}}">
 				<paper-input-error>Error occurred</paper-input-error>
 			</paper-input-container>
-		    <div class="members">
+		    <div class="users">
 		    	<div><b>Members:</b></div>
-			    <template is="dom-repeat" items="[[members]]">
+			    <template is="dom-repeat" items="[[users]]">
 			    	<div>[[item.name]]</div>
 			    </template>
 		    </div>
@@ -65,7 +65,7 @@
 				type: String,
 				value: null,
 			},
-			members: {
+			users: {
 				type: Array,
 				value: [],
 			},
@@ -82,7 +82,7 @@
 
 		open: function() {
 			this.clear();
-			this.push('members', {name: "You", id: this.user});
+			this.push('users', {name: "You", id: this.user});
 			this.$.dialog.open();
 		},
 
@@ -96,19 +96,19 @@
 			// 	group: {name: this.$.input.value, id: 3}, //TODO
 			// 	balance: 0,
 			// 	unread: 0,
-			// 	members: this.members,
+			// 	users: this.users,
 			// 	messages: [],
 			// };
 			// this.fire('add-group', {group: group});
 			var memberIds = [];
-			for (var i=0; i<this.members.length; i++) {
-				memberIds.push(this.members[i].id);
+			for (var i=0; i<this.users.length; i++) {
+				memberIds.push(this.users[i].id);
 			}
 			this.$.api_handler.addGroup(this.name, memberIds);
 		},
 
 		clear: function() {
-			this.members = [];
+			this.users = [];
 			this.name = "";
 		},
 
@@ -122,7 +122,7 @@
 		},
 
 		addMember: function() {
-			this.push('members', this.contacts[this.$.contacts.selected]);
+			this.push('users', this.contacts[this.$.contacts.selected]);
 		}
 	});
 </script>

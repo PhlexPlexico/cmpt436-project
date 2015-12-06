@@ -231,7 +231,7 @@
 				    		</div>
 				    		<div type="People">
 				    			<div class="people">
-					    			<template is="dom-repeat" items="[[selectedGroup.members]]">
+					    			<template is="dom-repeat" items="[[selectedGroup.users]]">
 					    				<contact-item contact="[[item]]"></contact-item>
 					    			</template>
 					    			<div class="vertical layout flex">
@@ -269,58 +269,58 @@
 				type: Array,
 				value: [
 					{id: "0", type: "contact", name: "William van der Kamp",
-						members: [
+						users: [
 							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
 							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: "images/profile-picture.svg"},
 						],
-						memberIndexMap: {
+						userIndexMap: {
 							'0': 0,
 							'1': 1,
 						},
 						messages: [],
 					},
 					{id: "1", type: "contact", name: "Ken Slawinksi",
-						members: [
+						users: [
 							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
 							{name: "Ken Slawinksi", id: "2", balance: -500, avatar_url: "images/profile-picture.svg"},
 						],
-						memberIndexMap: {
+						userIndexMap: {
 							'0': 0,
 							'2': 1,
 						},
 						messages: [],
 					},
 					{id: "2", type: "contact", name: "Jordan Lys",
-						members: [
+						users: [
 							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
 							{name: "Jordan Lys", id: "3", balance: -500, avatar_url: "images/profile-picture.svg"},
 						],
-						memberIndexMap: {
+						userIndexMap: {
 							'0': 0,
 							'3': 1,
 						},
 						messages: [],
 					},
 					{id: "3", type: "contact", name: "Evan Closson",
-						members: [
+						users: [
 							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
 							{name: "Evan Closson", id: "4", balance: -500, avatar_url: "images/profile-picture.svg"},
 						],
-						memberIndexMap: {
+						userIndexMap: {
 							'0': 0,
 							'4': 1,
 						},
 						messages: [],
 					},
 					{id: "4", type: "group", name: "Camping",
-						members: [
+						users: [
 							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
 							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: "images/profile-picture.svg"},
 							{name: "Ken Slawinksi", id: "2", balance: 20, avatar_url: "images/profile-picture.svg"},
 							{name: "Jordan Lys", id: "3", balance: 50, avatar_url: "images/profile-picture.svg"},
 							{name: "Evan Closson", id: "4", balance: -70, avatar_url: "images/profile-picture.svg"}
 						],
-						memberIndexMap: {
+						userIndexMap: {
 							'0': 0,
 							'1': 1,
 							'2': 2,
@@ -330,14 +330,14 @@
 						messages: [],
 					}, 
 					{id: "5", type: "group", name: "Vegas, Baby!",
-						members: [
+						users: [
 							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
 							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: "images/profile-picture.svg"},
 							{name: "Ken Slawinksi", id: "2", balance: 20, avatar_url: "images/profile-picture.svg"},
 							{name: "Jordan Lys", id: "3", balance: 50, avatar_url: "images/profile-picture.svg"},
 							{name: "Evan Closson", id: "4", balance: -70, avatar_url: "images/profile-picture.svg"},
 						],
-						memberIndexMap: {
+						userIndexMap: {
 							'0': 0,
 							'1': 1,
 							'2': 2,
