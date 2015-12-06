@@ -31,12 +31,12 @@ type uiUser struct {
 	Name      string `json:"name"`
 	Id        string `json:"id"`
 	AvatarUrl string `json:"avatar_url"`
+	Balance   int    `json:"balance"`
 }
 
 type uiGroup struct {
 	Name      string        `json:"name"`
 	Id        string        `json:"id"`
-	Balances  []int         `json:"balances"`
 	Users     []uiUser      `json:"users"`
 	FeedItems []db.FeedItem `json:"feed_items"`
 }
@@ -192,6 +192,12 @@ func (fm *feedsManager) broadcast(message *websocketOutMessage) {
 func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	feeds map[string]map[string]*connection) {
 
+	group, err := db.GetGroup(feedId)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	uiUsers := make([]uiUser, len(userIds))
 	for i, userId := range userIds {
 		user, err := db.FindUserByID(bson.ObjectId(userId))
@@ -199,7 +205,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 			log.Println(err.Error())
 			return
 		}
-		uiUsers[i] = *createUiUser(&user)
+		uiUsers[i] = *createUiUser(&user, group.Actual[i])
 	}
 
 	uiUsersBytes, err := json.Marshal(uiUsers)
@@ -218,11 +224,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	for i, userId := range userIds {
 		if client, ok := fm.clients[userId]; ok {
 			if wsMessage == nil {
-				group, err := db.GetGroup(feedId)
-				if err != nil {
-					log.Println(err)
-					return
-				}
+
 				newUiGroup, err := createUiGroup(group)
 				if err != nil {
 					log.Println(err)
@@ -300,7 +302,7 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 	}
 	uiUsers := make([]uiUser, len(users))
 	for j, user := range users {
-		uiUsers[j] = *createUiUser(&user)
+		uiUsers[j] = *createUiUser(&user, group.Actual[j])
 	}
 	feedItems, err := db.GetAllFeedItems(group.ID)
 	if err != nil {
@@ -309,16 +311,16 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 	return &uiGroup{
 		Name:      group.GroupName,
 		Id:        string(group.ID),
-		Balances:  group.Actual,
 		Users:     uiUsers,
 		FeedItems: feedItems,
 	}, nil
 }
 
-func createUiUser(user *db.User) *uiUser {
+func createUiUser(user *db.User, balance int) *uiUser {
 	return &uiUser{
 		Name:      user.Name,
 		Id:        string(user.ID),
 		AvatarUrl: user.AvatarURL,
+		Balance:   balance,
 	}
 }
