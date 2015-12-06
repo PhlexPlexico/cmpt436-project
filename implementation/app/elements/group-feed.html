@@ -35,7 +35,7 @@
 				<template is="dom-if" if="[[empty]]">
 					<div>No messages yet, send something to start chatting!</div>
 				</template>
-				<template is="dom-repeat" items="[[group.messages]]">
+				<template is="dom-repeat" items="[[group.feed_items]]">
 					<feed-item 
 						user="[[user]]"
 						group="[[group]]"
@@ -83,7 +83,7 @@
 		},
 
 		observers: [
-			'isEmpty(group.messages.splices)'
+			'isEmpty(group.feed_items.splices)'
 		],
 
 		ready: function() {
@@ -94,7 +94,7 @@
 			console.log(this.group);
 			var str = this.$.input.value.trim();
 			if (str) {
-				// this.push('group.messages', {user: this.user, time: '1:26 PM', message: str})
+				// this.push('group.feed_items', {user: this.user, time: '1:26 PM', message: str})
 				this.fire('add-message', {message: {
 					message: str,
 					group: this.group.id,
@@ -105,12 +105,12 @@
 		},
 
 		sameAsPrevious: function(index) {
-			return index > 0 && this.group.messages[index].content.userid == this.group.messages[index - 1].content.userid;
+			return index > 0 && this.group.feed_items[index].content.userid == this.group.feed_items[index - 1].content.userid;
 		},
 
 		isEmpty: function(changeRecord) {
 			this.scrollToBottom();
-			this.empty = this.group && this.group.messages.length == 0;
+			this.empty = this.group && this.group.feed_items.length == 0;
 		},
 
 		scrollToBottom: function() {

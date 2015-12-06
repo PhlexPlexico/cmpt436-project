@@ -215,7 +215,7 @@
 				    	<iron-pages attr-for-selected="type" selected="{{infoSelection}}">
 				    		<div type="Transactions">
 				    			<div class="transactions">
-					    			<template is="dom-repeat" items="[[selectedGroup.messages]]" filter="isTransaction">
+					    			<template is="dom-repeat" items="[[selectedGroup.feed_items]]" filter="isTransaction">
 				    					<feed-item 
 				    						user="[[user]]"
 											group="[[selectedGroup]]"
@@ -277,7 +277,7 @@
 							'0': 0,
 							'1': 1,
 						},
-						messages: [],
+						feed_items: [],
 					},
 					{id: "1", type: "contact", name: "Ken Slawinksi",
 						users: [
@@ -288,7 +288,7 @@
 							'0': 0,
 							'2': 1,
 						},
-						messages: [],
+						feed_items: [],
 					},
 					{id: "2", type: "contact", name: "Jordan Lys",
 						users: [
@@ -299,7 +299,7 @@
 							'0': 0,
 							'3': 1,
 						},
-						messages: [],
+						feed_items: [],
 					},
 					{id: "3", type: "contact", name: "Evan Closson",
 						users: [
@@ -310,7 +310,7 @@
 							'0': 0,
 							'4': 1,
 						},
-						messages: [],
+						feed_items: [],
 					},
 					{id: "4", type: "group", name: "Camping",
 						users: [
@@ -327,7 +327,7 @@
 							'3': 3,
 							'4': 4,
 						},
-						messages: [],
+						feed_items: [],
 					}, 
 					{id: "5", type: "group", name: "Vegas, Baby!",
 						users: [
@@ -344,7 +344,7 @@
 							'3': 3,
 							'4': 4,
 						},
-						messages: [
+						feed_items: [
 							{type: "message", time: "1985-04-12T23:20:50.52Z", content: {
 								userid: "0",
 								content: "Hello, World!",
