@@ -110,13 +110,23 @@ func validateUser(
 	return user, nil
 }
 
-func authHandler(w http.ResponseWriter, r *http.Request) {
+func appHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
 	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
 		// TODO change this
 		serveIndexTemplate(w, user)
 		// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+	}
+}
+
+func authHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("serving auth request")
+
+	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
+		// TODO change this
+		// serveIndexTemplate(w, user)
+		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 	}
 }
 
@@ -181,8 +191,8 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	session.Save(r, w)
 	//TODO change this
-	serveIndexTemplate(w, newAuthUser)
-	// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
+	// serveIndexTemplate(w, newAuthUser)
+	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -242,5 +252,6 @@ func initAuth(router *pat.Router, conf *config) {
 	router.Get(authCallbackRelativePath+"/{provider}", authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
 	router.Post("/logout", logoutHandler)
+	router.Get("/app/index.html", appHandler)
 	router.Get("/", authHandler)
 }
