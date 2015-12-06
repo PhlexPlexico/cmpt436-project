@@ -57,72 +57,76 @@
 		}*/
 	</style>
 	<template>
-		<div class="horizontal layout">
-			<template is="dom-if" if="[[!noAvatar]]">
-				<template is="dom-if" if="[[!noHeader]]">
-					<img src="../images/profile-picture.svg">
+		<template is="dom-if" if="[[isNotification(feedItem)]]">
+			<span>Notice: </span><span>[[feedItem.content.content]]</span>
+		</template>
+		<template is="dom-if" if="[[!isNotification(feedItem)]]">
+			<div class="horizontal layout">
+				<template is="dom-if" if="[[!noAvatar]]">
+					<template is="dom-if" if="[[!noHeader]]">
+						<img src="../images/profile-picture.svg">
+					</template>
+					<template is="dom-if" if="[[noHeader]]">
+						<div class="img_spacer"></div>
+					</template>
 				</template>
-				<template is="dom-if" if="[[noHeader]]">
-					<div class="img_spacer"></div>
-				</template>
-			</template>
-			<div class="message vertical layout flex">
-				<template is="dom-if" if="[[!noHeader]]">
-					<div class="no_overflow header horizontal layout">
-						<!-- TODO -->
-						<div class="no_overflow username">[[message.user.name]]</div>
-						<div class="time">[[message.time]]</div><br>
-					</div>
-				</template>
-				<template is="dom-if" if="[[isMessage(message)]]">
-					<div>[[message.message]]</div>
-				</template>
-				<template is="dom-if" if="[[isPurchase(message)]]">
-					<div>Added a purchase.</div>
-					<div class="flex transaction">
-						<div class="horizontal layout flex">
-							
-							<div class="flex"><b>[[message.purchase.title]]</b></div>
-							<div><b>[[formatCost(message.purchase.cost)]]</b></div>
-
+				<div class="message vertical layout flex">
+					<template is="dom-if" if="[[!noHeader]]">
+						<div class="no_overflow header horizontal layout">
+							<!-- TODO -->
+							<div class="no_overflow username">[[getName(feedItem.content.userid)]]</div>
+							<div class="time">[[formatTime(feedItem.time)]]</div><br>
 						</div>
-						<div class="horizontal layout flex">
-							<div class="flex">You pay</div>
-							<div>[[myCost(message.purchase.split)]]</div>
-						</div>
+					</template>
+					<template is="dom-if" if="[[isMessage(feedItem)]]">
+						<div>[[feedItem.content.content]]</div>
+					</template>
+					<template is="dom-if" if="[[isPurchase(feedItem)]]">
+						<div>Added a purchase.</div>
 						<div class="flex transaction">
-						<div on-tap="toggle" class="horizontal layout flex center">
-							<div class="flex">See Details</div>
-							<iron-icon icon="expand-more"></iron-icon>
-						</div>
-						<iron-collapse id="collapse">
-							<div class="more_splits">
-								<template is="dom-repeat" items="[[message.purchase.split]]">
-									<div class="split horizontal layout flex">
-										<div class="flex no_overflow">[[item.user.name]]</div>
-										<div>[[formatCost(item.cost)]]</div>
-									</div>
-								</template>
+							<div class="horizontal layout flex">
+								
+								<div class="flex"><b><span>[[getName(feedItem.content.payer)]]</span><span> purchased </span><span>[[feedItem.content.title]]</span></b></div>
+								<div><b>[[formatCost(feedItem.content.amountInCents)]]</b></div>
+
 							</div>
-						</iron-collapse>
+							<div class="horizontal layout flex">
+								<div class="flex">You pay</div>
+								<div>[[costById(user.id)]]</div>
+							</div>
+							<div class="flex transaction">
+							<div on-tap="toggle" class="horizontal layout flex center">
+								<div class="flex">See Details</div>
+								<iron-icon icon="expand-more"></iron-icon>
+							</div>
+							<iron-collapse id="collapse">
+								<div class="more_splits">
+									<template is="dom-repeat" items="[[feedItem.content.userids]]">
+										<div class="split horizontal layout flex">
+											<div class="flex no_overflow">[[getName(item)]]</div>
+											<div>[[costById(item)]]</div>
+										</div>
+									</template>
+								</div>
+							</iron-collapse>
+							</div>
 						</div>
-					</div>
-				</template>
-				<template is="dom-if" if="[[isPayment(message)]]">
-					<div>Added a payment.</div>
-					<div class="flex transaction">
-						<b>From: </b><span>[[message.payment.from]]</span><br>
-						<b>To: </b><span>[[message.payment.to]]</span><br>
-						<b>Amount: </b><span>[[formatCost(message.payment.cost)]]</span>
-					</div>
-				</template>
-				<template is="dom-if" if="[[isNotification(message)]]">
-					<div>Notice</div>
-				</template>
+					</template>
+					<template is="dom-if" if="[[isPayment(feedItem)]]">
+						<div>Added a payment.</div>
+						<div class="flex transaction">
+							<b>From: </b><span>[[getName(feedItem.content.payerid)]]</span><br>
+							<b>To: </b><span>[[getName(feedItem.content.payeeid)]]</span><br>
+							<b>Amount: </b><span>[[formatCost(feedItem.content.amountInCents)]]</span>
+						</div>
+					</template>
+				</div>
 			</div>
-		</div>
+		</template>
 	</template>
 </dom-module>
+
+<script src="../bower_components/moment/moment.js"></script>
 
 <script>
 	Polymer({
@@ -133,7 +137,11 @@
 				type: Object,
 				value: null,
 			},
-			message: {
+			group: {
+				type: Object,
+				value: null,
+			},
+			feedItem: {
 				type: Object,
 				value: null,
 			},
@@ -148,22 +156,38 @@
 		},
 
 		formatCost: function(balance) {
-			return "$" + Math.abs(balance).toFixed(2);
+			return "$" + Math.abs(balance/100).toFixed(2);
 		},
 
-		myCost: function(split) {
-			if (this.user) {
-				for (var i=0; i<split.length; i++) {
-					if (split[i].user.id == this.user.id) {
-						return this.formatCost(split[i].cost);
-					}
+		formatTime: function(time) {
+			return moment(time).format("h:mm a").toUpperCase();
+		},
+
+		costById: function(id) {
+			var userIndex;
+			for (var i=0; i<this.feedItem.content.userids.length; i++) {
+				if (this.feedItem.content.userids[i] == id) {
+					userIndex = i;
+					break;
 				}
-				return this.formatCost(0);
 			}
+			return this.formatCost(this.feedItem.content.expected[userIndex]);
+			// if (this.user) {
+			// 	for (var i=0; i<split.length; i++) {
+			// 		if (split[i].user.id == this.user.id) {
+			// 			return this.formatCost(split[i].cost);
+			// 		}
+			// 	}
+			// 	return this.formatCost(0);
+			// }
 		},
 
 		toggle: function(selector) {
 			this.$$('#collapse').toggle();
+		},
+
+		getName: function(id) {
+			return this.group.members[this.group.memberIndexMap[id]].name;
 		},
 
 		isNotification: function(feedItem) {
@@ -181,8 +205,5 @@
 		isMessage: function(feedItem) {
 			return feedItem.type == "message";
 		},
-
-
-
 	});
 </script>

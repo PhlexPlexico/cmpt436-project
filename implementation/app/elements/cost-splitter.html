@@ -104,7 +104,7 @@
 			if (this.people) {
 				for (var i=0; i<this.people.length; i++) {
 					this.push('_people', {
-						name: this.people[i].user.name,
+						name: this.people[i].name,
 						cost: this.cost / this.people.length,
 						ratio: 1.0 / this.people.length,
 						locked: false
@@ -171,7 +171,7 @@
 			console.log(this.people);
 			var split = [];
 			for (var i=0; i<this.people.length; i++) {
-				split.push({user: this.people[i].user, cost: this._people[i].cost});
+				split.push({user: this.people[i].id, cost: this._people[i].cost});
 			}
 			return split;
 		}

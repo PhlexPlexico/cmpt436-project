@@ -132,14 +132,14 @@
 		<add-payment-dialog
 			id="add_payment_dialog"
 			user="[[user]]"
-			contact="{{contact}}"
+			contact="{{selectedGroup}}"
 			on-add-payment="addPayment">
 		</add-payment-dialog>
 
 		<add-purchase-dialog
 			id="add_purchase_dialog"
 			user="[[user]]"
-			contact="{{contact}}"
+			contact="{{selectedGroup}}"
 			on-add-purchase="addPurchase">
 		</add-purchase-dialog>
 
@@ -163,9 +163,10 @@
 		    	</div>
 		    </paper-toolbar>
 		    <contact-menu
+		    	user="[[user]]"
 		    	contacts="{{contacts}}"
 		    	groups="{{groups}}"
-		    	on-contact-select="contactSelect"
+		    	on-group-select="groupSelect"
 		    	on-open-add-contact-dialog="openAddContactDialog"
 		    	on-open-add-group-dialog="openAddGroupDialog">
 		    </contact-menu>
@@ -177,11 +178,10 @@
 				    <paper-toolbar id="main-toolbar">
 				    	<div class="horizontal layout center flex">
 					    	<paper-icon-button id="menu_button" icon="menu" on-tap="contactToggle" hidden$="{{!contactNarrow}}"></paper-icon-button>
-					    	<template is="dom-if" if="[[contact]]">
+					    	<template is="dom-if" if="[[selectedGroup]]">
 						    	<paper-menu-button class="no_overflow" vertical-offset="40" horizontal-offset="10">
 						    		<paper-button class="title no_overflow horizontal layout center dropdown-trigger">
-						    			<span class="no_overflow">[[contact.user.name]]</span>
-						    			<span class="no_overflow">[[contact.group.name]]</span>
+						    			<span class="no_overflow">[[selectedGroup.name]]</span>
 						    			<iron-icon icon="icons:expand-more"></iron-icon>
 						    		</paper-button>
 						    		<paper-menu class="dropdown-content" on-iron-select="deselect">
@@ -194,12 +194,12 @@
 					    	</template>
 				    	</div>
 				    </paper-toolbar>
-		    		<template is="dom-if" if="[[!contact]]">
+		    		<template is="dom-if" if="[[!selectedGroup]]">
 						<div class="content">Please select a contact to start messaging.</div>
 					</template>
 				    <group-feed 
 				    	user="{{user}}"
-				    	contact="{{contact}}"
+				    	group="{{selectedGroup}}"
 				    	on-add-message="addMessage"
 				    	on-open-add-purchase-dialog="openAddPurchaseDialog"
 				    	on-open-add-payment-dialog="openAddPaymentDialog">
@@ -215,10 +215,13 @@
 				    	<iron-pages attr-for-selected="type" selected="{{infoSelection}}">
 				    		<div type="Transactions">
 				    			<div class="transactions">
-					    			<template is="dom-repeat" items="[[contact.messages]]">
-					    				<template is="dom-if" if="[[isTransaction(item)]]">
-					    					<feed-item no-avatar message="[[item]]"></feed-item>
-					    				</template>
+					    			<template is="dom-repeat" items="[[selectedGroup.messages]]" filter="isTransaction">
+				    					<feed-item 
+				    						user="[[user]]"
+											group="[[selectedGroup]]"
+				    						no-avatar 
+				    						feed-item="[[item]]">
+				    					</feed-item>
 					    			</template>
 					    			<div class="vertical layout flex">
 						    			<paper-button class="flex" on-tap="openAddPurchaseDialog">Add Purchase</paper-button>
@@ -228,7 +231,7 @@
 				    		</div>
 				    		<div type="People">
 				    			<div class="people">
-					    			<template is="dom-repeat" items="[[contact.members]]">
+					    			<template is="dom-repeat" items="[[selectedGroup.members]]">
 					    				<contact-item contact="[[item]]"></contact-item>
 					    			</template>
 					    			<div class="vertical layout flex">
@@ -251,91 +254,127 @@
 		properties: {
 			user: {
 				type: Object,
-				value: {name: "You", id: 0},
+				value: {name: "You", id: "0"},
 			},
 			contacts: {
 				type: Array,
 				value: [
-					{user: {name: "William van der Kamp", id: 1}, balance: 500, unread: 0,
-						members: [
-							{user: {name: "You", id: 0}, balance: 500},
-							{user: {name: "William van der Kamp", id: 1}, balance: -500}
-						],
-						messages: [],
-					}, 
-					{user: {name: "Ken Slawinksi", id: 2}, balance: 0, unread: 22,
-						members: [
-							{user: {name: "You", id: 0}, balance: 0},
-							{user: {name: "Ken Slawinksi", id: 2}, balance: 0}
-						],
-						messages: [],
-					}, 
-					{user: {name: "Jordan Lys", id: 3}, balance: -50, unread: 323,
-						members: [
-							{user: {name: "You", id: 0}, balance: -50},
-							{user: {name: "Jordan Lys", id: 3}, balance: 50}
-						],
-						messages: [],
-					}, 
-					{user: {name: "Evan Closson", id: 4}, balance: 10, unread: 1231,
-						members: [
-							{user: {name: "You", id: 0}, balance: 10},
-							{user: {name: "Evan Closson", id: 4}, balance: -10}
-						],
-						messages: [],
-					}
-				]
+					{name: "William van der Kamp", id: "1", avatar_url: ""},
+					{name: "Ken Slawinksi", id: "2", avatar_url: ""},
+					{name: "Jordan Lys", id: "3", avatar_url: ""},
+					{name: "Evan Closson", id: "4", avatar_url: ""},
+				],
 			},
 			groups: {
 				type: Array,
 				value: [
-					{group: {name: "Camping", id: 0}, balance: 500, unread: 0,
+					{id: "0", type: "contact", name: "William van der Kamp",
 						members: [
-							{user: {name: "You", id: 0}, balance: 500},
-							{user: {name: "Ken Slawinksi", id: 2}, balance: 20},
-							{user: {name: "William van der Kamp", id: 1}, balance: -500},
-							{user: {name: "Jordan Lys", id: 3}, balance: 50},
-							{user: {name: "Evan Closson", id: 4}, balance: -70}
+							{name: "You", id: "0", balance: 500, avatar_url: ""},
+							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: ""},
 						],
+						memberIndexMap: {
+							'0': 0,
+							'1': 1,
+						},
+						messages: [],
+					},
+					{id: "1", type: "contact", name: "Ken Slawinksi",
+						members: [
+							{name: "You", id: "0", balance: 500, avatar_url: ""},
+							{name: "Ken Slawinksi", id: "2", balance: -500, avatar_url: ""},
+						],
+						memberIndexMap: {
+							'0': 0,
+							'2': 1,
+						},
+						messages: [],
+					},
+					{id: "2", type: "contact", name: "Jordan Lys",
+						members: [
+							{name: "You", id: "0", balance: 500, avatar_url: ""},
+							{name: "Jordan Lys", id: "3", balance: -500, avatar_url: ""},
+						],
+						memberIndexMap: {
+							'0': 0,
+							'3': 1,
+						},
+						messages: [],
+					},
+					{id: "3", type: "contact", name: "Evan Closson",
+						members: [
+							{name: "You", id: "0", balance: 500, avatar_url: ""},
+							{name: "Evan Closson", id: "4", balance: -500, avatar_url: ""},
+						],
+						memberIndexMap: {
+							'0': 0,
+							'4': 1,
+						},
+						messages: [],
+					},
+					{id: "4", type: "group", name: "Camping",
+						members: [
+							{name: "You", id: "0", balance: 500, avatar_url: ""},
+							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: ""},
+							{name: "Ken Slawinksi", id: "2", balance: 20, avatar_url: ""},
+							{name: "Jordan Lys", id: "3", balance: 50, avatar_url: ""},
+							{name: "Evan Closson", id: "4", balance: -70, avatar_url: ""}
+						],
+						memberIndexMap: {
+							'0': 0,
+							'1': 1,
+							'2': 2,
+							'3': 3,
+							'4': 4,
+						},
 						messages: [],
 					}, 
-					{group: {name: "Vegas, Baby!", id: 1}, balance: 500, unread: 10,
+					{id: "5", type: "group", name: "Vegas, Baby!",
 						members: [
-							{user: {name: "You", id: 0}, balance: 500},
-							{user: {name: "Ken Slawinksi", id: 2}, balance: 20},
-							{user: {name: "William van der Kamp", id: 1}, balance: -500},
-							{user: {name: "Jordan Lys", id: 3}, balance: 50},
-							{user: {name: "Evan Closson", id: 4}, balance: -70}
+							{name: "You", id: "0", balance: 500, avatar_url: ""},
+							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: ""},
+							{name: "Ken Slawinksi", id: "2", balance: 20, avatar_url: ""},
+							{name: "Jordan Lys", id: "3", balance: 50, avatar_url: ""},
+							{name: "Evan Closson", id: "4", balance: -70, avatar_url: ""},
 						],
+						memberIndexMap: {
+							'0': 0,
+							'1': 1,
+							'2': 2,
+							'3': 3,
+							'4': 4,
+						},
 						messages: [
-							{user: {name: "You", id: 0}, time: "1:23 PM", message: "hello"},
-							{user: {name: "Ken Slawinski", id: 2}, time: "1:24 PM", message: "hi"},
-							{user: {name: "William van der Kamp", id: 1}, time: "1:25 PM", message: "hey"},
-							{user: {name: "Jordan Lys", id: 3}, time: "1:25 PM", message: "whats up"},
-							{user: {name: "Evan Closson", id: 4}, time: "1:25 PM", message: "hows it going"},
-							{user: {name: "William van der Kamp", id: 1}, time: "1:26 PM",
-								purchase: {title: "Marshmallows", cost: 100,
-									split: [
-										{user: {name: "You", id: 0}, cost: 20},
-										{user: {name: "Ken Slawinski", id: 2}, cost: 20},
-										{user: {name: "William van der Kamp", id: 1}, cost : 20},
-										{user: {name: "Jordan Lys", id: 3}, cost: 20},
-										{user: {name: "Evan Closson", id: 4}, cost: 20}
-									]
-								}
-							},
-							{user: {name: "William van der Kamp", id: 1}, time: "1:26 PM",
-								payment: {
-									from: "William van der Kamp", 
-									to: "Josh Heinrichs", 
-									cost: 100
-								}
-							}
-						]
+							{type: "message", time: "1985-04-12T23:20:50.52Z", content: {
+								userid: "0",
+								content: "Hello, World!",
+							}},
+							{type: "message", time: "1985-04-12T23:20:50.52Z", content: {
+								userid: "1",
+								content: "Foo bar, man...",
+							}},
+							{type: "payment", time: "1985-04-12T23:20:50.52Z", content: {
+								userid: "2", //TODO: NEED THIS
+								payerid: "3",
+								payeeid: "4",
+								amountInCents: 1000,
+							}},
+							{type: "purchase", time: "1985-04-12T23:20:50.52Z", content: {
+								title: "Cookies", //TODO: NEED THIS
+								userid: "0", //TODO: NEED THIS
+								payer: "0", //TODO: NEED THIS?
+								userids: ["0", "1", "2", "3", "4"],
+								expected: [200, 200, 200, 200, 200],
+								amountInCents: 1000,
+							}},
+							{type: "notification", time: "1985-04-12T23:20:50.52Z", content: {
+								content: "Foo joined the group",
+							}},
+						],
 					}
 				]
 			},
-			contact: {
+			selectedGroup: {
 				type: Object,
 				value: null,
 			},
@@ -386,14 +425,15 @@
 			event.target.selected = -1;
 		},
 
-		contactSelect: function(event) {
+		groupSelect: function(event) {
+			this.selectedGroup = event.detail.group;
 			this.$.contact_drawer_panel.closeDrawer();
-			this.contact = event.detail.contact;
-			var i = this.contacts.indexOf(this.contact);
+			
+			var i = this.contacts.indexOf(this.selectedGroup);
 			if (i > 0) {
 				this.set('contacts.'+i+'.unread', 0);
 			} else {
-				i = this.groups.indexOf(this.contact);
+				i = this.groups.indexOf(this.selectedGroup);
 				this.set('groups.'+i+'.unread', 0);
 			}	
 		},
@@ -405,7 +445,7 @@
 		addContact: function(event) {
 			console.log(event.detail.contact);
 			this.push('contacts', event.detail.contact);
-			this.contact = event.detail.contact;
+			this.selectedGroup = event.detail.contact;
 		},
 
 		openAddGroupDialog: function() {
@@ -415,7 +455,7 @@
 		addGroup: function(event) {
 			console.log(event.detail.group);
 			this.push('groups', event.detail.group);
-			this.contact = event.detail.group;
+			this.selectedGroup = event.detail.group;
 		},
 
 		addMessage: function(event) {
@@ -442,7 +482,7 @@
 		},
 
 		isTransaction: function(message) {
-			return message.purchase || message.payment;
+			return message.type == "payment" || message.type == "purchase";
 		}
 	});
 </script>

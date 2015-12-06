@@ -1,6 +1,6 @@
 <link rel="import" href="app-imports.html">
 
-<dom-module id="contact-item">
+<dom-module id="group-item">
 	<style>
 		:host {
 			display: block;
@@ -38,36 +38,44 @@
 	</style>
 	<template>
 		<paper-item on-tap="tapped">
-		<div class="horizontal layout center flex">
-			<img src="../images/profile-picture.svg">
-			<div class="message vertical layout flex">
-				<div class="no_overflow header horizontal layout">
-					<div class="no_overflow name">[[contact.name]]</div>
+			<div class="horizontal layout center flex">
+				<img src="../images/profile-picture.svg">
+				<div class="message vertical layout flex">
+					<div class="no_overflow header horizontal layout">
+						<div class="no_overflow name">[[group.name]]</div>
+					</div>
+					<div>[[displayBalance(group)]]</div>
 				</div>
-				<div>[[displayBalance(contact.balance)]]</div>
+				<template is="dom-if" if="[[notificationVisible(group.unread)]]">
+					<div class="notification">[[group.unread]]</div>
+				</template>
 			</div>
-			<template is="dom-if" if="[[notificationVisible(contact.unread)]]">
-				<div class="notification">[[contact.unread]]</div>
-			</template>
-		</div>
 		</paper-item>
 	</template>
 </dom-module>
 
 <script>
 	Polymer({
-		is: "contact-item",
+		is: "group-item",
 		properties: {
-			contact: Object,
+			user: {
+				type: Object,
+				value: null,
+			},
+			group: {
+				type: Object,
+				value: null,
+			},
 		},
 
-		displayBalance: function(balance) {
+		displayBalance: function(group) {
+			var balance = group.members[group.memberIndexMap[this.user.id]].balance/100;
 			if (balance.toFixed(2) > 0) {
-				return "Owes $" + balance.toFixed(2);
+				return "You owe $" + balance.toFixed(2);
 			} else if (balance.toFixed(2) < 0) {
-				return "Is owed $" + Math.abs(balance).toFixed(2);
+				return "You are owed $" + Math.abs(balance).toFixed(2);
 			} else {
-				return "Owes nothing";
+				return "You are even"
 			}
 		},
 
@@ -76,8 +84,8 @@
 		},
 
 		tapped: function(event) {
-			console.log("contact-select");
-			this.fire('contact-select', {contact: this.contact});
+			console.log("group-select");
+			this.fire('group-select', {group: this.group});
 		}
 	});
 </script>

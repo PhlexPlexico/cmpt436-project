@@ -38,7 +38,8 @@
 				<template is="dom-repeat" items="[[group.messages]]">
 					<feed-item 
 						user="[[user]]"
-						message="[[item]]"
+						group="[[group]]"
+						feed-item="[[item]]"
 						no-header="[[sameAsPrevious(index)]]">
 					</feed-item>
 				</template>
@@ -66,7 +67,10 @@
 		is: "group-feed",
 
 		properties: {
-			user: Object,
+			user: {
+				type: Object,
+				value: null,
+			},
 			group: {
 				type: Object,
 				value: null,
@@ -87,7 +91,7 @@
 		},
 
 		send: function() {
-			console.log("send");
+			console.log(this.group);
 			var str = this.$.input.value.trim();
 			if (str) {
 				// this.push('group.messages', {user: this.user, time: '1:26 PM', message: str})
@@ -101,7 +105,7 @@
 		},
 
 		sameAsPrevious: function(index) {
-			return index > 0 && this.group.messages[index].user.id == this.group.messages[index - 1].user.id;
+			return index > 0 && this.group.messages[index].content.userid == this.group.messages[index - 1].content.userid;
 		},
 
 		isEmpty: function(changeRecord) {

@@ -13,14 +13,14 @@
 				<paper-dropdown-menu label="From">
 					<paper-menu class="dropdown-content" id="from">
 						<template is="dom-repeat" items="[[contact.members]]">
-							<paper-item>[[item.user.name]]</paper-item>
+							<paper-item>[[item.name]]</paper-item>
 						</template>
 					</paper-menu>
 				</paper-dropdown-menu>
 				<paper-dropdown-menu label="To">
 					<paper-menu class="dropdown-content" id="to">
 						<template is="dom-repeat" items="[[contact.members]]">
-							<paper-item>[[item.user.name]]</paper-item>
+							<paper-item>[[item.name]]</paper-item>
 						</template>
 					</paper-menu>
 				</paper-dropdown-menu>
@@ -74,8 +74,8 @@
 			// 	}
 			// });
 			this.fire('add-payment', {payment: {
-				from: this.contact.members[this.$.from.selected].user.id,
-				to: this.contact.members[this.$.to.selected].user.id,
+				from: this.contact.members[this.$.from.selected].id,
+				to: this.contact.members[this.$.to.selected].id,
 				cost: this.$.input.value,
 				group_id: this.contact.id, //TODO: verify
 			}});

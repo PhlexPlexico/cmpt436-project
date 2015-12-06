@@ -29,9 +29,9 @@
 		is: "api-handler",
 
 		ready: function() {
-			this.$.add_contacts_to_group.url = "https://" + window.location.host + "/addcontactstogroup"
-			this.$.add_group.url = "https://" + window.location.host + "/creategroup"
-			this.$.add_contact.url = "https://" + window.location.host + "/addcontact"
+			this.$.add_contacts_to_group.url = "https://" + window.location.host + "/api/addcontactstogroup"
+			this.$.add_group.url = "https://" + window.location.host + "/api/creategroup"
+			this.$.add_contact.url = "https://" + window.location.host + "/api/addcontact"
 		},
 
 		addContact: function(email) {
@@ -58,6 +58,7 @@
 				name: name,
 				member_ids: memberIds
 			};
+			console.log(JSON.stringify(this.$.add_group.body));
 			this.$.add_group.generateRequest();
 		},
 

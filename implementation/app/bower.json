@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "paper-elements": "PolymerElements/paper-elements#~1.0.5",
-    "iron-elements": "PolymerElements/iron-elements#~1.0.4"
+    "iron-elements": "PolymerElements/iron-elements#~1.0.4",
+    "moment": "~2.10.6"
   }
 }
