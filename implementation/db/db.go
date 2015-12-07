@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"time"
 )
 
 ////////////////////////////////////////////////////////
@@ -156,7 +157,7 @@ func FindGroup(id bson.ObjectId) (Group, error) {
 	Col = Session.DB("test").C("Group")
 	group := Group{}
 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&group)
-	ThisPanic(err)
+	//ThisPanic(err)
 	return group, err
 }
 
@@ -411,6 +412,15 @@ func FindFeedItemById(id bson.ObjectId) (FeedItem, error) {
 	Col = Session.DB("test").C("FeedItem")
 	feedItem := FeedItem{}
 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&feedItem)
+	return feedItem, err
+}
+
+func FindFeedItemByGroupId(groupid bson.ObjectId) ([]FeedItem, error) {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	feedItem := []FeedItem{}
+	// Find way to order by date...?
+	err = Col.Find(bson.M{"groupid": bson.ObjectId(groupid)}).All(&feedItem)
 	return feedItem, err
 }
 
