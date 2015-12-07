@@ -9,6 +9,21 @@ import (
 
 func AddPurchase_old(g db.Group, buyer string, cost int, expected []int) error {
 	g = logic.AddPurchase(g, buyer, cost, expected)
+	Purchase := &db.Purchase{
+		PayerID:       buyer,
+		AmountInCents: cost,
+		Expected:      expected,
+	}
+	PurchaseBytes, err := json.Marshal(Purchase)
+	if err != nil {
+		return err
+	}
+	PurchseFeedItem := &db.FeedItem{
+		Content: PurchaseBytes,
+		GroupID: g.ID,
+		Type:    db.FeedItemTypePurchase,
+	}
+	db.AddFeedItemToGroupByID(&g, PurchaseFeedItem)
 	return db.GetGroupChanges(g)
 }
 
