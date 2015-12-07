@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	FeedItemTypeComment      string = "comment"
-	FeedItemTypeNotification string = "notification"
-	FeedItemTypePurchase     string = "purchase"
-	FeedItemTypePayment      string = "payment"
+	FeedItemTypeComment          string = "comment"
+	FeedItemTypeNotification     string = "notification"
+	FeedItemTypePurchase         string = "purchase"
+	FeedItemTypePayment          string = "payment"
+	invalidBsonIdHexErrorMessage string = "invalid bson id hex representation"
 )
 
 /* For debug purposes. */
@@ -106,19 +107,14 @@ func (pa *Payment) Insert() error {
  */
 func CreateUserIfNecessary(
 	email, name, avatarUrl string, isRealUser bool) (string, error) {
-	/* userID := FindUserIdByEmail(email)
-	 * if userID == "" {
-	 * 	AddUser(name, email, "", avatarUrl, isRealUser)
-	 *  userID = FindUserIdByEmail(email)
-	 *  return userID
-	 * }
-	 * return userID, nil
-	 */
-	return "", nil
-}
+	userID, err := FindUserIdByEmail(email)
 
-func CreateNotification(subject, content, groupId string) (Notification, error) {
-	return Notification{}, nil
+	if userID == "" {
+		AddUser(name, email, "", avatarUrl, isRealUser)
+		userID, err = FindUserIdByEmail(email)
+	}
+
+	return userID.Hex(), err
 }
 
 /*
@@ -126,17 +122,24 @@ func CreateNotification(subject, content, groupId string) (Notification, error) 
  * If the error is not nil, the returned value must be ignored.
  */
 func GetGroups(userId string) ([]Group, error) {
-	/*
-		var err error
-		var user User
-		//newUID := bson.ObjectId(userId)
-		user, err = FindUserByID(bson.ObjectId(userId))
+	if !bson.IsObjectIdHex(userId) {
+		return nil, errors.New(invalidBsonIdHexErrorMessage)
+	}
+
+	user, err := FindUserByID(bson.ObjectIdHex(userId))
+	if err != nil {
+		return nil, err
+	}
+
+	groups := make([]Group, len(user.Groups))
+	for i, groupId := range user.Groups {
+		groups[i], err = FindGroup(bson.ObjectIdHex(groupId))
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return user
-		**/
-	return nil, nil
+	}
+
+	return groups, nil
 }
 
 /*
@@ -144,18 +147,19 @@ func GetGroups(userId string) ([]Group, error) {
  * If the error is not nil, the returned value must be ignored.
  */
 func GetUsers(userIds []string) ([]User, error) {
-	/*
-		var users[] User
-		var err error
-		for _, i := range userIds {
-			users[i], err = FindUserByID(bson.ObjectId(userIds[i]))
-			if err != nil {
-				return err
-			}
+	users := make([]User, len(userIds))
+	var err error
+	for i, userId := range userIds {
+		if !bson.IsObjectIdHex(userId) {
+			return nil, errors.New(invalidBsonIdHexErrorMessage)
 		}
-		return users, nil
-	*/
-	return nil, nil
+		users[i], err = FindUserByID(bson.ObjectIdHex(userId))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return users, nil
 }
 
 /*
@@ -163,38 +167,41 @@ func GetUsers(userIds []string) ([]User, error) {
  * If the error is not nil, the returned value must be ignored.
  */
 func GetGroupIdStrings(userId string) ([]string, error) {
-	/*
-		var user User
-		var err error
-		user, err = FindUserByID(bson.ObjectId(userId))
-		if err != nil {
-			return nil, err
-		}
-		return user.Groups, nil
-	*/
-	return nil, nil
+	if !bson.IsObjectIdHex(userId) {
+		return nil, errors.New(invalidBsonIdHexErrorMessage)
+	}
+
+	user, err := FindUserByID(bson.ObjectIdHex(userId))
+	if err != nil {
+		return nil, err
+	}
+
+	return user.Groups, nil
 }
 
 /*
  * Add the user with the given userId to the group with the given groupId.
  * If the error is not nil, the returned value must be ignored.
  */
-func AddUsersToGroup(userIds []string, groupId string, adderId string) error {
-	/*
-		var err error
-		for _, i := range userIds {
-			err = AddMemberToGroupByID(bson.ObjectId(groupId), bson.ObjectId(userIds[i]))
-			if err != nil {
-				return err
-			}
-			err = AddGroupToUser(bson.ObjectId(userIds[i]), bson.ObjectId(groupId))
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+func AddUsersToGroup(userIds []string, groupId string) error {
+	if !bson.IsObjectIdHex(groupId) {
+		return errors.New(invalidBsonIdHexErrorMessage)
+	}
 
-	*/
+	for _, userId := range userIds {
+		if !bson.IsObjectIdHex(userId) {
+			return errors.New(invalidBsonIdHexErrorMessage)
+		}
+		err := AddMemberToGroupByID(bson.ObjectIdHex(groupId), bson.ObjectIdHex(userId))
+		if err != nil {
+			return err
+		}
+		err = AddGroupToUser(bson.ObjectIdHex(userId), bson.ObjectIdHex(groupId))
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -204,28 +211,33 @@ func AddUsersToGroup(userIds []string, groupId string, adderId string) error {
  * If the error is not nil, the returned value must be ignored.
  */
 func CreateGroup(name string, userIds []string) (string, error) {
-	/*
-			var err error
-			var group Group
-			// AddGroup adds all users to the group and in the User field as well??
-			err = AddGroup(bson.ObjectId(name), bson.ObjectId(userIds))
-			if err != nil {
-				return "", err
-			}
-			user := FindUserByID(bson.ObjectId(userIds[1]))
-			for _, i := range user.Groups {
-				group, err = FindGroup(bson.ObjectId(user.Group[i]))
-				if err != nil {
-					return "", err
-				}
-				ifgroup.GroupName == name {
-					break
-				}
-			}
-			return group.ID.hex(), nil
+	userIdsHex := make([]bson.ObjectId, len(userIds))
+	for i, userIdString := range userIds {
+		if !bson.IsObjectIdHex(userIdString) {
+			return "", errors.New(invalidBsonIdHexErrorMessage)
 		}
-	*/
-	return "", nil
+
+		userIdsHex[i] = bson.ObjectIdHex(userIdString)
+	}
+
+	//Fake a group creator.
+	groupId, err := AddGroup(name, userIdsHex[0])
+	if err != nil {
+		return "", err
+	}
+
+	for _, userIdHex := range userIdsHex[1:] {
+		err = AddMemberToGroupByID(groupId, userIdHex)
+		if err != nil {
+			return "", err
+		}
+		err = AddGroupToUser(groupId, userIdHex)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return groupId.Hex(), nil
 }
 
 /*
@@ -234,16 +246,15 @@ func CreateGroup(name string, userIds []string) (string, error) {
  * If the error is not nil, the returned value must be ignored.
  */
 func GetGroup(groupId string) (*Group, error) {
-	/*
-		var err error
-		var group Group
-		group, err = FindGroup(bson.ObjectId(groupId))
-		if err != nil {
-			return nil, err
-		}
-		return group, nil
-	*/
-	return nil, nil
+	if !bson.IsObjectIdHex(groupId) {
+		return nil, errors.New(invalidBsonIdHexErrorMessage)
+	}
+
+	group, err := FindGroup(bson.ObjectIdHex(groupId))
+	if err != nil {
+		return nil, err
+	}
+	return &group, nil
 }
 
 /*
@@ -252,30 +263,31 @@ func GetGroup(groupId string) (*Group, error) {
  * If the error is not nil, the returned value must be ignored.
  */
 func AddContact(userId string, contactEmail string) (*Contact, error) {
-	/*
-		var err error
-		var userCon User
-		var user User
-		var newContact Contact
-		user, err = FindUserById(bson.ObjectId(userId))
-		if err != nil {
-			return nil, err
-		}
-		userCon, err = FindUserIdByEmail(bson.ObjectId(contactEmail))
-		if err != nil {
-			return nil, err
-		}
-		err = AddContact_other(userCon.Name, userCon.Email, userCon.Phone, userCon.isRealUser, user.ID)
-		if err != nil {
-			return nil, err
-		}
-		newContact, err = FindContact(userCon.id)
-		if err != nil {
-			return nil, err
-		}
-		return newContact, nil
-	*/
-	return nil, nil
+	if !bson.IsObjectIdHex(userId) {
+		return nil, errors.New(invalidBsonIdHexErrorMessage)
+	}
+
+	user, err := FindUserByID(bson.ObjectIdHex(userId))
+	if err != nil {
+		return nil, err
+	}
+	userConId, err := FindUserIdByEmail(contactEmail)
+	if err != nil {
+		return nil, err
+	}
+	userCon, err := FindUserByID(userConId)
+	if err != nil {
+		return nil, err
+	}
+	err = AddContact_other(userCon.Name, userCon.Email, userCon.Phone, userCon.IsRealUser, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	newContact, err := FindContact(userCon.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &newContact, nil
 }
 
 /*
@@ -284,14 +296,10 @@ func AddContact(userId string, contactEmail string) (*Contact, error) {
  * If the error is not nil, the returned value must be ignored.
  */
 func GetAllFeedItems(groupId bson.ObjectId) ([]FeedItem, error) {
-	/*
-		var err error
-		var feed []FeedItem
-		feed, err = FindFeedItemByGroupId(groupId)
-		if err != nil {
-			return err
-		}
-		return feed, nil
-	*/
-	return nil, nil
+	group, err := FindGroup(groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	return group.Feed, nil
 }

@@ -191,6 +191,11 @@ func (fm *feedsManager) broadcast(message *websocketOutMessage) {
  */
 func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	feeds map[string]map[string]*connection) {
+	if !bson.IsObjectIdHex(feedId) {
+		log.Println("invalid feedId.")
+		return
+	}
+	// feedIdHex := bson.ObjectIdHex(feedId)
 
 	group, err := db.GetGroup(feedId)
 	if err != nil {
@@ -219,7 +224,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 		Type:    messageTypeUsers,
 	})
 
-	notifs := make([]db.Notification, len(userIds))
+	notifs := make([]*db.FeedItem, len(userIds))
 	var wsMessage *websocketOutMessage
 	for i, userId := range userIds {
 		if client, ok := fm.clients[userId]; ok {
@@ -248,8 +253,20 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 			log.Println("client not connected; no need to add it to a new broadcast.")
 		}
 
-		var err error
-		notifs[i], err = db.CreateNotification(userId, "joined the group.", feedId)
+		notification := &db.Notification{
+			Content: userId + "joined the group.",
+		}
+		notificationBytes, err := json.Marshal(notification)
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+		notifs[i] = &db.FeedItem{
+			Content: notificationBytes,
+			GroupID: feedId,
+			Type:    db.FeedItemTypeNotification,
+		}
+		err = db.AddFeedItemToGroupByID(bson.ObjectIdHex(feedId), notifs[i])
 		if err != nil {
 			log.Println(err.Error())
 			return
@@ -257,17 +274,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	}
 
 	for _, notif := range notifs {
-		notifBytes, err := json.Marshal(notif)
-		if err != nil {
-			log.Println(err.Error())
-			return
-		}
-
-		fm.broadcastFeedItem(&db.FeedItem{
-			Content: notifBytes,
-			GroupID: feedId,
-			Type:    db.FeedItemTypeNotification,
-		})
+		fm.broadcastFeedItem(notif)
 	}
 }
 

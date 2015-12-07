@@ -33,7 +33,7 @@ type Group struct {
 	UserIDs   []string      `json:"userids"`
 	Expected  []int         `json:"expected"`
 	Actual    []int         `json:"actual"`
-	Feed      []FeedItem    `json:"feedItem"`
+	Feed      []FeedItem    `json:"feed"`
 }
 
 type Contact struct {
@@ -143,13 +143,13 @@ func AddContactToUser(userId bson.ObjectId, contactId bson.ObjectId) error {
 ////////////////////////////////////////////////////////
 //          GROUP FUNCTIONS           //
 ////////////////////////////////////////////////////////
-func AddGroup(groupName string, uid bson.ObjectId) error {
+func AddGroup(groupName string, uid bson.ObjectId) (bson.ObjectId, error) {
 	var err error
 	Col = Session.DB("test").C("Group")
 	id := bson.NewObjectId()
 	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}, Feed: []FeedItem{}})
 	AddGroupToUser(uid, id)
-	return err
+	return id, err
 }
 
 func FindGroup(id bson.ObjectId) (Group, error) {
@@ -167,6 +167,25 @@ func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) error {
 	Col = Session.DB("test").C("Group")
 	query := bson.M{"_id": g.ID}
 	change := bson.M{"$push": bson.M{"userids": userId.Hex(), "expected": 0, "actual": 0}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func AddFeedItemToGroupByID(groupId bson.ObjectId, fi *FeedItem) error {
+	var err error
+	g, err := FindGroup(groupId)
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$push": bson.M{"feed": *fi}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func AddFeedItemToGroup(g *Group, fi *FeedItem) error {
+	var err error
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$push": bson.M{"feed": *fi}}
 	err = Col.Update(query, change)
 	return err
 }

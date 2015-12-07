@@ -41,7 +41,7 @@ func addContactsToGroupHandler(w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	if err := db.AddUsersToGroup(
-		body.ContactUserIds, body.GroupId, user.Id); err == nil {
+		body.ContactUserIds, body.GroupId); err == nil {
 		w.WriteHeader(http.StatusOK)
 		fm.addToGroup <- &userIdsGroupId{
 			userIds: body.ContactUserIds,
