@@ -47,49 +47,52 @@
 		},
 
 		sendMessage: function(message) {
-			console.log("sending message over socket", message);
-			// var feedItem = {
-			// 	type: "comment", 
-			// 	groupid: _,  
-			// 	content: {
-			// 		userName: _,
-			// 		userid: _,
-			// 		subject: _,
-			// 		content: _,
-			// 	}
-			// };
-			// this.ws.send(JSON.stringify(feedItem));
+			// console.log("sending message over socket", message);
+			var feedItem = {
+				type: "comment", 
+				groupid: message.group,  
+				content: {
+					content: message.message,
+				}
+			};
+			console.log("sending message over socket", feedItem);
+			this.ws.send(JSON.stringify(feedItem));
 		},
 
 		sendPurchase: function(purchase) {
-			console.log("sending purchase over socket", purchase);
-			// var feedItem = {
-			// 	type: "purchase", 
-			// 	groupid: _,
-			// 	content: {
-			// 		payer: _,
-			// 		userids: []_,
-			// 		expected: []_,
-			// 		amountInCents: _,
-			// 	}
-			// };
-			// this.ws.send(JSON.stringify(feedItem));
+			// console.log("sending purchase over socket", purchase);
+			var feedItem = {
+				type: "purchase", 
+				groupid: purchase.group_id,
+				content: {
+					title: purchase.title,
+					payer: this.user,
+					userids: [],
+					expected: [],
+					amountInCents: Math.round(purchase.cost * 100),
+				}
+			};
+			for (var i=0; i<purchase.split.length; i++) {
+				feedItem.content.userids.push(purchase.split[i].user);
+				feedItem.content.expected.push(Math.round(purchase.split[i].cost * 100));
+			}
+			console.log("sending purchase over socket", feedItem);
+			this.ws.send(JSON.stringify(feedItem));
 		},
 
 		sendPayment: function(payment) {
-			console.log("sending payment over socket", payment);
-			// var feedItem = {
-			// 	type: "payment", 
-			// 	groupid: _,
-			// 	content: {
-			// 		payer: _,
-			// 		payerid: _,
-			// 		payee: _,
-			// 		payeeid: _,
-			// 		amountInCents: _,
-			// 	}
-			// };
-			// this.ws.send(JSON.stringify(feedItem));
+			// console.log("sending payment over socket", payment);
+			var feedItem = {
+				type: "payment", 
+				groupid: payment.group_id,
+				content: {
+					payerid: payment.from,
+					payeeid: payment.to,
+					amountInCents: Math.round(payment.cost * 100),
+				}
+			};
+			console.log("sending payment over socket", feedItem);
+			this.ws.send(JSON.stringify(feedItem));
 		},
 
 		receiveSocketData: function(event) {
