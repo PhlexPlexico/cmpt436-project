@@ -82,14 +82,16 @@ func (fm *feedsManager) listen() {
 func (fm *feedsManager) joinHandler(client *connection) {
 	fm.clients[client.userId] = client
 
+	//Get all groups to which this user belong.
 	groups, err := db.GetGroups(client.userId)
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
+
+	//Give the client all group data up to this point.
 	uiGroups := make([]uiGroup, len(groups))
 	for i, group := range groups {
-		//register the client for notifications from each of its groups.
 		newUiGroup, err := createUiGroup(&group)
 		if err != nil {
 			log.Println(err)
@@ -97,7 +99,6 @@ func (fm *feedsManager) joinHandler(client *connection) {
 		}
 		uiGroups[i] = *newUiGroup
 	}
-	//Give the client all group data up to this point.
 	uiGroupsBytes, err := json.Marshal(uiGroups)
 	if err != nil {
 		log.Println(err.Error())
@@ -106,6 +107,11 @@ func (fm *feedsManager) joinHandler(client *connection) {
 	client.outgoing <- &websocketOutMessage{
 		Content: uiGroupsBytes,
 		Type:    messageTypeGroups,
+	}
+
+	//register the client for notifications from each of its groups.
+	for _, group := range groups {
+		fm.addClientToFeed(client, group.ID.Hex(), fm.clientsPerGroup)
 	}
 
 	fmt.Printf("client joined. client's groups sent:\n%v\n\n", uiGroups)
