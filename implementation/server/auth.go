@@ -252,6 +252,5 @@ func initAuth(router *pat.Router, conf *config) {
 	router.Get(authCallbackRelativePath+"/{provider}", authCallbackHandler)
 	router.Get("/auth/{provider}", gothic.BeginAuthHandler)
 	router.Post("/logout", logoutHandler)
-	router.Get("/app/index.html", appHandler)
 	router.Get("/", authHandler)
 }

@@ -85,8 +85,13 @@ func Serve() {
 	http.Handle("/", router)
 	//This static final can only be reached via explicit redirect: typing it into
 	//the address bar just makes the router handle it.
-	http.Handle("/app/", http.StripPrefix("/app/",
-		http.FileServer(http.Dir("app/"))))
+	http.HandleFunc("/app/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path[4:] == "/" {
+			appHandler(w, r)
+		} else {
+			http.ServeFile(w, r, r.URL.Path[1:])
+		}
+	})
 
 	log.Print("https://" + conf.WebsiteUrl + conf.HttpsPortNum)
 
