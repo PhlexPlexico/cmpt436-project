@@ -55,10 +55,14 @@
 			background-color: #fff;
 			border-radius: 5px;
 		}*/
+		.notification {
+			margin-bottom: 20px;
+			color: #666;
+		}
 	</style>
 	<template>
 		<template is="dom-if" if="[[isNotification(feedItem)]]">
-			<span>Notice: </span><span>[[feedItem.content.content]]</span>
+			<div class="notification"><span>Notice: </span><span>[[feedItem.content.content]]</span></div>
 		</template>
 		<template is="dom-if" if="[[!isNotification(feedItem)]]">
 			<div class="horizontal layout">
@@ -155,6 +159,10 @@
 			},
 		},
 
+		ready: function() {
+			console.log(this.feedItem);
+		},
+
 		formatCost: function(balance) {
 			return "$" + Math.abs(balance/100).toFixed(2);
 		},
@@ -187,10 +195,12 @@
 		},
 
 		getName: function(id) {
+			console.log(id);
 			return this.group.users[this.group.userIndexMap[id]].name;
 		},
 
 		getAvatar: function(id) {
+			console.log(id);
 			return this.group.users[this.group.userIndexMap[id]].avatar_url;
 		},
 
@@ -207,7 +217,7 @@
 		},
 
 		isMessage: function(feedItem) {
-			return feedItem.type == "message";
+			return feedItem.type == "comment";
 		},
 	});
 </script>

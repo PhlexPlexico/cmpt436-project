@@ -69,6 +69,8 @@
 		},
 
 		displayBalance: function(group) {
+			console.log(group);
+			console.log(this.user);
 			var balance = group.users[group.userIndexMap[this.user]].balance/100;
 			if (balance.toFixed(2) > 0) {
 				return "You owe $" + balance.toFixed(2);
