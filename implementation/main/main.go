@@ -10,7 +10,7 @@ import (
 
 func main() {
 
-	if os.Args[1] == "test" {
+	if (len(os.Args) > 1) && (os.Args[1] == "test") {
 		fmt.Println(len(os.Args), os.Args[len(os.Args)-1])
 
 		db.Test()
