@@ -124,7 +124,9 @@ func FindUserIdByEmail(email string) (bson.ObjectId, error) {
 	err = Col.Find(bson.M{"email": email}).One(&user)
 	log.Println(user.ID.Hex())
 	log.Println(user.Name)
-	log.Println(err.Error())
+	if err != nil {
+		log.Println(err.Error())
+	}
 	return user.ID, err
 }
 

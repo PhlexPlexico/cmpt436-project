@@ -24,7 +24,10 @@ const (
 	sessionDurationMinutes   int    = 30
 	userKey                  string = "key_user"
 	authCallbackRelativePath        = "/oauth2callback"
+	sessionName                     = "userSession"
 )
+
+var Store *sessions.CookieStore
 
 type authUser struct {
 	Name      string `json:"name"`
@@ -178,6 +181,7 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		endSession(session, w, r)
 		return
 	}
 
@@ -219,7 +223,7 @@ func endSession(s *sessions.Session, w http.ResponseWriter, r *http.Request) {
 }
 
 func getSession(r *http.Request) (*sessions.Session, error) {
-	return gothic.Store.Get(r, gothic.SessionName)
+	return Store.Get(r, sessionName)
 }
 
 //TODO add more providers
@@ -246,8 +250,8 @@ func initAuth(router *pat.Router, conf *config) {
 	)
 
 	//initialize the gothic store.
-	gothic.Store = sessions.NewCookieStore([]byte(conf.Session_secret))
-	gothic.Store.(*sessions.CookieStore).Options = &sessions.Options{
+	Store = sessions.NewCookieStore([]byte(conf.Session_secret))
+	Store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   60 * sessionDurationMinutes,
 		HttpOnly: true,
