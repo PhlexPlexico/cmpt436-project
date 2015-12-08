@@ -66,41 +66,16 @@ func createGroupHandler(w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	if groupId, err := db.CreateGroup(body.Name, body.MemberIds); groupId != "" {
+	if groupId, err := db.CreateGroup(body.Name, body.MemberIds); err == nil {
 		w.WriteHeader(http.StatusOK)
 		fm.addToGroup <- &userIdsGroupId{
 			userIds: body.MemberIds,
 			groupId: groupId,
 		}
-	} else if err != nil {
-		rest.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		rest.Error(w, "unable to create group", http.StatusInternalServerError)
+		rest.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-
-// func getContactsHandler(w rest.ResponseWriter, r *rest.Request) {
-// 	user := castedValidateUserAndLogInIfNecessary(w, r)
-// 	if user == nil {
-// 		return
-// 	}
-
-// 	if contacts, err := db.GetContacts(user.Id); contacts != nil {
-// 		contactsBody := make([]uiUser, len(contacts))
-// 		for i, contact := range contacts {
-// 			contactsBody[i] = uiUser{
-// 				Name:      contact.Name,
-// 				Id:        contacts.Id,
-// 				AvatarUrl: contacts.AvatarUrl,
-// 			}
-// 		}
-// 		w.writeJson(&contactsBody)
-// 	} else if err != nil {
-// 		rest.Error(w, err.Error(), http.StatusInternalServerError)
-// 	} else {
-// 		rest.Error(w, "unable to get contacts", http.StatusInternalServerError)
-// 	}
-// }
 
 func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 	user := castedValidateUserAndLogInIfNecessary(w, r)
@@ -116,24 +91,19 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	contact, err := db.AddContact(user.Id, body.Email)
+	groupId, err := db.AddContact(user.Id, body.Email)
 	if err != nil {
 		log.Println(err)
 		rest.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		ids := []string{user.Id, string(contact.ID)}
-		groupId, err := db.CreateGroup("", ids)
+		group, err := db.GetGroup(groupId)
 		if err != nil {
 			log.Println(err)
 			rest.Error(w, err.Error(), http.StatusInternalServerError)
-		} else if groupId == "" {
-			log.Println("unable to create group for contacts.")
-			rest.Error(w, "unable to create group for contacts.",
-				http.StatusInternalServerError)
 		} else {
 			w.WriteHeader(http.StatusOK)
 			fm.addToGroup <- &userIdsGroupId{
-				userIds: []string{user.Id},
+				userIds: group.UserIDs,
 				groupId: groupId,
 			}
 		}
@@ -159,5 +129,4 @@ func serveRestApi(conf *config) {
 	}
 	api.SetApp(router)
 	http.Handle("/api/", http.StripPrefix("/api", api.MakeHandler()))
-	// log.Fatal(http.ListenAndServeTLS(conf.RestPortNum, "cert.crt", "key.key", api.MakeHandler()))
 }

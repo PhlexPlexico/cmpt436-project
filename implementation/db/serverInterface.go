@@ -14,6 +14,7 @@ const (
 	FeedItemTypePurchase         string = "purchase"
 	FeedItemTypePayment          string = "payment"
 	invalidBsonIdHexErrorMessage string = "invalid bson id hex representation"
+	contactsGroupName                   = ""
 )
 
 /* For debug purposes. */
@@ -183,7 +184,7 @@ func GetGroups(userId string) ([]Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println()
+
 	groups := make([]Group, len(user.Groups))
 	for i, groupId := range user.Groups {
 		group, err := FindGroup(bson.ObjectIdHex(groupId))
@@ -316,32 +317,22 @@ func GetGroup(groupId string) (*Group, error) {
  * Return the new Contact object.
  * If the error is not nil, the returned value must be ignored.
  */
-func AddContact(userId string, contactEmail string) (*Contact, error) {
+func AddContact(userId string, contactEmail string) (string, error) {
 	if !bson.IsObjectIdHex(userId) {
-		return nil, errors.New(invalidBsonIdHexErrorMessage)
+		return "", errors.New(invalidBsonIdHexErrorMessage)
 	}
 
-	user, err := FindUserByID(bson.ObjectIdHex(userId))
+	contactId, err := FindUserIdByEmail(contactEmail)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	userConId, err := FindUserIdByEmail(contactEmail)
+	groupIdString, err := CreateGroup(
+		contactsGroupName, []string{userId, contactId.Hex()})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	userCon, err := FindUserByID(userConId)
-	if err != nil {
-		return nil, err
-	}
-	err = AddContact_other(userCon.Name, userCon.Email, userCon.Phone, userCon.IsRealUser, user.ID)
-	if err != nil {
-		return nil, err
-	}
-	newContact, err := FindContact(userCon.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &newContact, nil
+
+	return groupIdString, nil
 }
 
 /*
