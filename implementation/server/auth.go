@@ -119,9 +119,7 @@ func appHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
 	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
-		// TODO change this
 		serveIndexTemplate(w, user)
-		// http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 	}
 }
 
@@ -129,14 +127,18 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving auth request")
 
 	if user := validateUserAndLogInIfNecessary(w, r); user != nil {
-		// TODO change this
-		// serveIndexTemplate(w, user)
 		http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 	}
 }
 
 func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving new login.")
+	session, err := getSession(r)
+	if err == nil {
+		log.Println("ending session")
+		endSession(session, w, r)
+	}
+
 	t, err := template.New("login").Parse(loginTemplate)
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -195,8 +197,6 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.Save(r, w)
-	//TODO change this
-	// serveIndexTemplate(w, newAuthUser)
 	http.Redirect(w, r, "/app", http.StatusMovedPermanently)
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
+	"log"
 	"time"
 )
 
@@ -320,12 +321,13 @@ func AddContact(userId string, contactEmail string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Println()
 	groupIdString, err := CreateGroup(
 		contactsGroupName, []string{userId, contactId.Hex()})
 	if err != nil {
 		return "", err
 	}
-
+	log.Println()
 	return groupIdString, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"log"
 	"time"
 )
 
@@ -119,7 +120,11 @@ func FindUserIdByEmail(email string) (bson.ObjectId, error) {
 	var err error
 	Col = Session.DB("test").C("User")
 	user := User{}
+	log.Println(email)
 	err = Col.Find(bson.M{"email": email}).One(&user)
+	log.Println(user.ID.Hex())
+	log.Println(user.Name)
+	log.Println(err.Error())
 	return user.ID, err
 }
 
