@@ -69,12 +69,27 @@ func Test() {
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\n AddPurchase 3: %v\n", group1)
 
-	testpurch := &Purchase{
+	testpurch1 := &Purchase{
 		PayerID:       "Ken",
 		Expected:      purchase,
 		AmountInCents: 100,
 	}
-	InsertAsFeedItem(testpurch, groupid1)
+	testpurch2 := &Purchase{
+		PayerID:       "bob",
+		Expected:      purchase,
+		AmountInCents: 100,
+	}
+	testpurch3 := &Purchase{
+		PayerID:       "fred",
+		Expected:      purchase,
+		AmountInCents: 100,
+	}
+
+	InsertAsFeedItem(testpurch1, groupid1)
+	InsertAsFeedItem(testpurch2, groupid1)
+	InsertAsFeedItem(testpurch3, groupid1)
+	x, _ := FindGroup(bson.ObjectIdHex(groupid1))
+	fmt.Printf("\n FindGroup: %v\n", x)
 
 	_ = PayMember(group1, userid1.Hex(), userid3.Hex(), 2) // Jordan pays Evan 2
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
