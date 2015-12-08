@@ -74,6 +74,7 @@ type Payment struct {
 
 type Purchase struct {
 	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	Title         string        `json:"title"`
 	UserId        string        `json:"userid"`
 	PayerID       string        `json:"payer"`
 	UserIDs       []string      `json:"userids"`

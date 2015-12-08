@@ -62,6 +62,7 @@
 		},
 
 		displayBalance: function(balance) {
+			balance = balance/100;
 			if (balance.toFixed(2) > 0) {
 				return "Owes $" + balance.toFixed(2);
 			} else if (balance.toFixed(2) < 0) {

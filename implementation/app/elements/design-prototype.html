@@ -87,6 +87,9 @@
 		#menu_button {
 			margin-right: 0;
 		}
+		iron-pages {
+			height: calc(100% - 65px);
+		}
 /*		paper-drawer-panel {
 			--paper-drawer-panel-drawer-container: {
 				height: 100%;
@@ -103,7 +106,7 @@
 			height: 100%;
 		}
 		group-feed {
-			height: calc(100% - 65px);
+			height: 100%;
 		}
 		.transactions {
 			margin: 20px;
@@ -203,14 +206,17 @@
 		    		<template is="dom-if" if="[[!selectedGroup]]">
 						<div class="content">Please select a contact to start messaging.</div>
 					</template>
-				    <group-feed 
-				    	user="{{user}}"
-				    	groups="{{groups}}"
-				    	group="{{selectedGroup}}"
-				    	on-add-message="addMessage"
-				    	on-open-add-purchase-dialog="openAddPurchaseDialog"
-				    	on-open-add-payment-dialog="openAddPaymentDialog">
-				    </group-feed>
+					<iron-pages selected="{{selectedIndex}}">
+						<template is="dom-repeat" items="{{groups}}">
+						    <group-feed 
+						    	user="[[user]]"
+						    	group="{{item}}"
+						    	on-add-message="addMessage"
+						    	on-open-add-purchase-dialog="openAddPurchaseDialog"
+						    	on-open-add-payment-dialog="openAddPaymentDialog">
+						    </group-feed>
+					    </template>
+				    </iron-pages>
 				  </paper-header-panel>
 				  <paper-header-panel id="info-drawer" mode="seamed" drawer>
 				    <paper-toolbar id="info-toolbar">
@@ -222,18 +228,23 @@
 				    	<iron-pages attr-for-selected="type" selected="{{infoSelection}}">
 				    		<div type="Transactions">
 				    			<div class="transactions">
-					    			<template is="dom-repeat" items="[[selectedGroup.feed_items]]" filter="isTransaction">
-				    					<feed-item 
-				    						user="[[user]]"
-											group="[[selectedGroup]]"
-				    						no-avatar 
-				    						feed-item="[[item]]">
-				    					</feed-item>
-					    			</template>
-					    			<div class="vertical layout flex">
-						    			<paper-button class="flex" on-tap="openAddPurchaseDialog">Add Purchase</paper-button>
-						    			<paper-button class="flex" on-tap="openAddPaymentDialog">Add Payment</paper-button>
-					    			</div>
+				    				<iron-pages selected="{{selectedIndex}}">
+										<template is="dom-repeat" items="{{groups}}">
+											<div>
+								    			<template is="dom-repeat" items="[[item.feed_items]]" filter="isTransaction" as="transaction">
+							    					<feed-item 
+							    						user="[[user]]"
+														group="[[item]]"
+							    						no-avatar 
+							    						feed-item="[[transaction]]">
+							    					</feed-item>
+								    			</template>
+								    			<div class="vertical layout flex">
+									    			<paper-button class="flex" on-tap="openAddPurchaseDialog">Add Purchase</paper-button>
+									    			<paper-button class="flex" on-tap="openAddPaymentDialog">Add Payment</paper-button>
+								    		</div>
+									    </template>
+								    </iron-pages>
 				    			</div>
 				    		</div>
 				    		<div type="People">
@@ -277,7 +288,7 @@
 			},
 			selectedIndex: {
 				type: Number,
-				value: 0,
+				value: -1,
 			},
 			infoSelection: String,
 		},
@@ -329,13 +340,13 @@
 		},
 
 		groupSelect: function(event) {
-			var feed_items = event.detail.group.feed_items;
-			console.log("ASK:AFMSAF FEED ITEMS", feed_items);
+			// var feed_items = event.detail.group.feed_items;
+			// console.log("ASK:AFMSAF FEED ITEMS", feed_items);
 			this.set('selectedGroup', event.detail.group);
-			this.set('selectedGroup.feed_items', []);
-			for (var i=0; i<feed_items.length; i++) {
-				this.push('selectedGroup.feed_items', feed_items[i]);
-			}
+			// this.set('selectedGroup.feed_items', []);
+			// for (var i=0; i<feed_items.length; i++) {
+			// 	this.push('selectedGroup.feed_items', feed_items[i]);
+			// }
 			// this.set('selectedGroup.feed_items', feed_items);
 			this.$.contact_drawer_panel.closeDrawer();
 			
@@ -397,11 +408,11 @@
 		},
 
 		addFeedItem: function(event) {
-			if (event.detail.group_id == this.selectedGroup.id) {
-				this.push('selectedGroup.feed_items', event.detail.feed_item);
-			} else {
+			// if (event.detail.group_id == this.selectedGroup.id) {
+				// this.push('selectedGroup.feed_items', event.detail.feed_item);
+			// } else {
 				this.push('groups.'+event.detail.index+'.feed_items', event.detail.feed_item);
-			}
+			// }
 		},
 	});
 </script>
