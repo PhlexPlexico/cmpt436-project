@@ -13,7 +13,7 @@ var fm *feedsManager
 type feedsManager struct {
 	join       chan *connection
 	leave      chan *connection
-	incoming   chan *db.FeedItem
+	incoming   chan *feedInMessage
 	addToGroup chan *userIdsGroupId
 	// addToContacts      chan *userIdsGroupId
 	clients         map[string]*connection
@@ -46,7 +46,7 @@ func NewFeedsManager() *feedsManager {
 	fm := &feedsManager{
 		join:            make(chan *connection),
 		leave:           make(chan *connection),
-		incoming:        make(chan *db.FeedItem),
+		incoming:        make(chan *feedInMessage),
 		addToGroup:      make(chan *userIdsGroupId),
 		clients:         make(map[string]*connection),
 		clientsPerGroup: make(map[string]map[string]*connection),
@@ -68,11 +68,12 @@ func (fm *feedsManager) listen() {
 			case client := <-fm.leave:
 				fm.leaveHandler(client)
 			case message := <-fm.incoming:
-				if err := db.HandleFeedItem(message); err == nil {
-					fm.broadcastFeedItem(message)
+				fi, err := db.HandleFeedItem(message.content, message.userId)
+				if err != nil {
+					log.Printf("could not handle message %v,\ndue to error: %s\n",
+						message.content, err.Error())
 				} else {
-					log.Println("could not handle message", message,
-						",\ndue to error:", err.Error())
+					fm.broadcastFeedItem(fi)
 				}
 			}
 		}
@@ -230,9 +231,9 @@ func (fm *feedsManager) addNewClientsToFeedById(userIds []string, feedId string,
 
 		//Create a notification associated with the new user.
 		notification := &db.Notification{
-			Content: uiUsers[i].Name + "joined the group.",
+			Content: uiUsers[i].Name + " joined the group.",
 		}
-		err = db.InsertAsFeedItem(db.FeedItemContent(notification), feedId)
+		_, err = db.InsertAsFeedItem(db.FeedItemContent(notification), feedId)
 		if err != nil {
 			log.Println(err.Error())
 			return

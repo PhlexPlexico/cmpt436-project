@@ -63,6 +63,7 @@ type Notification struct {
 
 type Payment struct {
 	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	UserId        string        `json:"userid"`
 	Payer         string        `json:"payer"`
 	PayerID       string        `json:"payerid"`
 	Payee         string        `json:"payee"`
@@ -73,6 +74,7 @@ type Payment struct {
 
 type Purchase struct {
 	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	UserId        string        `json:"userid"`
 	PayerID       string        `json:"payer"`
 	UserIDs       []string      `json:"userids"`
 	Expected      []int         `json:"expected"`

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
-	"log"
 )
 
 const (
@@ -48,93 +47,85 @@ func (c *Payment) TypeString() string {
  * this handle function to return a value to the webserver, because the webserver
  * rebroadcasts incoming feed items on its own, automatically. Just return an error
  * if the webserver should not be rebroadcasting: e.g. if an invalid purchase is made.
+ *
+ * This function is passed in a userId, which it uses to fill in the FeedItem, if
+ * necessary. It then returns a new, filled-in feeditem.
  */
-func HandleFeedItem(fi *FeedItem) error {
-	if !bson.IsObjectIdHex(fi.GroupID) {
-		return errors.New(invalidBsonIdHexErrorMessage)
+func HandleFeedItem(fi *FeedItem, userId string) (*FeedItem, error) {
+	if !bson.IsObjectIdHex(fi.GroupID) || !bson.IsObjectIdHex(userId) {
+		return nil, errors.New(invalidBsonIdHexErrorMessage)
 	}
 	switch fi.Type {
 	case FeedItemTypeComment:
 		comment := &Comment{}
 		err := json.Unmarshal(fi.Content, comment)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		err = InsertAsFeedItem(FeedItemContent(comment), fi.GroupID)
-		if err != nil {
-			return err
-		}
-
+		comment.UserID = userId
+		return InsertAsFeedItem(FeedItemContent(comment), fi.GroupID)
 	case FeedItemTypeNotification:
 		notification := &Notification{}
 		err := json.Unmarshal(fi.Content, notification)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		err = InsertAsFeedItem(FeedItemContent(notification), fi.GroupID)
-		if err != nil {
-			return err
-		}
+		return InsertAsFeedItem(FeedItemContent(notification), fi.GroupID)
 	case FeedItemTypePayment:
 		payment := &Payment{}
 		err := json.Unmarshal(fi.Content, payment)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		payment.UserId = userId
 		group, err := FindGroup(bson.ObjectIdHex(fi.GroupID))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		err = PayMember(group, payment.PayerID, payment.PayeeID, payment.AmountInCents)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		err = InsertAsFeedItem(FeedItemContent(payment), fi.GroupID)
-		if err != nil {
-			return err
-		}
+		return InsertAsFeedItem(FeedItemContent(payment), fi.GroupID)
 	case FeedItemTypePurchase:
 		purchase := &Purchase{}
 		err := json.Unmarshal(fi.Content, purchase)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		purchase.UserId = userId
 		group, err := FindGroup(bson.ObjectIdHex(fi.GroupID))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		err = DoPurchase(group, purchase.PayerID,
 			purchase.AmountInCents, purchase.Expected)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		err = InsertAsFeedItem(FeedItemContent(purchase), fi.GroupID)
-		if err != nil {
-			return err
-		}
+		return InsertAsFeedItem(FeedItemContent(purchase), fi.GroupID)
 	default:
-		return errors.New(fmt.Sprint("invalid FeedItem type: ", fi.Type))
+		return nil, errors.New(fmt.Sprint("invalid FeedItem type: ", fi.Type))
 	}
-
-	return nil
 }
 
-func InsertAsFeedItem(v FeedItemContent, groupId string) error {
+/* Return the new feed item, to be rebroadcast, with userId filled in. */
+func InsertAsFeedItem(v FeedItemContent, groupId string) (*FeedItem, error) {
 	if !bson.IsObjectIdHex(groupId) {
-		return errors.New(invalidBsonIdHexErrorMessage)
+		return nil, errors.New(invalidBsonIdHexErrorMessage)
 	}
 
 	bytes, err := json.Marshal(v)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fi := &FeedItem{
 		Content: bytes,
 		GroupID: groupId,
 		Type:    v.TypeString(),
 	}
-	log.Printf("\n\n FeedItem %v \n \n \n", fi)
-	return AddFeedItemToGroupByID(bson.ObjectIdHex(groupId), fi)
+	// log.Printf("\n\n FeedItem %v \n \n \n", fi)
+	return fi, AddFeedItemToGroupByID(bson.ObjectIdHex(groupId), fi)
 }
 
 /*

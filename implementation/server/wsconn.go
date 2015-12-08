@@ -78,6 +78,11 @@ type websocketOutMessage struct {
 	Type    string          `json:"type"`
 }
 
+type feedInMessage struct {
+	content *db.FeedItem
+	userId  string
+}
+
 // readPump pumps messages from the websocket connection to the Feeds Manager.
 func (c *connection) readPump() {
 	defer func() {
@@ -105,7 +110,10 @@ func (c *connection) readPump() {
 		// 	log.Println("bad message has both groupId and contactsId")
 		// 	break
 		// }
-		fm.incoming <- message
+		fm.incoming <- &feedInMessage{
+			content: message,
+			userId:  c.userId,
+		}
 	}
 }
 
