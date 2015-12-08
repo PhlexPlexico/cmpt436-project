@@ -50,7 +50,7 @@ import (
 
 // Adds a purchase for the buyer, increasing the expeced by (cost-average)
 // lowers all other group members Actual by average
-func AddPurchase(group db.Group, buyer string, cost int, expected []int) db.Group {
+func AddPurchase(group *db.Group, buyer string, cost int, expected []int) {
 	//var length int = len(group.UserIDs)
 	//var average int = (expected / length)
 	for ele := range group.UserIDs {
@@ -61,13 +61,12 @@ func AddPurchase(group db.Group, buyer string, cost int, expected []int) db.Grou
 			group.Expected[ele] = group.Actual[ele] + expected[ele]
 		}
 	}
-	return group
 }
 
 // payer pays payee
 // payers Actual and Expected increase
 // payees Actual and Expected decrease
-func PayMember(group db.Group, payer string, payee string, amount int) db.Group {
+func PayMember(group *db.Group, payer string, payee string, amount int) {
 	payerPos, payeePos := getPositions(group, payer, payee)
 
 	fmt.Printf("\n Begin payer: %v %v", group.Expected[payerPos], group.Actual[payerPos])
@@ -80,10 +79,9 @@ func PayMember(group db.Group, payer string, payee string, amount int) db.Group 
 
 	//fmt.Printf("\n End payer: %v %v",group.Expected[payerPos], group.Actual[payerPos] )
 	//fmt.Printf("\n End payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
-	return group
 }
 
-func getPositions(group db.Group, u1 string, u2 string) (int, int) {
+func getPositions(group *db.Group, u1 string, u2 string) (int, int) {
 	x := -1
 	y := -1
 	for ele := range group.UserIDs {
@@ -97,13 +95,12 @@ func getPositions(group db.Group, u1 string, u2 string) (int, int) {
 }
 
 // take on the entirety of someone elses Actual/Expected
-func TakeDebt(group db.Group, taker string, giver string) db.Group {
+func TakeDebt(group *db.Group, taker string, giver string) {
 	takerPos, giverPos := getPositions(group, taker, giver)
 	group.Actual[takerPos] += group.Actual[giverPos]
 	group.Expected[takerPos] += group.Expected[giverPos]
 	group.Actual[giverPos] = 0
 	group.Expected[giverPos] = 0
-	return group
 }
 
 // this will be automatic with the sliders defualt when take debt uses default

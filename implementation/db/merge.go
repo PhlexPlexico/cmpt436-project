@@ -6,8 +6,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func AddPurchase_old(g Group, buyer string, cost int, expected []int) error {
-	g = logic.AddPurchase(g, buyer, cost, expected)
+func AddPurchase(g *Group, buyer string, cost int, expected []int) error {
+	logic.AddPurchase(g, buyer, cost, expected)
 	Purchase := &Purchase{
 		PayerID:       buyer,
 		AmountInCents: cost,
@@ -22,17 +22,17 @@ func AddPurchase_old(g Group, buyer string, cost int, expected []int) error {
 		GroupID: g.ID,
 		Type:    FeedItemTypePurchase,
 	}
-	AddFeedItemToGroupByID(&g, PurchaseFeedItem)
+	AddFeedItemToGroupByID(g, PurchaseFeedItem)
 	return GetGroupChanges(g)
 }
 
-func PayMember_old(g Group, payer string, payee string, amount int) error {
-	g = logic.PayMember(g, payer, payee, amount)
+func PayMember(g *Group, payer string, payee string, amount int) error {
+	logic.PayMember(g, payer, payee, amount)
 	return GetGroupChanges(g)
 }
 
-func TakeDebt_old(g Group, taker string, payee string) error {
-	g = logic.TakeDebt(g, taker, payee)
+func TakeDebt(g *Group, taker string, payee string) error {
+	logic.TakeDebt(g, taker, payee)
 	return GetGroupChanges(g)
 }
 
@@ -82,15 +82,15 @@ func main() {
 	// b := [2]string{"Penn", "Teller"}
 
 	purchase := []int{2, 2, 2, 2, 2}
-	_ = AddPurchase_old(group1, userid3.Hex(), 10, purchase) // evan purchase 10
+	_ = AddPurchase(group1, userid3.Hex(), 10, purchase) // evan purchase 10
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
-	fmt.Printf("\n AddPurchase_old 3: %v\n", group1)
+	fmt.Printf("\n AddPurchase 3: %v\n", group1)
 
-	_ = PayMember_old(group1, userid1.Hex(), userid3.Hex(), 2) // Jordan pays Evan 2
+	_ = PayMember(group1, userid1.Hex(), userid3.Hex(), 2) // Jordan pays Evan 2
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
-	fmt.Printf("\nPayMember_old 1, 3: %v\n", group1)
+	fmt.Printf("\nPayMember 1, 3: %v\n", group1)
 
-	_ = TakeDebt_old(group1, userid2.Hex(), userid3.Hex()) // ken taking evans
+	_ = TakeDebt(group1, userid2.Hex(), userid3.Hex()) // ken taking evans
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\nTake Debt 2, 3: %v\n", group1)
 
@@ -102,6 +102,6 @@ func main() {
 	// group = FindGroup("groupID")
 	// fmt.Printf(" %v ", t[i]) // use %+v for struct vals, %p for pointer
 
-	// //logic.AddPurchase_old(group FindUser("email") cost)
+	// //logic.AddPurchase(group FindUser("email") cost)
 
 }

@@ -152,11 +152,11 @@ func AddGroup(groupName string, uid bson.ObjectId) (bson.ObjectId, error) {
 	return id, err
 }
 
-func FindGroup(id bson.ObjectId) (Group, error) {
+func FindGroup(id bson.ObjectId) (*Group, error) {
 	var err error
 	Col = Session.DB("test").C("Group")
-	group := Group{}
-	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&group)
+	group := &Group{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(group)
 	//ThisPanic(err)
 	return group, err
 }
@@ -190,7 +190,7 @@ func AddFeedItemToGroup(g *Group, fi *FeedItem) error {
 	return err
 }
 
-func GetGroupChanges(g Group) error {
+func GetGroupChanges(g *Group) error {
 	var err error
 	Col = Session.DB("test").C("Group")
 	query := bson.M{"_id": g.ID}
