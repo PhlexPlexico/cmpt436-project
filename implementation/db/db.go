@@ -22,8 +22,8 @@ type User struct {
 	IsRealUser bool          `json:"isRealUser"`
 	AvatarURL  string        `json:"avatarurl"`
 	Groups     []string      `json:"groups"`
-	Contacts   []string      `json:"contacts"`
-	Timestamp  time.Time     `json:"time"`
+	// Contacts   []string
+	Timestamp time.Time `json:"time"`
 }
 
 type Group struct {
@@ -35,14 +35,14 @@ type Group struct {
 	Feed      []FeedItem    `json:"feed"`
 }
 
-type Contact struct {
-	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	Name       string        `json:"name"`
-	Phone      string        `json:"phone"`
-	Email      string        `json:"email"`
-	IsRealUser bool          `json:"isRealUser`
-	Timestamp  time.Time     `json:"time"`
-}
+// type Contact struct {
+// 	ID         bson.ObjectId `json:"id" bson:"_id,omitempty"`
+// 	Name       string        `json:"name"`
+// 	Phone      string        `json:"phone"`
+// 	Email      string        `json:"email"`
+// 	IsRealUser bool          `json:"isRealUser`
+// 	Timestamp  time.Time     `json:"time"`
+// }
 
 type Comment struct {
 	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
@@ -130,14 +130,14 @@ func AddGroupToUser(userId bson.ObjectId, groupId bson.ObjectId) error {
 	return err
 }
 
-func AddContactToUser(userId bson.ObjectId, contactId bson.ObjectId) error {
-	var err error
-	Col = Session.DB("test").C("User")
-	query := bson.M{"_id": bson.ObjectId(userId)}
-	change := bson.M{"$push": bson.M{"contacts": contactId.Hex()}}
-	err = Col.Update(query, change)
-	return err
-}
+// func AddContactToUser(userId bson.ObjectId, contactId bson.ObjectId) error {
+// 	var err error
+// 	Col = Session.DB("test").C("User")
+// 	query := bson.M{"_id": bson.ObjectId(userId)}
+// 	change := bson.M{"$push": bson.M{"contacts": contactId.Hex()}}
+// 	err = Col.Update(query, change)
+// 	return err
+// }
 
 ////////////////////////////////////////////////////////
 //          GROUP FUNCTIONS           //
@@ -219,38 +219,38 @@ func DeleteGroup(id bson.ObjectId) error {
 ////////////////////////////////////////////////////////
 //          CONTACT FUNCTIONS         //
 ////////////////////////////////////////////////////////
-func AddContact_other(contactName string, email string, phone string, isRealUser bool, uid bson.ObjectId) error {
-	var err error
-	Col = Session.DB("test").C("Contact")
-	id := bson.NewObjectId()
-	err = Col.Insert(&Contact{ID: id, Name: contactName, Email: email, IsRealUser: isRealUser, Timestamp: time.Now()})
-	AddContactToUser(uid, id)
-	return err
-}
+// func AddContact_other(contactName string, email string, phone string, isRealUser bool, uid bson.ObjectId) error {
+// 	var err error
+// 	Col = Session.DB("test").C("Contact")
+// 	id := bson.NewObjectId()
+// 	err = Col.Insert(&Contact{ID: id, Name: contactName, Email: email, IsRealUser: isRealUser, Timestamp: time.Now()})
+// 	AddContactToUser(uid, id)
+// 	return err
+// }
 
-func FindContact(id bson.ObjectId) (Contact, error) {
-	var err error
-	Col = Session.DB("test").C("Contact")
-	contact := Contact{}
-	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&contact)
-	return contact, err
-}
+// func FindContact(id bson.ObjectId) (Contact, error) {
+// 	var err error
+// 	Col = Session.DB("test").C("Contact")
+// 	contact := Contact{}
+// 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&contact)
+// 	return contact, err
+// }
 
-func GetContactChanges(c Contact) error {
-	var err error
-	Col = Session.DB("test").C("Contact")
-	query := bson.M{"_id": c.ID}
-	change := bson.M{"$set": bson.M{"name": c.Name, "phone": c.Phone, "email": c.Email, "isRealUser": c.IsRealUser}}
-	err = Col.Update(query, change)
-	return err
-}
+// func GetContactChanges(c Contact) error {
+// 	var err error
+// 	Col = Session.DB("test").C("Contact")
+// 	query := bson.M{"_id": c.ID}
+// 	change := bson.M{"$set": bson.M{"name": c.Name, "phone": c.Phone, "email": c.Email, "isRealUser": c.IsRealUser}}
+// 	err = Col.Update(query, change)
+// 	return err
+// }
 
-func DeleteContact(id bson.ObjectId) error {
-	var err error
-	Col = Session.DB("test").C("Contact")
-	err = Col.RemoveId(id)
-	return err
-}
+// func DeleteContact(id bson.ObjectId) error {
+// 	var err error
+// 	Col = Session.DB("test").C("Contact")
+// 	err = Col.RemoveId(id)
+// 	return err
+// }
 
 ////////////////////////////////////////////////////////
 //          COMMENT FUNCTIONS         //
