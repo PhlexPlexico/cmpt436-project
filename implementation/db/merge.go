@@ -28,7 +28,25 @@ func AddPurchase(g *Group, buyer string, cost int, expected []int) error {
 
 func PayMember(g *Group, payer string, payee string, amount int) error {
 	logic.PayMember(g, payer, payee, amount)
-	return GetGroupChanges(g)
+	//yolo := bson.NewObjectId()
+	Payment := &db.Payment{
+		//ID:            yolo,
+		PayerID:       payer,
+		PayeeID:       payee,
+		AmountInCents: amount,
+	}
+	PaymentBytes, err := json.Marshal(Payment)
+	if err != nil {
+		return err
+	}
+	PaymentFeedItem := &db.FeedItem{
+		Content: PaymentBytes,
+		GroupID: g.ID.Hex(),
+		Type:    db.FeedItemTypePayment,
+	}
+	log.Printf("\n\n PaymentFeedItem %v \n \n \n", PaymentFeedItem)
+	db.AddFeedItemToGroup(g, PaymentFeedItem)
+	return db.GetGroupChanges(g)
 }
 
 func TakeDebt(g *Group, taker string, payee string) error {

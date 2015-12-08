@@ -74,7 +74,7 @@ type Payment struct {
 
 type Purchase struct {
 	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Payer         string        `json:"payer"`
+	PayerID       string        `json:"payer"`
 	UserIDs       []string      `json:"userids"`
 	Expected      []int         `json:"expected"`
 	AmountInCents int           `json:"amountInCents"`
@@ -82,7 +82,7 @@ type Purchase struct {
 }
 
 type FeedItem struct {
-	ID        bson.ObjectId   `json:"id" bson:"_id, omitempty"`
+	ID        bson.ObjectId   `json:"id" bson:"_id"`
 	Content   json.RawMessage `json:"content"`
 	GroupID   string          `json:"groupid"`
 	Type      string          `json:"type"`
@@ -172,13 +172,8 @@ func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) error {
 }
 
 func AddFeedItemToGroupByID(groupId bson.ObjectId, fi *FeedItem) error {
-	var err error
-	g, err := FindGroup(groupId)
-	Col = Session.DB("test").C("Group")
-	query := bson.M{"_id": g.ID}
-	change := bson.M{"$push": bson.M{"feed": *fi}}
-	err = Col.Update(query, change)
-	return err
+	g, _ := FindGroup(groupId)
+	return AddFeedItemToGroup(&g, fi)
 }
 
 func AddFeedItemToGroup(g *Group, fi *FeedItem) error {
@@ -387,7 +382,7 @@ func DeletePayment(id bson.ObjectId) error {
 func AddPurchase(payer string, userIDs []string, expected []int, amount int) error {
 	var err error
 	Col = Session.DB("test").C("Purchase")
-	err = Col.Insert(&Purchase{Payer: payer, UserIDs: userIDs, Expected: expected, AmountInCents: amount, Timestamp: time.Now()})
+	err = Col.Insert(&Purchase{PayerID: payer, UserIDs: userIDs, Expected: expected, AmountInCents: amount, Timestamp: time.Now()})
 	return err
 }
 
@@ -403,7 +398,7 @@ func GetPurchaseChanges(p Purchase) error {
 	var err error
 	Col = Session.DB("test").C("Purchase")
 	query := bson.M{"_id": p.ID}
-	change := bson.M{"$set": bson.M{"payer": p.Payer, "userids": p.UserIDs, "expected": p.Expected, "amountInCents": p.AmountInCents}}
+	change := bson.M{"$set": bson.M{"payer": p.PayerID, "userids": p.UserIDs, "expected": p.Expected, "amountInCents": p.AmountInCents}}
 	err = Col.Update(query, change)
 	return err
 }
