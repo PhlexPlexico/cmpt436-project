@@ -137,10 +137,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 func serveNewLogin(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving new login.")
 	session, err := getSession(r)
-	if err == nil {
-		log.Println("ending session")
-		endSession(session, w, r)
-	}
+	log.Println("ending session")
+	endSession(session, w, r)
 
 	t, err := template.New("login").Parse(loginTemplate)
 	if err != nil {
@@ -206,14 +204,7 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving logout")
-	session, err := getSession(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Println(err.Error())
-		return
-	}
 
-	endSession(session, w, r)
 	serveNewLogin(w, r)
 }
 
