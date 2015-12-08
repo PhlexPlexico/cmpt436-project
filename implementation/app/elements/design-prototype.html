@@ -419,6 +419,7 @@
 				// this.push('selectedGroup.feed_items', event.detail.feed_item);
 			// } else {
 				this.push('groups.'+event.detail.index+'.feed_items', event.detail.feed_item);
+				this.set('groups.'+event.detail.index+'.unread', this.groups[event.detail.index].unread + 1);
 			// }
 		},
 
