@@ -421,6 +421,8 @@
 		logOut: function() {
 			console.log("logging out");
 			this.$.log_out.generateRequest();
+			location.reload();
+			// window.location = location.host + "/logout";
 		},
 	});
 </script>
