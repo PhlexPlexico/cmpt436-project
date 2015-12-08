@@ -261,32 +261,35 @@ func AddUsersToGroup(userIds []string, groupId string) error {
  * If the error is not nil, the returned value must be ignored.
  */
 func CreateGroup(name string, userIds []string) (string, error) {
-	userIdsHex := make([]bson.ObjectId, len(userIds))
+	userIdsObj := make([]bson.ObjectId, len(userIds))
 	for i, userIdString := range userIds {
 		if !bson.IsObjectIdHex(userIdString) {
 			return "", errors.New(invalidBsonIdHexErrorMessage)
 		}
 
-		userIdsHex[i] = bson.ObjectIdHex(userIdString)
+		userIdsObj[i] = bson.ObjectIdHex(userIdString)
 	}
-
+	log.Println()
 	//Fake a group creator.
-	groupId, err := AddGroup(name, userIdsHex[0])
+	groupId, err := AddGroup(name, userIdsObj[0])
 	if err != nil {
 		return "", err
 	}
+	log.Println()
 
-	for _, userIdHex := range userIdsHex[1:] {
-		err = AddMemberToGroupByID(groupId, userIdHex)
+	for _, userIdObj := range userIdsObj[1:] {
+		err = AddMemberToGroupByID(groupId, userIdObj)
 		if err != nil {
 			return "", err
 		}
-		err = AddGroupToUser(groupId, userIdHex)
+		log.Println()
+		err = AddGroupToUser(userIdObj, groupId)
 		if err != nil {
 			return "", err
 		}
 	}
 
+	log.Println()
 	return groupId.Hex(), nil
 }
 
