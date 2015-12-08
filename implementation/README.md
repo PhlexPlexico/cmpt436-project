@@ -1,14 +1,22 @@
-# secure-chat
+# implementation
 
 This is intended to be the final implementation for the project.
 
 ### Setup
 
-Setup is a bit more involved for this prototype. Make sure you have [Bower](http://bower.io/) and [Go](https://golang.org/) installed, and then run:
+Make sure you have [Bower](http://bower.io/) and [Go](https://golang.org/) installed, and then run:
 
 `bower install`
 
-in the `app/` directory to get all of the website dependencies. After that, you will need to create a certificate and key (named `cert.crt` and `key.key`) for https and wss connection, and place them in the `main/` directory. Specifically, just execute the following command in the 'main/' directory:
+in the `app/` directory to get all of the website dependencies. You'll then need to add the following code inside of `app/bower_components/iron-a11y-keys-behavior/iron-a11y-keys-behavior.html` at line `253` to fix an outstanding bug:
+
+```
+  ready: function() {
+    this.keyEventTarget = document.body;
+  },
+```
+
+After that, you will need to create a certificate and key (named `cert.crt` and `key.key`) for https and wss connection, and place them in the `main/` directory. Specifically, just execute the following command in the 'main/' directory:
 
 `openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.key -out cert.crt`
 

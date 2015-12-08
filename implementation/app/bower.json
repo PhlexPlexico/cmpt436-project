@@ -17,8 +17,10 @@
     "tests"
   ],
   "dependencies": {
-    "paper-elements": "PolymerElements/paper-elements#~1.0.5",
-    "iron-elements": "PolymerElements/iron-elements#~1.0.4",
-    "moment": "~2.10.6"
+    "moment": "~2.10.6",
+    "polymer": "Polymer/Polymer#~1.2.3",
+    "webcomponentsjs": "~0.7.19",
+    "iron-elements": "PolymerElements/iron-elements#~1.0.6",
+    "paper-elements": "PolymerElements/paper-elements#~1.0.6"
   }
 }
