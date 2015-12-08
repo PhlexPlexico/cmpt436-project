@@ -57,7 +57,7 @@ func ProcessPurchase(group *Group, buyer string, cost int, expected []int) {
 			group.Expected[ele] = group.Expected[ele] + expected[ele]
 			group.Actual[ele] = group.Actual[ele] + cost
 		} else {
-			group.Expected[ele] = group.Actual[ele] + expected[ele]
+			group.Expected[ele] = group.Expected[ele] + expected[ele]
 		}
 	}
 }

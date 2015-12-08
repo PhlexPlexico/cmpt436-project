@@ -64,9 +64,9 @@
 		displayBalance: function(balance) {
 			balance = balance/100;
 			if (balance.toFixed(2) > 0) {
-				return "Owes $" + balance.toFixed(2);
+				return "Is owed $" + balance.toFixed(2);
 			} else if (balance.toFixed(2) < 0) {
-				return "Is owed $" + Math.abs(balance).toFixed(2);
+				return "Owes $" + Math.abs(balance).toFixed(2);
 			} else {
 				return "Owes nothing";
 			}
