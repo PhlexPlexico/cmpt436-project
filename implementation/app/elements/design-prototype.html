@@ -257,125 +257,15 @@
 		properties: {
 			user: {
 				type: String,
-				value: "0",
+				value: null,
 			},
 			contacts: {
 				type: Array,
-				value: [
-					{name: "William van der Kamp", id: "1", avatar_url: "images/profile-picture.svg"},
-					{name: "Ken Slawinksi", id: "2", avatar_url: "images/profile-picture.svg"},
-					{name: "Jordan Lys", id: "3", avatar_url: "images/profile-picture.svg"},
-					{name: "Evan Closson", id: "4", avatar_url: "images/profile-picture.svg"},
-				],
+				value: [],
 			},
 			groups: {
 				type: Array,
-				value: [
-					{id: "0", type: "contact", name: "William van der Kamp",
-						users: [
-							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
-							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: "images/profile-picture.svg"},
-						],
-						userIndexMap: {
-							'0': 0,
-							'1': 1,
-						},
-						feed_items: [],
-					},
-					{id: "1", type: "contact", name: "Ken Slawinksi",
-						users: [
-							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
-							{name: "Ken Slawinksi", id: "2", balance: -500, avatar_url: "images/profile-picture.svg"},
-						],
-						userIndexMap: {
-							'0': 0,
-							'2': 1,
-						},
-						feed_items: [],
-					},
-					{id: "2", type: "contact", name: "Jordan Lys",
-						users: [
-							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
-							{name: "Jordan Lys", id: "3", balance: -500, avatar_url: "images/profile-picture.svg"},
-						],
-						userIndexMap: {
-							'0': 0,
-							'3': 1,
-						},
-						feed_items: [],
-					},
-					{id: "3", type: "contact", name: "Evan Closson",
-						users: [
-							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
-							{name: "Evan Closson", id: "4", balance: -500, avatar_url: "images/profile-picture.svg"},
-						],
-						userIndexMap: {
-							'0': 0,
-							'4': 1,
-						},
-						feed_items: [],
-					},
-					{id: "4", type: "group", name: "Camping",
-						users: [
-							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
-							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: "images/profile-picture.svg"},
-							{name: "Ken Slawinksi", id: "2", balance: 20, avatar_url: "images/profile-picture.svg"},
-							{name: "Jordan Lys", id: "3", balance: 50, avatar_url: "images/profile-picture.svg"},
-							{name: "Evan Closson", id: "4", balance: -70, avatar_url: "images/profile-picture.svg"}
-						],
-						userIndexMap: {
-							'0': 0,
-							'1': 1,
-							'2': 2,
-							'3': 3,
-							'4': 4,
-						},
-						feed_items: [],
-					}, 
-					{id: "5", type: "group", name: "Vegas, Baby!",
-						users: [
-							{name: "You", id: "0", balance: 500, avatar_url: "images/profile-picture.svg"},
-							{name: "William van der Kamp", id: "1", balance: -500, avatar_url: "images/profile-picture.svg"},
-							{name: "Ken Slawinksi", id: "2", balance: 20, avatar_url: "images/profile-picture.svg"},
-							{name: "Jordan Lys", id: "3", balance: 50, avatar_url: "images/profile-picture.svg"},
-							{name: "Evan Closson", id: "4", balance: -70, avatar_url: "images/profile-picture.svg"},
-						],
-						userIndexMap: {
-							'0': 0,
-							'1': 1,
-							'2': 2,
-							'3': 3,
-							'4': 4,
-						},
-						feed_items: [
-							{type: "message", time: "1985-04-12T23:20:50.52Z", content: {
-								userid: "0",
-								content: "Hello, World!",
-							}},
-							{type: "message", time: "1985-04-12T23:20:50.52Z", content: {
-								userid: "1",
-								content: "Foo bar, man...",
-							}},
-							{type: "payment", time: "1985-04-12T23:20:50.52Z", content: {
-								userid: "2", //TODO: NEED THIS
-								payerid: "3",
-								payeeid: "4",
-								amountInCents: 1000,
-							}},
-							{type: "purchase", time: "1985-04-12T23:20:50.52Z", content: {
-								title: "Cookies", //TODO: NEED THIS
-								userid: "0", //TODO: NEED THIS
-								payer: "0", //TODO: NEED THIS?
-								userids: ["0", "1", "2", "3", "4"],
-								expected: [200, 200, 200, 200, 200],
-								amountInCents: 1000,
-							}},
-							{type: "notification", time: "1985-04-12T23:20:50.52Z", content: {
-								content: "Foo joined the group",
-							}},
-						],
-					}
-				]
+				value: [],
 			},
 			selectedGroup: {
 				type: Object,
