@@ -116,22 +116,27 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	if contact, err := db.AddContact(user.Id, body.Email); err != nil {
-		if groupId, err := db.CreateGroup("",
-			[]string{user.Id, string(contact.ID)}); groupId != "" {
+	contact, err := db.AddContact(user.Id, body.Email)
+	if err != nil {
+		log.Println(err)
+		rest.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		ids := []string{user.Id, string(contact.ID)}
+		groupId, err := db.CreateGroup("", ids)
+		if err != nil {
+			log.Println(err)
+			rest.Error(w, err.Error(), http.StatusInternalServerError)
+		} else if groupId == "" {
+			log.Println("unable to create group for contacts.")
+			rest.Error(w, "unable to create group for contacts.",
+				http.StatusInternalServerError)
+		} else {
 			w.WriteHeader(http.StatusOK)
 			fm.addToGroup <- &userIdsGroupId{
 				userIds: []string{user.Id},
 				groupId: groupId,
 			}
-		} else if err != nil {
-			rest.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			rest.Error(w, "unable to create group for contacts.",
-				http.StatusInternalServerError)
 		}
-	} else {
-		rest.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
