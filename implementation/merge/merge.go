@@ -3,8 +3,10 @@ package main
 import (
 	"../db"
 	"../logic"
+	"encoding/json"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
+	"log"
 )
 
 func AddPurchase_old(g db.Group, buyer string, cost int, expected []int) error {
@@ -18,17 +20,36 @@ func AddPurchase_old(g db.Group, buyer string, cost int, expected []int) error {
 	if err != nil {
 		return err
 	}
-	PurchseFeedItem := &db.FeedItem{
+	PurchaseFeedItem := &db.FeedItem{
 		Content: PurchaseBytes,
-		GroupID: g.ID,
+		GroupID: g.ID.Hex(),
 		Type:    db.FeedItemTypePurchase,
 	}
-	db.AddFeedItemToGroupByID(&g, PurchaseFeedItem)
+	db.AddFeedItemToGroup(&g, PurchaseFeedItem)
+	log.Printf("\n\n Purchase Feed Item: %v \n \n \n", PurchaseFeedItem)
 	return db.GetGroupChanges(g)
 }
 
 func PayMember_old(g db.Group, payer string, payee string, amount int) error {
 	g = logic.PayMember(g, payer, payee, amount)
+	//yolo := bson.NewObjectId()
+	Payment := &db.Payment{
+		//ID:            yolo,
+		PayerID:       payer,
+		PayeeID:       payee,
+		AmountInCents: amount,
+	}
+	PaymentBytes, err := json.Marshal(Payment)
+	if err != nil {
+		return err
+	}
+	PaymentFeedItem := &db.FeedItem{
+		Content: PaymentBytes,
+		GroupID: g.ID.Hex(),
+		Type:    db.FeedItemTypePayment,
+	}
+	log.Printf("\n\n PaymentFeedItem %v \n \n \n", PaymentFeedItem)
+	db.AddFeedItemToGroup(&g, PaymentFeedItem)
 	return db.GetGroupChanges(g)
 }
 
@@ -66,7 +87,7 @@ func main() {
 	fmt.Printf("\nUser Info For User 4: %v\n", user4)
 	fmt.Printf("\nUser Info For User 5: %v\n", user5)
 
-	_ = db.AddGroup("Group1", userid1)
+	db.AddGroup("Group1", userid1)
 	user1, _ = db.FindUserByID(userid1)
 
 	// when storing an ID, use ObjectIdHex casts
@@ -82,7 +103,7 @@ func main() {
 
 	// b := [2]string{"Penn", "Teller"}
 
-	purchase := []int{2, 2, 2, 2, 2}
+	purchase := []int{3, 3, 3, 3, 3}
 	_ = AddPurchase_old(group1, userid3.Hex(), 10, purchase) // evan purchase 10
 	group1, _ = db.FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\n AddPurchase_old 3: %v\n", group1)
@@ -103,6 +124,6 @@ func main() {
 	// group = db.FindGroup("groupID")
 	// fmt.Printf(" %v ", t[i]) // use %+v for struct vals, %p for pointer
 
-	// //logic.AddPurchase_old(group db.FindUser("email") cost)
+	// // //logic.AddPurchase_old(group db.FindUser("email") cost)
 
 }
