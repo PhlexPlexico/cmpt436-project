@@ -73,9 +73,9 @@
 			console.log(this.user);
 			var balance = group.users[group.userIndexMap[this.user]].balance/100;
 			if (balance.toFixed(2) > 0) {
-				return "You are owed $" + balance.toFixed(2);
+				return "You owe $" + balance.toFixed(2);
 			} else if (balance.toFixed(2) < 0) {
-				return "You owe $" + Math.abs(balance).toFixed(2);
+				return "You are owed $" + Math.abs(balance).toFixed(2);
 			} else {
 				return "You are even"
 			}
