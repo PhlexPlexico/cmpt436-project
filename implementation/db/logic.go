@@ -86,7 +86,8 @@ func getPositions(group *Group, u1 string, u2 string) (int, int) {
 	for ele := range group.UserIDs {
 		if group.UserIDs[ele] == u1 {
 			x = ele
-		} else if group.UserIDs[ele] == u2 {
+		}
+		if group.UserIDs[ele] == u2 {
 			y = ele
 		}
 	}
