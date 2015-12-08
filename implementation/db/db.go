@@ -434,7 +434,7 @@ func FindFeedItemByGroupId(groupid bson.ObjectId) ([]FeedItem, error) {
 	Col = Session.DB("test").C("FeedItem")
 	feedItem := []FeedItem{}
 	// Find way to order by date...?
-	err = Col.Find(bson.M{"groupid": bson.ObjectId(groupid)}).All(&feedItem)
+	err = Col.Find(bson.M{"groupid": groupid.Hex()}).Sort("-timestamp").All(&feedItem)
 	return feedItem, err
 }
 
