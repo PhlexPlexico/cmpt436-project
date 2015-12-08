@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const (
@@ -120,10 +121,12 @@ func InsertAsFeedItem(v FeedItemContent, groupId string) (*FeedItem, error) {
 		return nil, err
 	}
 	fi := &FeedItem{
-		Content: bytes,
-		GroupID: groupId,
-		Type:    v.TypeString(),
+		Content:   bytes,
+		GroupID:   groupId,
+		Type:      v.TypeString(),
+		Timestamp: time.Now(),
 	}
+
 	// log.Printf("\n\n FeedItem %v \n \n \n", fi)
 	return fi, AddFeedItemToGroupByID(bson.ObjectIdHex(groupId), fi)
 }

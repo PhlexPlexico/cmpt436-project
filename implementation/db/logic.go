@@ -83,6 +83,7 @@ func ProcessPayment(group *Group, payer string, payee string, amount int) {
 func getPositions(group *Group, u1 string, u2 string) (int, int) {
 	x := -1
 	y := -1
+	//Allow x and y to be the same user.
 	for ele := range group.UserIDs {
 		if group.UserIDs[ele] == u1 {
 			x = ele
