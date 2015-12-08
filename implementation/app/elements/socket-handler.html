@@ -18,9 +18,9 @@
 				type: Object,
 				value: null,
 			},
-			groups: {
+			groups: { 
 				type: Array,
-				value: [],
+				value: null,
 			},
 			groupIndexMap: {
 				type: Object,
@@ -28,11 +28,13 @@
 			},
 			contacts: {
 				type: Array,
-				value: [],
+				value: null,
 			},
 		},
 
 		ready: function() {
+			console.log(this.groups);
+			console.log(this.contacts);
 		    if (window["WebSocket"]) {
 		        this.ws = new WebSocket("wss://" + window.location.host + "/ws");
 		        this.ws.onclose = function(event) {
@@ -125,17 +127,21 @@
 			//content is a feedItem
 			//need to find group by group_id and append feedItem to group's feed_items field
 			var index = this.groupIndexMap[data.group_id];
-			if (index) {
-				this.push('groups.'+index+'.feed_items', data.content);
+			if (index != null) {
+				// this.push('groups.'+index+'.feed_items', data.content);
+				this.fire('add-feed-item', {index: index, feed_item: data.content, group_id: data.group_id});
 				console.log('added feed item to group', data);
+				console.log('group', this.groups[index]);
 				return;
 			}
-			index = this.contactIndexMap[data.group_id];
-			if (index) {
-				this.push('contacts.'+index+'.feed_items', data.content);
-				console.log('added feed item to contact', data);
-				return;
-			}
+
+			// index = this.contactIndexMap[data.group_id];
+			// if (index != null) {
+			// 	this.push('contacts.'+index+'.feed_items', data.content);
+			// 	console.log('added feed item to contact', data);
+			// 	console.log('contact', this.contacts[index]);
+			// 	return;
+			// }
 			console.log("the given group_id does not exist", data);
 		},
 
@@ -159,7 +165,7 @@
 				}
 				data.content[i].userIndexMap = {};
 				for (var j=0; j<data.content[i].users.length; j++) {
-					data.content[i].userIndexMap[data.content[i].users[j].id] = data.content[i].users[j].name;
+					data.content[i].userIndexMap[data.content[i].users[j].id] = j;
 				}
 				this.groupIndexMap[data.content[i].id] = this.groups.length;
 				this.push('groups', data.content[i]);

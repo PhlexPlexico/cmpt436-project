@@ -118,7 +118,10 @@
 	<template>
 		<socket-handler 
 			id="socket_handler"
-			user="[[user]]">
+			user="[[user]]"
+			contacts="{{contacts}}"
+			groups="{{groups}}"
+			on-add-feed-item="addFeedItem">
 		</socket-handler>
 
 		<add-contact-dialog 
@@ -202,6 +205,7 @@
 					</template>
 				    <group-feed 
 				    	user="{{user}}"
+				    	groups="{{groups}}"
 				    	group="{{selectedGroup}}"
 				    	on-add-message="addMessage"
 				    	on-open-add-purchase-dialog="openAddPurchaseDialog"
@@ -271,12 +275,18 @@
 				type: Object,
 				value: null,
 			},
+			selectedIndex: {
+				type: Number,
+				value: 0,
+			},
 			infoSelection: String,
 		},
 
 		ready: function() {
 			this.$.contact_drawer_panel.openDrawer();
 			console.log(this.user);
+			console.log(this.contacts);
+			console.log(this.groups);
 		},
 
 		peopleOpen: function() {
@@ -319,7 +329,14 @@
 		},
 
 		groupSelect: function(event) {
-			this.selectedGroup = event.detail.group;
+			var feed_items = event.detail.group.feed_items;
+			console.log("ASK:AFMSAF FEED ITEMS", feed_items);
+			this.set('selectedGroup', event.detail.group);
+			this.set('selectedGroup.feed_items', []);
+			for (var i=0; i<feed_items.length; i++) {
+				this.push('selectedGroup.feed_items', feed_items[i]);
+			}
+			// this.set('selectedGroup.feed_items', feed_items);
 			this.$.contact_drawer_panel.closeDrawer();
 			
 			var i = this.contacts.indexOf(this.selectedGroup);
@@ -328,6 +345,7 @@
 			} else {
 				i = this.groups.indexOf(this.selectedGroup);
 				this.set('groups.'+i+'.unread', 0);
+				this.selectedIndex = i;
 			}	
 		},
 
@@ -376,6 +394,14 @@
 
 		isTransaction: function(message) {
 			return message.type == "payment" || message.type == "purchase";
-		}
+		},
+
+		addFeedItem: function(event) {
+			if (event.detail.group_id == this.selectedGroup.id) {
+				this.push('selectedGroup.feed_items', event.detail.feed_item);
+			} else {
+				this.push('groups.'+event.detail.index+'.feed_items', event.detail.feed_item);
+			}
+		},
 	});
 </script>
