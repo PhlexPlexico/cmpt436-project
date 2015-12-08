@@ -116,7 +116,7 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	if contact, err := db.AddContact(user.Id, body.Email); contact.Name != "" {
+	if contact, err := db.AddContact(user.Id, body.Email); err != nil {
 		if groupId, err := db.CreateGroup("",
 			[]string{user.Id, string(contact.ID)}); groupId != "" {
 			w.WriteHeader(http.StatusOK)
@@ -124,11 +124,8 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 				userIds: []string{user.Id},
 				groupId: groupId,
 			}
-		} else if err != nil {
-			rest.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			rest.Error(w, "unable to create group for contacts.",
-				http.StatusInternalServerError)
+			rest.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	} else if err != nil {
 		rest.Error(w, err.Error(), http.StatusInternalServerError)
