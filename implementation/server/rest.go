@@ -124,13 +124,14 @@ func addContactHandler(w rest.ResponseWriter, r *rest.Request) {
 				userIds: []string{user.Id},
 				groupId: groupId,
 			}
-		} else {
+		} else if err != nil {
 			rest.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			rest.Error(w, "unable to create group for contacts.",
+				http.StatusInternalServerError)
 		}
-	} else if err != nil {
-		rest.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		rest.Error(w, "unable to add contact", http.StatusInternalServerError)
+		rest.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
