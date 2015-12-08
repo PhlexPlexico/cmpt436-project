@@ -21,6 +21,26 @@ func (fi *FeedItem) String() string {
 	return fmt.Sprint(fi.GroupID, ":", fi.Type, ":", string(fi.Content))
 }
 
+type FeedItemContent interface {
+	TypeString() string
+}
+
+func (c *Comment) TypeString() string {
+	return FeedItemTypeComment
+}
+
+func (c *Notification) TypeString() string {
+	return FeedItemTypeNotification
+}
+
+func (c *Purchase) TypeString() string {
+	return FeedItemTypePurchase
+}
+
+func (c *Payment) TypeString() string {
+	return FeedItemTypePayment
+}
+
 /*
  * Handle all inbound websocket messages. This is where all payments and purchases
  * are given to the back-end, to be processed appropriately. There is no need for
@@ -36,7 +56,7 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-		err = comment.Insert()
+		err = InsertAsFeedItem(FeedItemContent(comment), fi.GroupID)
 		if err != nil {
 			return err
 		}
@@ -47,7 +67,7 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-		err = notification.Insert()
+		err = InsertAsFeedItem(FeedItemContent(notification), fi.GroupID)
 		if err != nil {
 			return err
 		}
@@ -57,7 +77,7 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-		err = payment.Insert()
+		err = InsertAsFeedItem(FeedItemContent(payment), fi.GroupID)
 		if err != nil {
 			return err
 		}
@@ -67,7 +87,7 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
-		err = purchase.Insert()
+		err = InsertAsFeedItem(FeedItemContent(purchase), fi.GroupID)
 		if err != nil {
 			return err
 		}
@@ -78,20 +98,22 @@ func HandleFeedItem(fi *FeedItem) error {
 	return nil
 }
 
-func (c *Comment) Insert() error {
-	return nil
-}
+func InsertAsFeedItem(v FeedItemContent, groupId string) error {
+	if !bson.IsObjectIdHex(groupId) {
+		return errors.New(invalidBsonIdHexErrorMessage)
+	}
 
-func (n *Notification) Insert() error {
-	return nil
-}
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	fi := &FeedItem{
+		Content: bytes,
+		GroupID: groupId,
+		Type:    v.TypeString(),
+	}
 
-func (pu *Purchase) Insert() error {
-	return nil
-}
-
-func (pa *Payment) Insert() error {
-	return nil
+	return AddFeedItemToGroupByID(bson.ObjectIdHex(groupId), fi)
 }
 
 /*
