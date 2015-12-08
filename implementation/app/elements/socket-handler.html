@@ -154,9 +154,11 @@
 					data.content[i].type = "contact";
 					if (data.content[i].users[0].id == this.user) {
 						data.content[i].name = data.content[i].users[1].name;
+						data.content[i].avatar_url = data.content[i].users[1].avatar_url;
 						this.push('contacts', data.content[i].users[1]);
 					} else {
 						data.content[i].name = data.content[i].users[0].name;
+						data.content[i].avatar_url = data.content[i].users[0].avatar_url;
 						this.push('contacts', data.content[i].users[0]);
 					}
 					console.log('added contact', data.content[i]);

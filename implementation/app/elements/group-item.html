@@ -39,7 +39,12 @@
 	<template>
 		<paper-item on-tap="tapped">
 			<div class="horizontal layout center flex">
-				<img src="../images/profile-picture.svg">
+				<template is="dom-if" if="[[group.avatar_url]]">
+					<img src="[[group.avatar_url]]">
+				</template>
+				<template is="dom-if" if="[[!group.avatar_url]]">
+					<img src="../images/profile-picture.svg">
+				</template>
 				<div class="message vertical layout flex">
 					<div class="no_overflow header horizontal layout">
 						<div class="no_overflow name">[[group.name]]</div>
