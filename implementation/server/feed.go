@@ -61,7 +61,7 @@ func (fm *feedsManager) listen() {
 			fm.printState()
 			select {
 			case uidsAndGid := <-fm.addToGroup:
-				fm.addClientsToFeedById(uidsAndGid.userIds, uidsAndGid.groupId,
+				fm.addNewClientsToFeedById(uidsAndGid.userIds, uidsAndGid.groupId,
 					fm.clientsPerGroup)
 			case client := <-fm.join:
 				fm.joinHandler(client)
@@ -165,7 +165,7 @@ func (fm *feedsManager) broadcast(message *websocketOutMessage) {
  * This will only add the client with id userId to the broadcast for the feed
  * with feedId if the client is currently connected.
  */
-func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
+func (fm *feedsManager) addNewClientsToFeedById(userIds []string, feedId string,
 	feeds map[string]map[string]*connection) {
 	group, err := db.GetGroup(feedId)
 	if err != nil {
@@ -294,7 +294,7 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 	}
 	return &uiGroup{
 		Name:      group.GroupName,
-		Id:        string(group.ID),
+		Id:        group.ID.Hex(),
 		Users:     uiUsers,
 		FeedItems: feedItems,
 	}, nil
@@ -303,7 +303,7 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 func createUiUser(user *db.User, balance int) *uiUser {
 	return &uiUser{
 		Name:      user.Name,
-		Id:        string(user.ID),
+		Id:        user.ID.Hex(),
 		AvatarUrl: user.AvatarURL,
 		Balance:   balance,
 	}

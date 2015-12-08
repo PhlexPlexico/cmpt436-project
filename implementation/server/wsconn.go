@@ -55,8 +55,8 @@ const (
 
 	messageTypeFeedItem = "feedItem"
 	messageTypeGroups   = "groups"
-	messageTypeContacts = "contacts"
-	messageTypeUsers    = "users"
+	// messageTypeContacts = "contacts"
+	messageTypeUsers = "users"
 )
 
 // connection is an middleman between the websocket connection and
