@@ -12,8 +12,6 @@ func DoPurchase(g *Group, buyer string, cost int, expected []int) error {
 
 func PayMember(g *Group, payer string, payee string, amount int) error {
 	ProcessPayment(g, payer, payee, amount)
-	// log.Printf("\n\n PaymentFeedItem %v \n \n \n", PaymentFeedItem)
-
 	return GetGroupChanges(g)
 }
 
@@ -22,8 +20,7 @@ func TakeDebt(g *Group, taker string, payee string) error {
 	return GetGroupChanges(g)
 }
 
-func main() {
-
+func Test() {
 	Init()
 
 	_ = AddUser("jordan", "lys.jordan@gmail.com", "3066305775", "", true)
@@ -71,6 +68,28 @@ func main() {
 	_ = DoPurchase(group1, userid3.Hex(), 10, purchase) // evan purchase 10
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\n AddPurchase 3: %v\n", group1)
+
+	testpurch1 := &Purchase{
+		PayerID:       "Ken",
+		Expected:      purchase,
+		AmountInCents: 100,
+	}
+	testpurch2 := &Purchase{
+		PayerID:       "bob",
+		Expected:      purchase,
+		AmountInCents: 100,
+	}
+	testpurch3 := &Purchase{
+		PayerID:       "fred",
+		Expected:      purchase,
+		AmountInCents: 100,
+	}
+
+	InsertAsFeedItem(testpurch1, groupid1)
+	InsertAsFeedItem(testpurch2, groupid1)
+	InsertAsFeedItem(testpurch3, groupid1)
+	x, _ := FindGroup(bson.ObjectIdHex(groupid1))
+	fmt.Printf("\n FindGroup: %v\n", x)
 
 	_ = PayMember(group1, userid1.Hex(), userid3.Hex(), 2) // Jordan pays Evan 2
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))

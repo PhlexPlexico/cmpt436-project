@@ -1,12 +1,15 @@
 package main
 
+//package main
+
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"time"
 )
 
 ////////////////////////////////////////////////////////
@@ -30,7 +33,7 @@ type Group struct {
 	UserIDs   []string      `json:"userids"`
 	Expected  []int         `json:"expected"`
 	Actual    []int         `json:"actual"`
-	Feed      []FeedItem    `json:"feedItem"`
+	Feed      []FeedItem    `json:"feed"`
 }
 
 type Contact struct {
@@ -43,7 +46,7 @@ type Contact struct {
 }
 
 type Comment struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	UserName  string        `json:"userName"`
 	UserID    string        `json:"userid"`
 	Subject   string        `json:"subject"`
@@ -52,7 +55,7 @@ type Comment struct {
 }
 
 type Notification struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	UserID    string        `json:"userid"`
 	Subject   string        `json:"subject"`
 	Content   string        `json:"content"`
@@ -60,7 +63,7 @@ type Notification struct {
 }
 
 type Payment struct {
-	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Payer         string        `json:"payer"`
 	PayerID       string        `json:"payerid"`
 	Payee         string        `json:"payee"`
@@ -70,8 +73,8 @@ type Payment struct {
 }
 
 type Purchase struct {
-	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
-	Payer         string        `json:"payer"`
+	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	PayerID       string        `json:"payer"`
 	UserIDs       []string      `json:"userids"`
 	Expected      []int         `json:"expected"`
 	AmountInCents int           `json:"amountInCents"`
@@ -79,7 +82,7 @@ type Purchase struct {
 }
 
 type FeedItem struct {
-	ID        bson.ObjectId   `json:"id" bson:"_id, omitempty"`
+	ID        bson.ObjectId   `json:"id" bson:"_id,omitempty"`
 	Content   json.RawMessage `json:"content"`
 	GroupID   string          `json:"groupid"`
 	Type      string          `json:"type"`
@@ -140,13 +143,13 @@ func AddContactToUser(userId bson.ObjectId, contactId bson.ObjectId) error {
 ////////////////////////////////////////////////////////
 //          GROUP FUNCTIONS           //
 ////////////////////////////////////////////////////////
-func AddGroup(groupName string, uid bson.ObjectId) error {
+func AddGroup(groupName string, uid bson.ObjectId) (bson.ObjectId, error) {
 	var err error
 	Col = Session.DB("test").C("Group")
 	id := bson.NewObjectId()
 	err = Col.Insert(&Group{ID: id, GroupName: groupName, UserIDs: []string{uid.Hex()}, Expected: []int{0}, Actual: []int{0}, Feed: []FeedItem{}})
 	AddGroupToUser(uid, id)
-	return err
+	return id, err
 }
 
 func FindGroup(id bson.ObjectId) (Group, error) {
@@ -154,7 +157,7 @@ func FindGroup(id bson.ObjectId) (Group, error) {
 	Col = Session.DB("test").C("Group")
 	group := Group{}
 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&group)
-	ThisPanic(err)
+	//ThisPanic(err)
 	return group, err
 }
 
@@ -164,6 +167,20 @@ func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) error {
 	Col = Session.DB("test").C("Group")
 	query := bson.M{"_id": g.ID}
 	change := bson.M{"$push": bson.M{"userids": userId.Hex(), "expected": 0, "actual": 0}}
+	err = Col.Update(query, change)
+	return err
+}
+
+func AddFeedItemToGroupByID(groupId bson.ObjectId, fi *FeedItem) error {
+	g, _ := FindGroup(groupId)
+	return AddFeedItemToGroup(&g, fi)
+}
+
+func AddFeedItemToGroup(g *Group, fi *FeedItem) error {
+	var err error
+	Col = Session.DB("test").C("Group")
+	query := bson.M{"_id": g.ID}
+	change := bson.M{"$push": bson.M{"feed": *fi}}
 	err = Col.Update(query, change)
 	return err
 }
@@ -365,7 +382,7 @@ func DeletePayment(id bson.ObjectId) error {
 func AddPurchase(payer string, userIDs []string, expected []int, amount int) error {
 	var err error
 	Col = Session.DB("test").C("Purchase")
-	err = Col.Insert(&Purchase{Payer: payer, UserIDs: userIDs, Expected: expected, AmountInCents: amount, Timestamp: time.Now()})
+	err = Col.Insert(&Purchase{PayerID: payer, UserIDs: userIDs, Expected: expected, AmountInCents: amount, Timestamp: time.Now()})
 	return err
 }
 
@@ -381,7 +398,7 @@ func GetPurchaseChanges(p Purchase) error {
 	var err error
 	Col = Session.DB("test").C("Purchase")
 	query := bson.M{"_id": p.ID}
-	change := bson.M{"$set": bson.M{"payer": p.Payer, "userids": p.UserIDs, "expected": p.Expected, "amountInCents": p.AmountInCents}}
+	change := bson.M{"$set": bson.M{"payer": p.PayerID, "userids": p.UserIDs, "expected": p.Expected, "amountInCents": p.AmountInCents}}
 	err = Col.Update(query, change)
 	return err
 }
@@ -396,6 +413,13 @@ func DeletePurchase(id bson.ObjectId) error {
 ////////////////////////////////////////////////////////
 //					FEEDITEM FUNCTIONS				  //
 ////////////////////////////////////////////////////////
+// type FeedItem struct {
+// 	ID        bson.ObjectId   `json:"id" bson:"_id, omitempty"`
+// 	Content   json.RawMessage `json:"content"`
+// 	GroupID   string          `json:"groupid"`
+// 	Type      string          `json:"type"`
+// 	Timestamp time.Time       `json:"time"`
+// }
 
 func AddFeedItem(content json.RawMessage, groupID string, typee string) error {
 	var err error
@@ -409,6 +433,16 @@ func FindFeedItemById(id bson.ObjectId) (FeedItem, error) {
 	Col = Session.DB("test").C("FeedItem")
 	feedItem := FeedItem{}
 	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&feedItem)
+	return feedItem, err
+}
+
+func FindFeedItemByGroupId(groupid bson.ObjectId) ([]FeedItem, error) {
+	var err error
+	Col = Session.DB("test").C("FeedItem")
+	feedItem := []FeedItem{}
+	// Find way to order by date...?
+	err = Col.Find(bson.M{"groupid": groupid.Hex()}).Sort("-timestamp").All(&feedItem)
+	fmt.Printf("feeditem: %v\n", feedItem)
 	return feedItem, err
 }
 
@@ -429,8 +463,58 @@ func DeleteFeedItem(id bson.ObjectId) error {
 }
 
 ////////////////////////////////////////////////////////
-//					TEST FUNCTIONS					  //
+//          MAIN FUNCTIONS            //
 ////////////////////////////////////////////////////////
+
+func Init() {
+	ConnectToDB()
+	//defer Session.Close()
+	ConfigDB()
+
+	Col = Session.DB("test").C("User")
+
+	index := mgo.Index{
+		Key:        []string{"name", "phone"},
+		Unique:     true,
+		DropDups:   true,
+		Background: true,
+		Sparse:     true,
+	}
+
+	err := Col.EnsureIndex(index)
+	ThisPanic(err)
+
+}
+
+func Close() {
+	Session.Close()
+}
+
+////////////////////////////////////////////////////////
+//          DATABASE FUNCTIONS          //
+////////////////////////////////////////////////////////
+
+func ConfigDB() {
+	var err error
+	Session.SetMode(mgo.Monotonic, true)
+	// Drop Database
+	if IsDrop {
+		err = Session.DB("test").DropDatabase()
+		ThisPanic(err)
+	}
+}
+
+func ThisPanic(err error) {
+	if err != nil {
+		fmt.Printf("Panic: %s\n", err.Error())
+	}
+}
+
+func ConnectToDB() {
+	var err error
+	Session, err = mgo.Dial("127.0.0.1")
+	ThisPanic(err)
+}
 
 func main() {
 	var err error
@@ -475,13 +559,10 @@ func main() {
 	fmt.Printf("\nUserId1: %v\n", id1)
 
 	//Add Users to Groups
-	err = AddGroup("group1", id1)
+
+	groupid1, err := AddGroup("group1", id1)
 	ThisPanic(err)
 
-	user1, err := FindUserByID(id1)
-	ThisPanic(err)
-
-	groupid1 := bson.ObjectIdHex(user1.Groups[0])
 	fmt.Printf("GroupID1: %v\n", groupid1)
 
 	err = AddMemberToGroupByID(groupid1, id2)
@@ -500,30 +581,11 @@ func main() {
 	err = DeleteGroup(groupid1)
 	ThisPanic(err)
 
-}
-
-////////////////////////////////////////////////////////
-//					DATABASE FUNCTIONS				  //
-////////////////////////////////////////////////////////
-
-func ConfigDB() {
-	var err error
-	Session.SetMode(mgo.Monotonic, true)
-	// Drop Database
-	if IsDrop {
-		err = Session.DB("test").DropDatabase()
-		ThisPanic(err)
-	}
-}
-
-func ThisPanic(err error) {
-	if err != nil {
-		fmt.Printf("Panic: %v\n", err.Error())
-	}
-}
-
-func ConnectToDB() {
-	var err error
-	Session, err = mgo.Dial("127.0.0.1")
+	err = AddFeedItem(nil, groupid1.Hex(), "nothing")
 	ThisPanic(err)
+
+	_, err = FindFeedItemByGroupId(groupid1)
+	//fmt.Printf("feeditem: %v\n", fi)
+	//ThisPanic(err)
+
 }

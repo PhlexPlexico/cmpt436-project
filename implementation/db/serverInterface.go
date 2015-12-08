@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"gopkg.in/mgo.v2/bson"
+	"log"
 )
 
 const (
@@ -132,7 +132,7 @@ func InsertAsFeedItem(v FeedItemContent, groupId string) error {
 		GroupID: groupId,
 		Type:    v.TypeString(),
 	}
-
+	log.Printf("\n\n FeedItem %v \n \n \n", fi)
 	return AddFeedItemToGroupByID(bson.ObjectIdHex(groupId), fi)
 }
 

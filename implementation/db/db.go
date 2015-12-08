@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
-
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 ////////////////////////////////////////////////////////
@@ -46,7 +45,7 @@ type Contact struct {
 }
 
 type Comment struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	UserName  string        `json:"userName"`
 	UserID    string        `json:"userid"`
 	Subject   string        `json:"subject"`
@@ -55,7 +54,7 @@ type Comment struct {
 }
 
 type Notification struct {
-	ID        bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	UserID    string        `json:"userid"`
 	Subject   string        `json:"subject"`
 	Content   string        `json:"content"`
@@ -63,7 +62,7 @@ type Notification struct {
 }
 
 type Payment struct {
-	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Payer         string        `json:"payer"`
 	PayerID       string        `json:"payerid"`
 	Payee         string        `json:"payee"`
@@ -73,7 +72,7 @@ type Payment struct {
 }
 
 type Purchase struct {
-	ID            bson.ObjectId `json:"id" bson:"_id, omitempty"`
+	ID            bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	PayerID       string        `json:"payer"`
 	UserIDs       []string      `json:"userids"`
 	Expected      []int         `json:"expected"`
@@ -82,7 +81,7 @@ type Purchase struct {
 }
 
 type FeedItem struct {
-	ID        bson.ObjectId   `json:"id" bson:"_id"`
+	ID        bson.ObjectId   `json:"id" bson:"_id,omitempty"`
 	Content   json.RawMessage `json:"content"`
 	GroupID   string          `json:"groupid"`
 	Type      string          `json:"type"`
@@ -434,7 +433,7 @@ func FindFeedItemByGroupId(groupid bson.ObjectId) ([]FeedItem, error) {
 	Col = Session.DB("test").C("FeedItem")
 	feedItem := []FeedItem{}
 	// Find way to order by date...?
-	err = Col.Find(bson.M{"groupid": bson.ObjectId(groupid)}).All(&feedItem)
+	err = Col.Find(bson.M{"groupid": groupid.Hex()}).Sort("-timestamp").All(&feedItem)
 	return feedItem, err
 }
 
