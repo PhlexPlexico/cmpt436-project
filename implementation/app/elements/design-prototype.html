@@ -119,6 +119,9 @@
 
 	</style>
 	<template>
+		<iron-ajax id="log_out" method="POST" url="/logout">
+    	</iron-ajax>
+
 		<socket-handler 
 			id="socket_handler"
 			user="[[user]]"
@@ -166,7 +169,7 @@
 			    			<iron-icon icon="icons:expand-more"></iron-icon>
 			    		</paper-button>
 			    		<paper-menu class="dropdown-content" selected="-1">
-			    			<paper-item>Log out</paper-item>
+			    			<paper-item on-tap="logOut">Log out</paper-item>
 			    		</paper-menu>
 			    	</paper-menu-button>
 		    	</div>
@@ -413,6 +416,11 @@
 			// } else {
 				this.push('groups.'+event.detail.index+'.feed_items', event.detail.feed_item);
 			// }
+		},
+
+		logOut: function() {
+			console.log("logging out");
+			this.$.log_out.generateRequest();
 		},
 	});
 </script>
