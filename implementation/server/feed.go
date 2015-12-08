@@ -287,7 +287,7 @@ func createUiGroup(group *db.Group) (*uiGroup, error) {
 	}
 	uiUsers := make([]uiUser, len(users))
 	for j, user := range users {
-		uiUsers[j] = *createUiUser(&user, group.Actual[j])
+		uiUsers[j] = *createUiUser(&user, group.Expected[j]-group.Actual[j])
 	}
 	feedItems, err := db.GetAllFeedItems(group.ID)
 	if err != nil {

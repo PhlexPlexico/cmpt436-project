@@ -72,9 +72,9 @@ func ProcessPayment(group *Group, payer string, payee string, amount int) {
 	//fmt.Printf("\n Begin payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
 
 	group.Actual[payerPos] += amount
-	group.Expected[payerPos] -= amount
+	// group.Expected[payerPos] -= amount
 	group.Actual[payeePos] -= amount
-	group.Expected[payeePos] += amount
+	// group.Expected[payeePos] += amount
 
 	//fmt.Printf("\n End payer: %v %v",group.Expected[payerPos], group.Actual[payerPos] )
 	//fmt.Printf("\n End payee: %v %v",group.Expected[payeePos], group.Actual[payeePos] )
