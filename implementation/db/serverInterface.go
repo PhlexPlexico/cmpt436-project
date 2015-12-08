@@ -49,6 +49,9 @@ func (c *Payment) TypeString() string {
  * if the webserver should not be rebroadcasting: e.g. if an invalid purchase is made.
  */
 func HandleFeedItem(fi *FeedItem) error {
+	if !bson.IsObjectIdHex(fi.GroupID) {
+		return errors.New(invalidBsonIdHexErrorMessage)
+	}
 	switch fi.Type {
 	case FeedItemTypeComment:
 		comment := &Comment{}
@@ -77,6 +80,14 @@ func HandleFeedItem(fi *FeedItem) error {
 		if err != nil {
 			return err
 		}
+		group, err := FindGroup(bson.ObjectIdHex(fi.GroupID))
+		if err != nil {
+			return err
+		}
+		err = PayMember(group, payment.PayerID, payment.PayeeID, payment.AmountInCents)
+		if err != nil {
+			return err
+		}
 		err = InsertAsFeedItem(FeedItemContent(payment), fi.GroupID)
 		if err != nil {
 			return err
@@ -84,6 +95,15 @@ func HandleFeedItem(fi *FeedItem) error {
 	case FeedItemTypePurchase:
 		purchase := &Purchase{}
 		err := json.Unmarshal(fi.Content, purchase)
+		if err != nil {
+			return err
+		}
+		group, err := FindGroup(bson.ObjectIdHex(fi.GroupID))
+		if err != nil {
+			return err
+		}
+		err = DoPurchase(group, purchase.PayerID,
+			purchase.AmountInCents, purchase.Expected)
 		if err != nil {
 			return err
 		}
@@ -155,10 +175,11 @@ func GetGroups(userId string) ([]Group, error) {
 
 	groups := make([]Group, len(user.Groups))
 	for i, groupId := range user.Groups {
-		groups[i], err = FindGroup(bson.ObjectIdHex(groupId))
+		group, err := FindGroup(bson.ObjectIdHex(groupId))
 		if err != nil {
 			return nil, err
 		}
+		groups[i] = *group
 	}
 
 	return groups, nil
@@ -276,7 +297,7 @@ func GetGroup(groupId string) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &group, nil
+	return group, nil
 }
 
 /*

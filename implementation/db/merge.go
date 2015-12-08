@@ -1,56 +1,24 @@
 package db
 
 import (
-	"../logic"
 	"fmt"
 	"gopkg.in/mgo.v2/bson"
 )
 
-func AddPurchase(g *Group, buyer string, cost int, expected []int) error {
-	logic.AddPurchase(g, buyer, cost, expected)
-	Purchase := &Purchase{
-		PayerID:       buyer,
-		AmountInCents: cost,
-		Expected:      expected,
-	}
-	PurchaseBytes, err := json.Marshal(Purchase)
-	if err != nil {
-		return err
-	}
-	PurchseFeedItem := &FeedItem{
-		Content: PurchaseBytes,
-		GroupID: g.ID,
-		Type:    FeedItemTypePurchase,
-	}
-	AddFeedItemToGroupByID(g, PurchaseFeedItem)
+func DoPurchase(g *Group, buyer string, cost int, expected []int) error {
+	ProcessPurchase(g, buyer, cost, expected)
 	return GetGroupChanges(g)
 }
 
 func PayMember(g *Group, payer string, payee string, amount int) error {
-	logic.PayMember(g, payer, payee, amount)
-	//yolo := bson.NewObjectId()
-	Payment := &db.Payment{
-		//ID:            yolo,
-		PayerID:       payer,
-		PayeeID:       payee,
-		AmountInCents: amount,
-	}
-	PaymentBytes, err := json.Marshal(Payment)
-	if err != nil {
-		return err
-	}
-	PaymentFeedItem := &db.FeedItem{
-		Content: PaymentBytes,
-		GroupID: g.ID.Hex(),
-		Type:    db.FeedItemTypePayment,
-	}
-	log.Printf("\n\n PaymentFeedItem %v \n \n \n", PaymentFeedItem)
-	db.AddFeedItemToGroup(g, PaymentFeedItem)
-	return db.GetGroupChanges(g)
+	ProcessPayment(g, payer, payee, amount)
+	// log.Printf("\n\n PaymentFeedItem %v \n \n \n", PaymentFeedItem)
+
+	return GetGroupChanges(g)
 }
 
 func TakeDebt(g *Group, taker string, payee string) error {
-	logic.TakeDebt(g, taker, payee)
+	ProcessTakeDebt(g, taker, payee)
 	return GetGroupChanges(g)
 }
 
@@ -83,7 +51,7 @@ func main() {
 	fmt.Printf("\nUser Info For User 4: %v\n", user4)
 	fmt.Printf("\nUser Info For User 5: %v\n", user5)
 
-	_ = AddGroup("Group1", userid1)
+	AddGroup("Group1", userid1)
 	user1, _ = FindUserByID(userid1)
 
 	// when storing an ID, use ObjectIdHex casts
@@ -100,7 +68,7 @@ func main() {
 	// b := [2]string{"Penn", "Teller"}
 
 	purchase := []int{2, 2, 2, 2, 2}
-	_ = AddPurchase(group1, userid3.Hex(), 10, purchase) // evan purchase 10
+	_ = DoPurchase(group1, userid3.Hex(), 10, purchase) // evan purchase 10
 	group1, _ = FindGroup(bson.ObjectIdHex(groupid1))
 	fmt.Printf("\n AddPurchase 3: %v\n", group1)
 

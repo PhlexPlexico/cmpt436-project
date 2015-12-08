@@ -173,7 +173,7 @@ func AddMemberToGroupByID(groupId bson.ObjectId, userId bson.ObjectId) error {
 
 func AddFeedItemToGroupByID(groupId bson.ObjectId, fi *FeedItem) error {
 	g, _ := FindGroup(groupId)
-	return AddFeedItemToGroup(&g, fi)
+	return AddFeedItemToGroup(g, fi)
 }
 
 func AddFeedItemToGroup(g *Group, fi *FeedItem) error {
