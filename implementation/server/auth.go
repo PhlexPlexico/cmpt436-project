@@ -204,7 +204,7 @@ func authCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving logout")
-	session, err := getSession(r)
+	session, _ := getSession(r)
 	endSession(session, w, r)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
