@@ -74,7 +74,7 @@ func validateUserAndLogInIfNecessary(
 	user, err := validateUser(w, r)
 	if user == nil {
 		if err != nil {
-			log.Println(err.Error())
+			log.Println(err.Error() + ". Serving new login instead.")
 		}
 		serveNewLogin(w, r)
 		return nil
@@ -84,15 +84,14 @@ func validateUserAndLogInIfNecessary(
 }
 
 /**
- * return a session pointer. It is nil if the session could not be validated
- * (and thus the session is unauthorized). An error is also returned, if one
+ * return a user pointer. It is nil if the user could not be validated
+ * (and thus the user is unauthorized). An error is also returned, if one
  * exists.
  */
 func validateUser(
 	w http.ResponseWriter, r *http.Request) (*authUser, error) {
 	log.Println("validating user...")
 	session, err := getSession(r)
-
 	if err != nil {
 		return nil, errors.New("unable to get user session: " + err.Error())
 	}
@@ -104,6 +103,12 @@ func validateUser(
 	user, err := getUserFromSession(session)
 	if err != nil {
 		return nil, errors.New("unable to unmarshal user from session: " +
+			err.Error())
+	}
+
+	err = db.ValidateUser(user.Id)
+	if err != nil {
+		return nil, errors.New("session-stored user does not exist in database: " +
 			err.Error())
 	}
 

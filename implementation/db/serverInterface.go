@@ -142,6 +142,17 @@ func InsertAsFeedItem(v FeedItemContent, groupId string) error {
  * worked with strings in my code to... reduce coupling, I guess?
  */
 
+/*
+ * return a non-nil error if the user is not valid.
+ */
+func ValidateUser(userId string) error {
+	if !bson.IsObjectIdHex(userId) {
+		return errors.New(invalidBsonIdHexErrorMessage)
+	}
+	_, err := FindUserByID(bson.ObjectIdHex(userId))
+	return err
+}
+
 /**
  * creates a new user if necessary, and returns a string representation of
  * the user's id. If the user already exists, just return the userId anyway.
@@ -172,7 +183,7 @@ func GetGroups(userId string) ([]Group, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	log.Println()
 	groups := make([]Group, len(user.Groups))
 	for i, groupId := range user.Groups {
 		group, err := FindGroup(bson.ObjectIdHex(groupId))
@@ -191,15 +202,15 @@ func GetGroups(userId string) ([]Group, error) {
  */
 func GetUsers(userIds []string) ([]User, error) {
 	users := make([]User, len(userIds))
-	var err error
 	for i, userId := range userIds {
 		if !bson.IsObjectIdHex(userId) {
 			return nil, errors.New(invalidBsonIdHexErrorMessage)
 		}
-		users[i], err = FindUserByID(bson.ObjectIdHex(userId))
+		user, err := FindUserByID(bson.ObjectIdHex(userId))
 		if err != nil {
 			return nil, err
 		}
+		users[i] = *user
 	}
 
 	return users, nil

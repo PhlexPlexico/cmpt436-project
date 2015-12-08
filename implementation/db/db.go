@@ -105,11 +105,11 @@ func AddUser(name string, email string, phone string, avatarURL string, isRealUs
 	return err
 }
 
-func FindUserByID(id bson.ObjectId) (User, error) {
+func FindUserByID(id bson.ObjectId) (*User, error) {
 	var err error
 	Col = Session.DB("test").C("User")
-	user := User{}
-	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(&user)
+	user := &User{}
+	err = Col.Find(bson.M{"_id": bson.ObjectId(id)}).One(user)
 	return user, err
 }
 

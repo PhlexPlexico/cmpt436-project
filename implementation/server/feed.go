@@ -3,6 +3,7 @@ package server
 import (
 	"../db"
 	"encoding/json"
+	"fmt"
 	"gopkg.in/mgo.v2/bson"
 	"log"
 )
@@ -43,14 +44,12 @@ type uiGroup struct {
 
 func NewFeedsManager() *feedsManager {
 	fm := &feedsManager{
-		join:       make(chan *connection),
-		leave:      make(chan *connection),
-		incoming:   make(chan *db.FeedItem),
-		addToGroup: make(chan *userIdsGroupId),
-		// addToContacts:      make(chan *userIdsGroupId),
+		join:            make(chan *connection),
+		leave:           make(chan *connection),
+		incoming:        make(chan *db.FeedItem),
+		addToGroup:      make(chan *userIdsGroupId),
 		clients:         make(map[string]*connection),
 		clientsPerGroup: make(map[string]map[string]*connection),
-		// clientsPerContacts: make(map[string]map[string]*connection),
 	}
 	fm.listen()
 	return fm
@@ -59,10 +58,8 @@ func NewFeedsManager() *feedsManager {
 func (fm *feedsManager) listen() {
 	go func() {
 		for {
+			fm.printState()
 			select {
-			// case uidAndGid := <-fm.addToContacts:
-			// 	fm.addClientToFeedById(uidAndGid.userId, uidAndGid.groupId,
-			// 		fm.clientsPerContacts)
 			case uidsAndGid := <-fm.addToGroup:
 				fm.addClientsToFeedById(uidsAndGid.userIds, uidsAndGid.groupId,
 					fm.clientsPerGroup)
@@ -111,23 +108,7 @@ func (fm *feedsManager) joinHandler(client *connection) {
 		Type:    messageTypeGroups,
 	}
 
-	//give the client all contacts data.
-	//This is probably not needed.
-	// contacts := db.GetContacts(client.userId)
-	// uiContacts := make([]uiUser, len(contacts))
-	// for i, user := range users {
-	// 	uiContacts[i] = uiUser{
-	// 		Name:      user.Name,
-	// 		Id:        user.Id,
-	// 		AvatarUrl: user.AvatarUrl,
-	// 	}
-	// }
-	// client.outgoing <- &websocketOutMessage{
-	// 	Content: uiContacts,
-	// 	Type:    messageTypeContacts,
-	// }
-
-	log.Println("client joined")
+	fmt.Printf("client joined. client's groups sent:\n%v\n\n", uiGroups)
 }
 
 func (fm *feedsManager) leaveHandler(client *connection) {
@@ -147,10 +128,6 @@ func (fm *feedsManager) leaveHandler(client *connection) {
 	for _, groupId := range groupIds {
 		removeClientFromFeed(client, groupId, fm.clientsPerGroup)
 	}
-	// contactsIds := db.GetContactsIds(client.userId)
-	// for contactsId := range contactsIds {
-	// 	removeClientFromFeed(client, contactsId, fm.clientsPerContacts)
-	// }
 
 	log.Println("client left")
 }
@@ -168,13 +145,6 @@ func (fm *feedsManager) broadcastFeedItem(message *db.FeedItem) {
 	}
 
 	fm.broadcast(wsMessage)
-	// if message.Gid != "" {
-
-	// } else {
-	// 	for client := range fm.clientsPerContacts[message.ContactsId] {
-	// 		client.outgoing <- wsMessage
-	// 	}
-	// }
 	log.Println("broadcasted message to group " + message.GroupID)
 }
 
@@ -197,6 +167,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 		return
 	}
 
+	//Send the new users to all the older users in the group.
 	uiUsers := make([]uiUser, len(userIds))
 	for i, userId := range userIds {
 		if !bson.IsObjectIdHex(userId) {
@@ -208,9 +179,8 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 			log.Println(err.Error())
 			return
 		}
-		uiUsers[i] = *createUiUser(&user, group.Actual[i])
+		uiUsers[i] = *createUiUser(user, group.Actual[i])
 	}
-
 	uiUsersBytes, err := json.Marshal(uiUsers)
 	if err != nil {
 		log.Println(err.Error())
@@ -226,6 +196,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 	var wsMessage *websocketOutMessage
 	for i, userId := range userIds {
 		if client, ok := fm.clients[userId]; ok {
+			//If the added client is active, send them their new group.
 			if wsMessage == nil {
 
 				newUiGroup, err := createUiGroup(group)
@@ -251,10 +222,10 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 			log.Println("client not connected; no need to add it to a new broadcast.")
 		}
 
+		//Create a notification associated with the new user.
 		notification := &db.Notification{
-			Content: userId + "joined the group.",
+			Content: uiUsers[i].Name + "joined the group.",
 		}
-
 		err = db.InsertAsFeedItem(db.FeedItemContent(notification), feedId)
 		if err != nil {
 			log.Println(err.Error())
@@ -272,6 +243,7 @@ func (fm *feedsManager) addClientsToFeedById(userIds []string, feedId string,
 		}
 	}
 
+	//Notify the feed (including the new users) of the new users in the group.
 	for _, notif := range notifs {
 		fm.broadcastFeedItem(notif)
 	}
@@ -329,4 +301,11 @@ func createUiUser(user *db.User, balance int) *uiUser {
 		AvatarUrl: user.AvatarURL,
 		Balance:   balance,
 	}
+}
+
+func (fm *feedsManager) printState() {
+	fmt.Printf("\n####### Current Feed Manager State #######\n"+
+		"active clients: %v\n\nactive groups: %v\n\n"+
+		"##########################################\n\n",
+		fm.clients, fm.clientsPerGroup)
 }
