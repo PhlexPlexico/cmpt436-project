@@ -119,7 +119,11 @@
 
 	</style>
 	<template>
-		<iron-ajax id="log_out" method="POST" url="/logout">
+		<iron-ajax id="log_out" 
+			method="POST" 
+			url="/logout"
+			on-respose="reload"
+			on-error="reload">
     	</iron-ajax>
 
 		<socket-handler 
@@ -255,9 +259,9 @@
 					    			<template is="dom-repeat" items="[[selectedGroup.users]]">
 					    				<contact-item contact="[[item]]"></contact-item>
 					    			</template>
-					    			<div class="vertical layout flex">
+					    			<!-- <div class="vertical layout flex">
 					    				<paper-button class="flex">Add Contact to Group</paper-button>
-					    			</div>
+					    			</div> -->
 				    			</div>
 				    		</div>
 				    	</iron-pages>
@@ -414,13 +418,21 @@
 			// if (event.detail.group_id == this.selectedGroup.id) {
 				// this.push('selectedGroup.feed_items', event.detail.feed_item);
 			// } else {
-				this.push('groups.'+event.detail.index+'.feed_items', event.detail.feed_item);
+			this.push('groups.'+event.detail.index+'.feed_items', event.detail.feed_item);
+			if (event.detail.group_id != this.selectedGroup.id) {
+				this.set('groups.'+event.detail.index+'.unread', this.groups[event.detail.index].unread + 1);
+			}
 			// }
 		},
 
 		logOut: function() {
 			console.log("logging out");
 			this.$.log_out.generateRequest();
+			// window.location = location.host + "/logout";
+		},
+
+		reload: function() {
+			location.reload();
 		},
 	});
 </script>
